@@ -279,6 +279,11 @@ button{font-family:inherit}
 .app .chain li.approved .seq{color:#37E8A0;border-color:rgba(55,232,160,.4)}
 .app .chain li.rejected .seq{color:#FF8FA3;border-color:rgba(255,143,163,.4)}
 .app .chain .who{font-weight:600;font-size:.94rem}
+.app .chain .spacer{flex:1}
+.app .chain form{display:inline-flex}
+.app .inline-form select{font-family:var(--body);font-size:.9rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:10px;padding:10px 13px;min-width:240px}
+.app .inline-form select:focus{outline:none;border-color:var(--cyan)}
+.app .inline-form button:disabled{opacity:.4;cursor:default}
 .app .chain .remarks{flex-basis:100%;color:var(--muted);font-size:.88rem}
 
 /* Form preview */

@@ -8,6 +8,7 @@ import CatalogPanel from "../CatalogPanel";
 import TreePanel from "../TreePanel";
 import StandardPanel from "../StandardPanel";
 import FormTypesPanel from "../FormTypesPanel";
+import RoutesPanel from "../RoutesPanel";
 
 export default async function WorkflowTab({
   params,
@@ -39,6 +40,7 @@ export default async function WorkflowTab({
         ]
       : [
           { href: "/workflow/service-type", label: "Service Type", on: active.slug === "service-type" },
+          { href: "/workflow/tasks", label: "Tasks", on: active.slug === "tasks" },
           { href: "/workflow/routes", label: "Routes", on: active.slug === "routes" },
         ];
 
@@ -84,9 +86,11 @@ export default async function WorkflowTab({
       {active.slug === "service-forms" &&
         (formsTab === "types" ? <FormTypesPanel /> : <StandardPanel preview={preview === "1"} />)}
 
-      {active.slug === "routes" && (
+      {active.slug === "routes" && <RoutesPanel />}
+
+      {active.slug === "tasks" && (
         <div className="panel">
-          <h2>Routes</h2>
+          <h2>Tasks</h2>
           <p>Nothing here yet.</p>
         </div>
       )}

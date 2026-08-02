@@ -57,6 +57,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "service-type", label: "Service Type" },
       { slug: "service-forms", label: "Service Forms" },
+      { slug: "tasks", label: "Tasks", hideInSubmenu: true },
       { slug: "routes", label: "Routes", hideInSubmenu: true },
     ],
     children: "submenu",

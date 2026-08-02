@@ -69,6 +69,13 @@ export default function AppShell({
   const initial = user.name.trim().charAt(0).toUpperCase() || "A";
   const section = nav.find((s) => s.key === activeSection);
 
+  // Sections whose children are sublinks name the page after the open sublink
+  // (Service Forms, Routes…); tab sections keep the section name.
+  const crumb =
+    (section?.children === "submenu"
+      ? section.tabs.find((t) => t.slug === activeTab)?.label
+      : section?.label) ?? section?.label ?? "Argonaut";
+
   // Sections that declare plain tabs (HRIS, Service Desk) get a strip derived
   // from their own children; anything else supplies one explicitly.
   const strip: TopTab[] =
@@ -142,7 +149,7 @@ export default function AppShell({
           <button className="hamb" onClick={toggle} aria-label="Toggle navigation">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          <span className="crumb">{section?.label ?? "Argonaut"}</span>
+          <span className="crumb">{crumb}</span>
           <span className="spacer" />
           <form action={signOut}><button className="signout" type="submit">Sign out</button></form>
           <span className="top-avatar">{initial}</span>
