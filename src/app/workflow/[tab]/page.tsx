@@ -9,6 +9,7 @@ import TreePanel from "../TreePanel";
 import StandardPanel from "../StandardPanel";
 import FormTypesPanel from "../FormTypesPanel";
 import RoutesPanel from "../RoutesPanel";
+import TasksPanel from "../TasksPanel";
 
 export default async function WorkflowTab({
   params,
@@ -88,12 +89,7 @@ export default async function WorkflowTab({
 
       {active.slug === "routes" && <RoutesPanel />}
 
-      {active.slug === "tasks" && (
-        <div className="panel">
-          <h2>Tasks</h2>
-          <p>Nothing here yet.</p>
-        </div>
-      )}
+      {active.slug === "tasks" && <TasksPanel />}
     </AppShell>
   );
 }
