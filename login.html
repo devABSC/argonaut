@@ -60,7 +60,8 @@
     .brandrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
     .wordmark{display:flex;align-items:center;gap:9px;font-family:var(--font);font-weight:700;font-size:1.24rem;letter-spacing:.02em}
     .logo{width:29px;height:29px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06070B;font-family:var(--font);font-weight:700;font-size:1rem;box-shadow:0 0 22px -2px rgba(56,232,255,.6)}
-    .hero-mark{width:32px;height:32px;flex:0 0 32px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--cyan),var(--violet));box-shadow:0 0 0 3px rgba(56,232,255,.14),0 0 20px -2px rgba(56,232,255,.55)}
+    .hero-mark{width:34px;height:34px;flex:0 0 34px;border-radius:50%;overflow:hidden;background:#0b0d13;box-shadow:0 0 0 3px rgba(56,232,255,.14),0 0 20px -2px rgba(56,232,255,.55)}
+    .hero-mark img{width:100%;height:100%;object-fit:cover;display:block}
     .chip{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 9px}
 
     .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:8px;margin-bottom:12px}
@@ -122,11 +123,7 @@
         <div class="brandrow">
           <span class="wordmark">
             <span class="hero-mark">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <ellipse cx="12" cy="4.6" rx="5.4" ry="1.5" stroke="#06070B" stroke-width="1.3"/>
-                <path d="M12 7.2c-3.5 0-6.1 2.6-6.1 6 0 1.2.3 2.1.9 3 .2.3.5.5.9.5h1.2c.3 0 .6-.2.8-.5.6-.8 1.4-1.3 2.3-1.3s1.7.5 2.3 1.3c.2.3.5.5.8.5h1.2c.4 0 .7-.2.9-.5.6-.9.9-1.8.9-3 0-3.4-2.6-6-6.1-6z" fill="#06070B"/>
-                <path d="M9.2 12.3c1.7-.8 3.9-.8 5.6 0-.4.9-1.6 1.5-2.8 1.5s-2.4-.6-2.8-1.5z" fill="#38E8FF"/>
-              </svg>
+              <img src="assets/avatar.jpg" alt="Argonaut avatar" />
             </span>
             Argonaut
           </span>
