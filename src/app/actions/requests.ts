@@ -81,7 +81,7 @@ export async function createRequest(formData: FormData) {
 
   const reference = await nextReference(sub.id, sub.category.code, sub.code);
 
-  await prisma.serviceRequest.create({
+  const created = await prisma.serviceRequest.create({
     data: {
       reference,
       requesterId: user.id,
@@ -110,5 +110,6 @@ export async function createRequest(formData: FormData) {
   });
 
   revalidatePath("/service-desk/my-requests");
-  redirect("/service-desk/my-requests");
+  // Carries the reference so the list can confirm which ticket was raised.
+  redirect(`/service-desk/my-requests?new=${encodeURIComponent(created.reference)}`);
 }
