@@ -92,7 +92,7 @@ export default function AppShell({
               {/* Sublinks in the rail — only for sections that use a submenu. */}
               {s.key === activeSection && s.children === "submenu" && s.tabs.length > 1 && (
                 <div className="subnav navtext">
-                  {s.tabs.map((t) => (
+                  {s.tabs.filter((t) => !t.hideInSubmenu).map((t) => (
                     <Link
                       key={t.slug}
                       href={`/${s.key}/${t.slug}`}
@@ -130,19 +130,28 @@ export default function AppShell({
           <span className="top-avatar">{initial}</span>
         </header>
 
-        {section && section.children !== "submenu" && section.tabs.length > 1 && (
+        {section && (section.topTabs ?? (section.children !== "submenu" && section.tabs.length > 1 ? section.tabs : [])).length > 0 && (
           <div className="tabs" role="tablist">
-            {section.tabs.map((t) => (
-              <Link
-                key={t.slug}
-                href={`/${section.key}/${t.slug}`}
-                role="tab"
-                aria-selected={t.slug === activeTab}
-                className={t.slug === activeTab ? "tab active" : "tab"}
-              >
-                {t.label}
-              </Link>
-            ))}
+            {(() => {
+              const strip = section.topTabs ?? section.tabs;
+              // A left-pane sublink (e.g. Service Forms) may not be in the strip;
+              // in that case the first tab stays highlighted.
+              const matched = strip.some((t) => t.slug === activeTab);
+              return strip.map((t, i) => {
+                const on = matched ? t.slug === activeTab : i === 0;
+                return (
+                  <Link
+                    key={t.slug}
+                    href={`/${section.key}/${t.slug}`}
+                    role="tab"
+                    aria-selected={on}
+                    className={on ? "tab active" : "tab"}
+                  >
+                    {t.label}
+                  </Link>
+                );
+              });
+            })()}
           </div>
         )}
 

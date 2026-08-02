@@ -67,6 +67,13 @@ export default async function WorkflowTab({
       )}
 
       {active.slug === "service-forms" && <ServiceFormsPanel />}
+
+      {active.slug === "routes" && (
+        <div className="panel">
+          <h2>Routes</h2>
+          <p>Nothing here yet.</p>
+        </div>
+      )}
     </AppShell>
   );
 }

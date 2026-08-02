@@ -2,7 +2,7 @@
 // AppShell renders it and the route pages validate against it.
 import type { Role } from "@prisma/client";
 
-export type NavTab = { slug: string; label: string };
+export type NavTab = { slug: string; label: string; /** Reachable route, but not listed in the left-pane submenu. */ hideInSubmenu?: boolean };
 export type NavSection = {
   key: string;
   label: string;
@@ -13,6 +13,11 @@ export type NavSection = {
    * "submenu" — sublinks nested under the section in the left pane (Workflow)
    */
   children?: "tabs" | "submenu";
+  /**
+   * Tabs shown across the top of the content area, independent of the left-pane
+   * sublinks. Used by Workflow, which has both.
+   */
+  topTabs?: NavTab[];
   /** When set, only these roles see the section. Unset = every signed-in user. */
   roles?: Role[];
 };
@@ -52,8 +57,13 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "service-type", label: "Service Type" },
       { slug: "service-forms", label: "Service Forms" },
+      { slug: "routes", label: "Routes", hideInSubmenu: true },
     ],
     children: "submenu",
+    topTabs: [
+      { slug: "service-type", label: "Workflow" },
+      { slug: "routes", label: "Routes" },
+    ],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
