@@ -1,59 +1,73 @@
 import { prisma } from "@/lib/prisma";
-import { STANDARD_SLUG } from "@/lib/forms";
-import { createFormType, deleteFormType } from "../actions/forms";
-import { IconPlus, IconTrash } from "../icons";
 import FieldEditor from "./FieldEditor";
+import SubtypePicker from "./SubtypePicker";
 
-export default async function FormTypesPanel() {
-  const forms = await prisma.formType.findMany({
-    where: { slug: { not: STANDARD_SLUG } },
-    orderBy: { name: "asc" },
-    include: {
-      fields: { orderBy: { sortOrder: "asc" } },
-      subcategories: { select: { name: true, category: { select: { name: true } } } },
+/**
+ * A subtype and its form are the same thing, so this is driven by a subtype
+ * dropdown rather than a separate list of forms to name and create.
+ */
+export default async function FormTypesPanel({ subId }: { subId?: string }) {
+  const cats = await prisma.requestCategory.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      subcategories: {
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { id: true, name: true },
+      },
     },
   });
+
+  // "Finance BIR 2316" — one entry per subtype, since a subtype is a form.
+  const options = cats.flatMap((c) =>
+    c.subcategories.map((s) => ({ id: s.id, label: `${c.name} ${s.name}` })),
+  );
+
+  const sub = subId
+    ? await prisma.requestSubcategory.findUnique({
+        where: { id: subId },
+        include: {
+          category: { select: { id: true, name: true } },
+          formType: { include: { fields: { orderBy: { sortOrder: "asc" } } } },
+        },
+      })
+    : null;
 
   return (
     <>
       <div className="panel">
-        <h2>Form types</h2>
+        <h2>Form by subtype</h2>
         <p>
-          Create a form, then give it its own fields. These are added to the
-          standard fields, not instead of them.
+          Each subtype is its own form. Pick one to edit the fields it adds on
+          top of the standard fields.
         </p>
-        <form action={createFormType} className="inline-form">
-          <input name="name" placeholder="New form name — e.g. Cash Advance Request" required />
-          <button type="submit" className="icon" title="Create form" aria-label="Create form"><IconPlus /></button>
-        </form>
+        <SubtypePicker options={options} selected={sub?.id ?? ""} />
       </div>
 
-      {forms.length === 0 ? (
+      {options.length === 0 && (
         <div className="panel" style={{ marginTop: 18 }}>
-          <p>No form types yet. Create one above, or add a subtype on Service Type — that creates a form automatically.</p>
+          <p>No subtypes yet — add one on the Service Type tab.</p>
         </div>
-      ) : (
-        forms.map((f) => {
-          const used = f.subcategories[0];
-          return (
-            <div className="panel" key={f.id} style={{ marginTop: 18 }}>
-              <div className="cat-head">
-                <h2>{f.name}</h2>
-                {used
-                  ? <span className="tree-meta">{used.category.name} › {used.name}</span>
-                  : <span className="pill s-PENDING">not linked to a subtype</span>}
-                <span className="spacer" />
-                <span className="tree-meta">{f.fields.length} field{f.fields.length === 1 ? "" : "s"}</span>
-                {f.subcategories.length === 0 && (
-                  <form action={deleteFormType.bind(null, f.id)}>
-                    <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
-                  </form>
-                )}
-              </div>
-              <FieldEditor formTypeId={f.id} fields={f.fields} />
-            </div>
-          );
-        })
+      )}
+
+      {sub && (
+        <div className="panel" style={{ marginTop: 18 }}>
+          <div className="cat-head">
+            <h2>{sub.category.name} › {sub.name}</h2>
+            <span className="spacer" />
+            <span className="tree-meta">
+              {sub.formType.fields.length} field{sub.formType.fields.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <FieldEditor
+            formTypeId={sub.formTypeId}
+            fields={sub.formType.fields}
+            emptyText="No fields specific to this subtype yet — it will show only the standard fields."
+          />
+        </div>
       )}
     </>
   );
