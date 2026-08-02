@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "./actions/auth";
+import ThemeToggle from "./ThemeToggle";
 import type { NavSection } from "@/lib/nav";
 
 const ICONS: Record<string, ReactNode> = {
@@ -106,6 +107,8 @@ export default function AppShell({
             </div>
           ))}
         </nav>
+
+        <ThemeToggle />
 
         <div className="side-foot">
           <span className="avatar">{initial}</span>
