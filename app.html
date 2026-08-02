@@ -16,94 +16,136 @@
       --font:"Space Grotesk",system-ui,sans-serif; --mono:"JetBrains Mono",monospace; --body:"Inter",system-ui,sans-serif;
     }
     *{box-sizing:border-box;margin:0}
-    body{font-family:var(--body);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;position:relative;min-height:100vh}
+    body{font-family:var(--body);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
     a{text-decoration:none;color:inherit}
-    .bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-    .grid{position:absolute;inset:0;background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 80% 50% at 50% 0%,#000 30%,transparent 90%)}
-    .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4}
-    .orb-1{width:560px;height:560px;background:radial-gradient(circle,#1f6bff,transparent 65%);top:-220px;left:-140px}
-    .orb-2{width:420px;height:420px;background:radial-gradient(circle,#8b3bff,transparent 65%);top:-120px;right:-120px}
-    .wrap{position:relative;z-index:1}
-    .container{max-width:1120px;margin-inline:auto;padding-inline:28px}
 
-    /* Nav */
-    nav{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);backdrop-filter:blur(16px);background:rgba(6,7,11,.6)}
-    .nav-in{height:70px;display:flex;align-items:center;justify-content:space-between}
-    .wordmark{display:flex;align-items:center;gap:9px;font-family:var(--font);font-weight:700;font-size:1.2rem}
-    .logo{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06070B;font-family:var(--font);font-weight:700;font-size:1rem;box-shadow:0 0 18px -2px rgba(56,232,255,.6)}
-    .links{display:flex;gap:30px}
-    .links a{font-size:.9rem;color:var(--muted);font-weight:500}
-    .links a:hover,.links a.active{color:var(--text)}
-    .links a.active{text-shadow:0 0 12px rgba(56,232,255,.5)}
-    .navright{display:flex;align-items:center;gap:16px}
-    .ghost{font-size:.86rem;color:var(--muted)}
-    .ghost:hover{color:var(--text)}
-    .avatar{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-family:var(--font);font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06070B;box-shadow:0 0 16px -3px rgba(165,116,255,.7)}
+    .app{display:flex;min-height:100vh}
 
-    /* Hero */
-    .hero{padding:76px 0 40px}
+    /* ---------- Sidebar ---------- */
+    .sidebar{position:sticky;top:0;height:100vh;width:252px;flex:0 0 252px;
+      background:rgba(255,255,255,.02);border-right:1px solid var(--line);
+      display:flex;flex-direction:column;padding:20px 14px;
+      transition:width .25s ease, transform .25s ease}
+    .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 20px;font-family:var(--font);font-weight:700;font-size:1.2rem;letter-spacing:.02em;white-space:nowrap;overflow:hidden}
+    .brand .mark{width:10px;height:10px;border-radius:50%;flex:0 0 10px;background:linear-gradient(135deg,var(--cyan),var(--violet));box-shadow:0 0 14px -1px var(--cyan)}
+
+    .nav{display:flex;flex-direction:column;gap:4px}
+    .nav a{display:flex;align-items:center;gap:13px;padding:11px 12px;border-radius:11px;color:var(--muted);font-size:.94rem;font-weight:500;white-space:nowrap;overflow:hidden;transition:background .18s,color .18s}
+    .nav a svg{flex:0 0 20px}
+    .nav a:hover{background:rgba(255,255,255,.045);color:var(--text)}
+    .nav a.active{color:var(--text);background:linear-gradient(90deg,rgba(56,232,255,.14),transparent 80%);box-shadow:inset 2px 0 0 var(--cyan)}
+
+    .newbtn{display:flex;align-items:center;justify-content:center;gap:9px;margin:16px 4px 0;padding:11px;border:0;border-radius:11px;cursor:pointer;
+      font-family:var(--font);font-weight:600;font-size:.92rem;color:#06070B;white-space:nowrap;overflow:hidden;
+      background:linear-gradient(135deg,var(--cyan),var(--blue) 55%,var(--violet));box-shadow:0 10px 26px -10px rgba(76,107,255,.6)}
+
+    .side-foot{margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 10px 4px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden}
+    .avatar{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:grid;place-items:center;font-family:var(--font);font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06070B}
+    .u-meta{display:flex;flex-direction:column;min-width:0}
+    .u-meta b{font-size:.9rem;font-weight:600}
+    .u-meta span{font-size:.76rem;color:var(--faint)}
+
+    /* Rail (desktop collapsed) */
+    @media(min-width:901px){
+      .app.nav-rail .sidebar{width:76px}
+      .app.nav-rail .navtext,.app.nav-rail .brandtext,.app.nav-rail .u-meta{opacity:0;width:0;display:none}
+      .app.nav-rail .nav a{justify-content:center;gap:0}
+      .app.nav-rail .newbtn{gap:0}
+      .app.nav-rail .side-foot{justify-content:center}
+    }
+
+    /* ---------- Main ---------- */
+    .main{flex:1;min-width:0;display:flex;flex-direction:column}
+    .topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;padding:0 24px;border-bottom:1px solid var(--line);backdrop-filter:blur(14px);background:rgba(6,7,11,.62)}
+    .hamb{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.03);cursor:pointer;color:var(--text);transition:border-color .18s,background .18s}
+    .hamb:hover{border-color:rgba(255,255,255,.24);background:rgba(255,255,255,.06)}
+    .crumb{font-family:var(--font);font-weight:600;font-size:1.05rem}
+    .spacer{flex:1}
+    .top-avatar{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-family:var(--font);font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06070B}
+
+    .content{padding:34px 28px;max-width:1080px;width:100%}
     .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:8px}
     .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#37E8A0;box-shadow:0 0 10px #37E8A0}
-    h1{font-family:var(--font);font-weight:600;font-size:clamp(2.4rem,5vw,3.6rem);line-height:1.05;letter-spacing:-.02em;margin-top:16px}
+    h1{font-family:var(--font);font-weight:600;font-size:clamp(2.1rem,4vw,3rem);line-height:1.06;letter-spacing:-.02em;margin-top:14px}
     h1 .grad{background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-    .lead{color:var(--muted);font-size:1.1rem;margin-top:16px;max-width:56ch;line-height:1.6}
-    .cta{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap}
-    .btn{font-family:var(--font);font-weight:600;font-size:.95rem;color:#06070B;border:0;border-radius:11px;padding:12px 22px;cursor:pointer;background:linear-gradient(135deg,var(--cyan),var(--blue) 60%,var(--violet));box-shadow:0 10px 30px -8px rgba(76,107,255,.55);transition:transform .15s,box-shadow .2s}
-    .btn:hover{box-shadow:0 16px 40px -8px rgba(139,59,255,.65);transform:translateY(-1px)}
-    .btn-ghost{font-family:var(--font);font-weight:500;font-size:.95rem;color:var(--text);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;padding:12px 22px;cursor:pointer}
+    .lead{color:var(--muted);font-size:1.06rem;margin-top:14px;max-width:56ch;line-height:1.6}
+    .cta{display:flex;gap:13px;margin-top:24px;flex-wrap:wrap}
+    .btn{font-family:var(--font);font-weight:600;font-size:.94rem;color:#06070B;border:0;border-radius:11px;padding:12px 22px;cursor:pointer;background:linear-gradient(135deg,var(--cyan),var(--blue) 60%,var(--violet));box-shadow:0 10px 28px -10px rgba(76,107,255,.55)}
+    .btn-ghost{font-family:var(--font);font-weight:500;font-size:.94rem;color:var(--text);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;padding:12px 22px;cursor:pointer}
     .btn-ghost:hover{border-color:rgba(255,255,255,.22)}
 
-    /* Stat row */
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
-    .stat{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:20px 22px}
-    .stat .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
-    .stat .v{font-family:var(--font);font-weight:600;font-size:1.8rem;margin-top:6px}
-    .stat .v small{font-size:.9rem;color:var(--cyan)}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:40px}
+    .stat{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+    .stat .k{font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+    .stat .v{font-family:var(--font);font-weight:600;font-size:1.7rem;margin-top:6px}
+    .stat .v small{font-size:.85rem;color:var(--cyan)}
 
-    /* Cards */
-    .sechead{display:flex;align-items:baseline;justify-content:space-between;margin:56px 0 18px}
-    .sechead h2{font-family:var(--font);font-weight:600;font-size:1.4rem}
+    .sechead{display:flex;align-items:baseline;justify-content:space-between;margin:50px 0 16px}
+    .sechead h2{font-family:var(--font);font-weight:600;font-size:1.35rem}
     .sechead a{font-size:.86rem;color:var(--cyan)}
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
-    .card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:16px;padding:22px;transition:transform .2s,border-color .2s,box-shadow .2s;overflow:hidden}
-    .card:hover{transform:translateY(-3px);border-color:rgba(56,232,255,.35);box-shadow:0 20px 50px -20px rgba(56,232,255,.25)}
-    .card::before{content:"";position:absolute;left:22px;right:22px;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity .2s}
-    .card:hover::before{opacity:.6}
-    .kick{font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan)}
-    .card h3{font-family:var(--font);font-weight:600;font-size:1.15rem;margin-top:10px}
-    .card p{color:var(--muted);font-size:.88rem;margin-top:6px}
-    .bar{height:5px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:16px;overflow:hidden}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:15px}
+    .card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:15px;padding:20px;transition:transform .2s,border-color .2s,box-shadow .2s}
+    .card:hover{transform:translateY(-3px);border-color:rgba(56,232,255,.35);box-shadow:0 20px 46px -22px rgba(56,232,255,.25)}
+    .kick{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan)}
+    .card h3{font-family:var(--font);font-weight:600;font-size:1.1rem;margin-top:9px}
+    .card p{color:var(--muted);font-size:.86rem;margin-top:6px}
+    .bar{height:5px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:15px;overflow:hidden}
     .bar span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
-    .card a.open{display:inline-block;margin-top:14px;font-size:.84rem;color:var(--cyan)}
+    .card a.open{display:inline-block;margin-top:13px;font-size:.84rem;color:var(--cyan)}
 
-    footer{border-top:1px solid var(--line);margin-top:64px;padding:26px 0}
-    .foot-in{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;color:var(--muted);font-size:.84rem}
-
-    @media (max-width:720px){.stats{grid-template-columns:1fr}.links{display:none}}
+    /* Backdrop (mobile) */
+    .backdrop{display:none}
+    @media(max-width:900px){
+      .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%)}
+      .app.nav-open .sidebar{transform:none}
+      .backdrop{position:fixed;inset:0;background:rgba(3,4,7,.6);backdrop-filter:blur(2px);z-index:55;opacity:0;pointer-events:none;transition:opacity .2s}
+      .app.nav-open .backdrop{opacity:1;pointer-events:auto}
+      .stats{grid-template-columns:1fr}
+    }
   </style>
 </head>
 <body>
-  <div class="bg"><div class="grid"></div><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+  <div class="app" id="app">
+    <div class="backdrop" id="backdrop"></div>
 
-  <div class="wrap">
-    <nav>
-      <div class="container nav-in">
-        <span class="wordmark"><span class="logo">A</span>Argonaut</span>
-        <div class="links">
-          <a class="active" href="#">Overview</a>
-          <a href="#">Projects</a>
-          <a href="#">Library</a>
-          <a href="#">Settings</a>
-        </div>
-        <div class="navright">
-          <a class="ghost" href="login.html">Sign out</a>
-          <span class="avatar" title="Ethan">E</span>
-        </div>
+    <!-- Left sidebar navigation -->
+    <aside class="sidebar">
+      <div class="brand"><span class="mark"></span><span class="brandtext">Argonaut</span></div>
+
+      <nav class="nav">
+        <a class="active" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg><span class="navtext">Overview</span></a>
+        <a href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg><span class="navtext">Projects</span></a>
+        <a href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="6" height="16" rx="1.5"/><rect x="11" y="4" width="4" height="16" rx="1.5"/><path d="M17 5l3.5 1-3 14L15 19"/></svg><span class="navtext">Library</span></a>
+        <a href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1A1.6 1.6 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00-1.1-2.7H1a2 2 0 110-4h.1A1.6 1.6 0 002.6 5l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V1a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H23a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg><span class="navtext">Settings</span></a>
+      </nav>
+
+      <button class="newbtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg><span class="navtext">New project</span></button>
+
+      <div class="side-foot">
+        <span class="avatar" aria-label="hero">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <ellipse cx="12" cy="4.6" rx="5.4" ry="1.5" stroke="#06070B" stroke-width="1.3"/>
+            <path d="M12 7.2c-3.5 0-6.1 2.6-6.1 6 0 1.2.3 2.1.9 3 .2.3.5.5.9.5h1.2c.3 0 .6-.2.8-.5.6-.8 1.4-1.3 2.3-1.3s1.7.5 2.3 1.3c.2.3.5.5.8.5h1.2c.4 0 .7-.2.9-.5.6-.9.9-1.8.9-3 0-3.4-2.6-6-6.1-6z" fill="#06070B"/>
+            <path d="M9.2 12.3c1.7-.8 3.9-.8 5.6 0-.4.9-1.6 1.5-2.8 1.5s-2.4-.6-2.8-1.5z" fill="#38E8FF"/>
+          </svg>
+        </span>
+        <div class="u-meta"><b>Ethan</b></div>
       </div>
-    </nav>
+    </aside>
 
-    <header class="hero">
-      <div class="container">
+    <!-- Main -->
+    <div class="main">
+      <header class="topbar">
+        <button class="hamb" id="hamb" aria-label="Toggle navigation">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="crumb">Overview</span>
+        <span class="spacer"></span>
+        <a href="login.html" style="color:var(--muted);font-size:.86rem">Sign out</a>
+        <span class="top-avatar">E</span>
+      </header>
+
+      <div class="content">
         <p class="eyebrow"><span class="dot"></span>Session authenticated · 02 Aug 2026</p>
         <h1>Welcome back, <span class="grad">Ethan.</span></h1>
         <p class="lead">You&rsquo;re in. Your workspace is synced and ready — jump back into an active project or spin up something new.</p>
@@ -117,42 +159,24 @@
           <div class="stat"><div class="k">Credits</div><div class="v">10 <small>free</small></div></div>
           <div class="stat"><div class="k">Team</div><div class="v">3 <small>online</small></div></div>
         </div>
-      </div>
-    </header>
 
-    <section class="container">
-      <div class="sechead"><h2>Continue working</h2><a href="#">View all →</a></div>
-      <div class="cards">
-        <article class="card">
-          <p class="kick">Recent</p>
-          <h3>Aurelia Landing</h3>
-          <p>Edited 2 hours ago · Draft</p>
-          <div class="bar"><span style="width:35%"></span></div>
-          <a class="open" href="#">Open →</a>
-        </article>
-        <article class="card">
-          <p class="kick">In progress</p>
-          <h3>Nova Brand Kit</h3>
-          <p>Edited yesterday · 68% complete</p>
-          <div class="bar"><span style="width:68%"></span></div>
-          <a class="open" href="#">Continue →</a>
-        </article>
-        <article class="card">
-          <p class="kick">Shared</p>
-          <h3>Editorial System</h3>
-          <p>3 collaborators · Updated Mon</p>
-          <div class="bar"><span style="width:90%"></span></div>
-          <a class="open" href="#">View →</a>
-        </article>
+        <div class="sechead"><h2>Continue working</h2><a href="#">View all →</a></div>
+        <div class="cards">
+          <article class="card"><p class="kick">Recent</p><h3>Aurelia Landing</h3><p>Edited 2 hours ago · Draft</p><div class="bar"><span style="width:35%"></span></div><a class="open" href="#">Open →</a></article>
+          <article class="card"><p class="kick">In progress</p><h3>Nova Brand Kit</h3><p>Edited yesterday · 68% complete</p><div class="bar"><span style="width:68%"></span></div><a class="open" href="#">Continue →</a></article>
+          <article class="card"><p class="kick">Shared</p><h3>Editorial System</h3><p>3 collaborators · Updated Mon</p><div class="bar"><span style="width:90%"></span></div><a class="open" href="#">View →</a></article>
+        </div>
       </div>
-    </section>
-
-    <footer>
-      <div class="container foot-in">
-        <span class="wordmark" style="font-size:1.05rem"><span class="logo" style="width:24px;height:24px;font-size:.85rem">A</span>Argonaut</span>
-        <span>© 2026 Argonaut · Encrypted workspace</span>
-      </div>
-    </footer>
+    </div>
   </div>
+
+  <script>
+    const app = document.getElementById('app');
+    document.getElementById('hamb').addEventListener('click', function(){
+      if (window.matchMedia('(max-width:900px)').matches) app.classList.toggle('nav-open');
+      else app.classList.toggle('nav-rail');
+    });
+    document.getElementById('backdrop').addEventListener('click', function(){ app.classList.remove('nav-open'); });
+  </script>
 </body>
 </html>

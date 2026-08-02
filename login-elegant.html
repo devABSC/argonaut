@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in · Argonaut</title>
+  <link rel="icon" href="design-system/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --canvas:#FBF8F1; --surface:#FFFFFF;
+      --ink:#1C1A17; --ink-soft:#423D36; --muted:#6B655C; --faint:#9A9388;
+      --hairline:#E7E1D6; --hairline-2:#EFEAE0;
+      --brand:#5E2130; --brand-700:#491923; --brand-050:#F4EBEC;
+      --gold:#B08D57; --gold-600:#9A784A; --gold-050:#F6F0E6;
+      --display:"Cormorant Garamond","Hoefler Text",Georgia,serif;
+      --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    }
+    *{box-sizing:border-box;margin:0}
+    html,body{height:100%}
+    body{font-family:var(--body);color:var(--ink);background:var(--canvas);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    a{text-decoration:none;color:inherit}
+
+    .split{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+
+    /* ---------- Left: form on ivory ---------- */
+    .formside{display:flex;align-items:center;justify-content:center;padding:48px 32px}
+    .form{width:100%;max-width:392px;animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+    @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+    .wordmark{display:inline-flex;align-items:baseline;gap:.5rem;font-family:var(--display);font-weight:600;font-size:1.55rem;letter-spacing:.02em;color:var(--ink)}
+    .wordmark .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);display:inline-block;transform:translateY(-2px)}
+
+    .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-600);margin-top:38px}
+    h1{font-family:var(--display);font-weight:600;font-size:2.9rem;line-height:1.04;letter-spacing:-.01em;margin-top:.5rem}
+    .sub{color:var(--muted);font-size:1rem;margin-top:.65rem;line-height:1.5}
+
+    form{margin-top:2rem}
+    .field+.field{margin-top:1.15rem}
+    .label{display:block;font-size:.86rem;font-weight:600;color:var(--ink-soft);margin-bottom:.5rem}
+    .input{width:100%;font-family:var(--body);font-size:1rem;color:var(--ink);background:var(--surface);border:1px solid var(--hairline);border-radius:3px;padding:.85rem 1rem;transition:border-color .18s,box-shadow .18s}
+    .input::placeholder{color:var(--faint)}
+    .input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-050)}
+
+    .row{display:flex;align-items:center;justify-content:space-between;margin-top:1.1rem}
+    .check{display:inline-flex;align-items:center;gap:.5rem;font-size:.9rem;color:var(--muted);cursor:pointer}
+    .check input{accent-color:var(--brand);width:15px;height:15px}
+    .link{color:var(--brand);font-weight:600}
+    .link:hover{color:var(--gold-600)}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;width:100%;font-family:var(--body);font-weight:600;font-size:1rem;letter-spacing:.01em;border:1px solid transparent;border-radius:3px;padding:.95rem 1.5rem;cursor:pointer;transition:background-color .18s,color .18s,border-color .18s,box-shadow .18s,transform .15s;margin-top:1.6rem}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:var(--brand);color:#fff}
+    .btn-primary:hover{background:var(--brand-700);box-shadow:0 12px 34px -14px rgba(28,26,23,.4)}
+    .btn-outline{background:transparent;color:var(--ink);border-color:var(--hairline);margin-top:0}
+    .btn-outline:hover{border-color:var(--ink)}
+
+    .divider{display:flex;align-items:center;gap:1rem;color:var(--faint);font-size:.85rem;margin:1.4rem 0 1rem}
+    .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--hairline)}
+
+    .foot{margin-top:2rem;text-align:center;color:var(--muted);font-size:.9rem}
+
+    /* ---------- Right: rocket image panel, elegant frame ---------- */
+    .brandside{position:relative;overflow:hidden;color:#fff;background:#1b0a0e}
+    .brandside .bg{position:absolute;inset:0;background:url("assets/rocket-launch.png") center/cover no-repeat;transform:scale(1.02)}
+    .brandside .veil{position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(180deg,rgba(24,9,13,.42) 0%,rgba(24,9,13,.08) 34%,rgba(24,9,13,.50) 68%,rgba(24,9,13,.92) 100%)}
+    .brandside .frame{position:absolute;inset:26px;border:1px solid rgba(255,255,255,.18);pointer-events:none}
+    .brandside .content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:56px 52px}
+    .brandside .wordmark{color:#fff}
+    .brand-quote{font-family:var(--display);font-style:italic;font-weight:500;font-size:clamp(2rem,3vw,2.9rem);line-height:1.18;max-width:16ch}
+    .brand-quote em{color:var(--gold);font-style:italic}
+    .brand-rule{width:56px;height:2px;background:var(--gold);margin:1.5rem 0}
+    .brand-foot{color:rgba(255,255,255,.7);font-size:.9rem;letter-spacing:.02em}
+    .brand-eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+
+    @media (max-width:900px){
+      .split{grid-template-columns:1fr}
+      .brandside{display:none}
+    }
+  </style>
+</head>
+<body>
+  <main class="split">
+    <!-- Left: sign-in form -->
+    <section class="formside">
+      <div class="form">
+        <a class="wordmark" href="#">Argonaut<span class="dot"></span></a>
+
+        <p class="eyebrow">Welcome back</p>
+        <h1>Sign in</h1>
+        <p class="sub">Enter your details to continue to your workspace.</p>
+
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label class="label" for="email">Email address</label>
+            <input class="input" id="email" type="email" placeholder="you@studio.com" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label class="label" for="password">Password</label>
+            <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+          </div>
+
+          <div class="row">
+            <label class="check"><input type="checkbox" checked /> Remember me</label>
+            <a class="link" href="#" style="font-size:.9rem">Forgot password?</a>
+          </div>
+
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </form>
+
+        <div class="divider">or</div>
+        <button class="btn btn-outline" type="button" onclick="enter()">Continue with Google</button>
+
+        <p class="foot">Don&rsquo;t have an account? <a class="link" href="#">Create one</a></p>
+      </div>
+    </section>
+
+    <!-- Right: rocket image panel, elegant frame -->
+    <section class="brandside">
+      <div class="bg"></div>
+      <div class="veil"></div>
+      <div class="frame"></div>
+      <div class="content">
+        <a class="wordmark" href="#">Argonaut<span class="dot"></span></a>
+        <div>
+          <p class="brand-eyebrow">Set your course</p>
+          <div class="brand-rule"></div>
+          <p class="brand-quote">Every voyage begins the moment you <em>step aboard.</em></p>
+        </div>
+        <p class="brand-foot">© 2026 Argonaut — Elegant systems, considered details.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Mockup only — no real authentication. Any submit proceeds to the workspace.
+    function enter(){ window.location.href = 'app.html'; }
+    document.getElementById('loginForm').addEventListener('submit', function(e){ e.preventDefault(); enter(); });
+  </script>
+</body>
+</html>
