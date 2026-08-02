@@ -4,6 +4,7 @@ import { visibleNav, findSection, canViewSection } from "@/lib/nav";
 import { ROLE_LABEL } from "@/lib/rbac";
 import AppShell from "../../AppShell";
 import CatalogPanel from "../CatalogPanel";
+import TreePanel from "../TreePanel";
 
 export default async function WorkflowTab({ params }: { params: Promise<{ tab: string }> }) {
   const { tab } = await params;
@@ -24,6 +25,7 @@ export default async function WorkflowTab({ params }: { params: Promise<{ tab: s
       activeTab={active.slug}
     >
       {active.slug === "service-type" && <CatalogPanel />}
+      {active.slug === "service-type-2" && <TreePanel />}
     </AppShell>
   );
 }
