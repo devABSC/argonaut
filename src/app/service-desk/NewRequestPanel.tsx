@@ -87,7 +87,7 @@ export default async function NewRequestPanel({ subId }: { subId?: string }) {
 
             {sub.formType.fields.length > 0 && (
               <>
-                <p className="secdiv">{sub.formType.name} — specific fields</p>
+                <p className="secdiv">{sub.name} Details</p>
                 {sub.formType.fields.map((f) => <RequestField key={f.id} field={f} />)}
               </>
             )}
