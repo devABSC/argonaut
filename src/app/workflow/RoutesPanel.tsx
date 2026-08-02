@@ -2,11 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { addStep, saveStep, deleteStep } from "../actions/routes";
 import { IconSave, IconTrash, IconPlus } from "../icons";
 import SubtypePicker from "./SubtypePicker";
-
-const ACTORS = [
-  { value: "REQUESTOR", label: "Requestor" },
-  { value: "APPROVER", label: "Approver" },
-];
+import StepActorCells from "./StepActorCells";
 
 /**
  * The route for one subtype: sequential steps, each with a status, an SLA and
@@ -106,13 +102,7 @@ export default async function RoutesPanel({ subId }: { subId?: string }) {
                   <input name="description" defaultValue={st.description ?? ""} placeholder="What happens here" />
                   <input name="slaDays" type="number" min="1" defaultValue={st.slaDays} />
 
-                  <select name="actor" defaultValue={st.actor}>
-                    {ACTORS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-                  </select>
-
-                  <select name="approverIds" multiple defaultValue={chosen} size={3}>
-                    {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
-                  </select>
+                  <StepActorCells actor={st.actor} users={users} selected={chosen} />
 
                   <select name="groupName" defaultValue={st.groupName ?? ""} disabled>
                     <option value="">Select</option>
@@ -141,13 +131,7 @@ export default async function RoutesPanel({ subId }: { subId?: string }) {
               <input name="description" placeholder="What happens here" />
               <input name="slaDays" type="number" min="1" defaultValue={1} />
 
-              <select name="actor" defaultValue="APPROVER">
-                {ACTORS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-              </select>
-
-              <select name="approverIds" multiple size={3} defaultValue={[]}>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
-              </select>
+              <StepActorCells actor="APPROVER" users={users} />
 
               <select name="groupName" defaultValue="" disabled>
                 <option value="">Select</option>

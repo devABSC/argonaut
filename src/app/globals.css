@@ -249,7 +249,8 @@ button{font-family:inherit}
 .app .frow.srow.shead{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px;align-items:end}
 .app .seqbox{display:grid;place-items:center;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--s3);font-family:var(--mono);font-size:.8rem;color:var(--muted)}
 .app .frow.srow select[multiple]{padding:4px;min-height:66px}
-.app .frow.srow select:disabled{opacity:.45}
+.app .frow.srow select:disabled{opacity:.45;cursor:default}
+.app .frow.srow select.blanked{color:var(--faint);font-style:italic;background:var(--s2)}
 .app .frow.srow .rowacts{align-self:center}
 .app button.add.icon{color:var(--on-accent);background:linear-gradient(135deg,#37E8A0,#12B981);border:0}
 .app button.add.icon:hover{filter:brightness(1.08)}
