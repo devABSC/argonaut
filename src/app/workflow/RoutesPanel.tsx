@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { addStep, saveStep, deleteStep } from "../actions/routes";
-import { IconSave, IconTrash, IconPlus } from "../icons";
+import Link from "next/link";
+import { addStep, saveStep, deleteStep, deleteRoute } from "../actions/routes";
+import { IconSave, IconTrash, IconPlus, IconEdit } from "../icons";
 import SubtypePicker from "./SubtypePicker";
 import StepActorCells from "./StepActorCells";
 
@@ -18,7 +19,7 @@ export default async function RoutesPanel({ subId }: { subId?: string }) {
         subcategories: {
           where: { isActive: true },
           orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-          select: { id: true, name: true },
+          select: { id: true, name: true, _count: { select: { steps: true } } },
         },
       },
     }),
@@ -32,6 +33,13 @@ export default async function RoutesPanel({ subId }: { subId?: string }) {
 
   const options = cats.flatMap((c) =>
     c.subcategories.map((s) => ({ id: s.id, label: `${c.name} ${s.name}` })),
+  );
+
+  // Subtypes that already have a route configured.
+  const configured = cats.flatMap((c) =>
+    c.subcategories
+      .filter((x) => x._count.steps > 0)
+      .map((x) => ({ id: x.id, name: x.name, categoryName: c.name, steps: x._count.steps })),
   );
 
   const sub = subId
@@ -64,6 +72,41 @@ export default async function RoutesPanel({ subId }: { subId?: string }) {
           basePath="/workflow/routes"
           param="sub"
         />
+      </div>
+
+      <div className="panel" style={{ marginTop: 18 }}>
+        <h2>Existing routes <span className="count">{configured.length}</span></h2>
+        {configured.length === 0 ? (
+          <p style={{ marginTop: 14 }}>No routes defined yet — pick a subtype above and add steps.</p>
+        ) : (
+          <div className="tablewrap">
+            <table className="utable">
+              <thead>
+                <tr><th className="numcol">No.</th><th>Service Type</th><th>Subtype</th><th>Steps</th><th /></tr>
+              </thead>
+              <tbody>
+                {configured.map((r, i) => (
+                  <tr key={r.id}>
+                    <td className="numcol">{i + 1}</td>
+                    <td className="muted">{r.categoryName}</td>
+                    <td><b>{r.name}</b></td>
+                    <td><span className="pill s-ACTIVE">{r.steps} step{r.steps === 1 ? "" : "s"}</span></td>
+                    <td className="rowacts">
+                      <Link className="save icon" href={`/workflow/routes?sub=${r.id}`} title="Edit" aria-label="Edit">
+                        <IconEdit />
+                      </Link>
+                      <form action={deleteRoute.bind(null, r.id)}>
+                        <button className="reject icon" type="submit" title="Delete route" aria-label="Delete route">
+                          <IconTrash />
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {sub && (

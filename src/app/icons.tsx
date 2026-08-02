@@ -34,6 +34,13 @@ export const IconDown = () => (
   </svg>
 );
 
+export const IconEdit = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M4 20h4.2L19 9.2a2 2 0 000-2.8l-1.4-1.4a2 2 0 00-2.8 0L4 15.8z" />
+    <path d="M14.5 6.5l3 3" />
+  </svg>
+);
+
 export const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
     <path d="M4.5 12.5l5 5 10-11" />

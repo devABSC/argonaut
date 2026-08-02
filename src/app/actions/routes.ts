@@ -113,3 +113,10 @@ export async function deleteStep(stepId: string) {
   ]);
   revalidatePath(PATH);
 }
+
+/** Removes the whole route for a subtype. Tickets already raised keep their snapshot. */
+export async function deleteRoute(subcategoryId: string) {
+  await requireCatalogAdmin();
+  await prisma.workflowStep.deleteMany({ where: { subcategoryId } });
+  revalidatePath(PATH);
+}

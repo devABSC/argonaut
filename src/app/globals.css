@@ -284,6 +284,7 @@ button{font-family:inherit}
 .app .banner{margin-bottom:16px;padding:13px 17px;border-radius:12px;border:1px solid rgba(55,232,160,.35);background:rgba(55,232,160,.1);color:#37E8A0;font-size:.92rem}
 .app .ticket{display:inline-block;font-family:var(--mono);font-size:.8rem;color:var(--cyan);background:rgba(56,232,255,.09);border:1px solid rgba(56,232,255,.22);border-radius:6px;padding:3px 7px;white-space:nowrap}
 .app a.ticket:hover{background:rgba(56,232,255,.18);border-color:rgba(56,232,255,.5)}
+.app .utable a.save.icon{text-decoration:none}
 .app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
 
 /* Ticket detail — route trail */
