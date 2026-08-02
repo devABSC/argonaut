@@ -251,7 +251,6 @@ button{font-family:inherit}
 .app .approvercell{display:flex;flex-direction:column;gap:4px;min-width:0}
 .app .approvercell .assigned{font-size:.78rem;font-weight:600;color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app .approvercell .hint{font-size:.66rem;color:var(--faint)}
-.app .frow.srow select[multiple]{padding:4px;min-height:66px}
 .app .frow.srow select:disabled{opacity:.45;cursor:default}
 .app .frow.srow select.blanked{color:var(--faint);font-style:italic;background:var(--s2)}
 .app .frow.srow .rowacts{align-self:center}

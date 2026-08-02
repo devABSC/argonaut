@@ -8,9 +8,10 @@ const ACTORS = [
 ];
 
 /**
- * User Role and Approvers, paired. A requestor step routes back to the person
- * who raised the ticket, so it has no approvers to pick — the field is cleared
- * and disabled, and a disabled select posts nothing.
+ * User Role and Approver, paired. One approver is picked from a collapsed
+ * dropdown rather than a list of every user. A requestor step routes back to
+ * whoever raised the ticket, so its picker is cleared and disabled — and a
+ * disabled select posts nothing.
  */
 export default function StepActorCells({
   actor: initialActor,
@@ -31,21 +32,14 @@ export default function StepActorCells({
       </select>
 
       {isRequestor ? (
-        <select disabled size={3} className="blanked">
+        <select disabled className="blanked">
           <option>Goes back to the requestor</option>
         </select>
       ) : (
-        <span className="approvercell">
-          <span className="assigned">
-            {selected.length === 0
-              ? "None assigned"
-              : users.filter((u) => selected.includes(u.id)).map((u) => u.email).join(", ")}
-          </span>
-          <select name="approverIds" multiple size={3} defaultValue={selected}>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
-          </select>
-          <span className="hint">Ctrl/Cmd-click to select more than one</span>
-        </span>
+        <select name="approverIds" defaultValue={selected[0] ?? ""}>
+          <option value="">Select approver</option>
+          {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
+        </select>
       )}
     </>
   );
