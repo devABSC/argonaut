@@ -4,7 +4,13 @@ import { createRequest } from "../actions/requests";
 import RequestPicker from "./RequestPicker";
 import RequestField from "./RequestField";
 
-export default async function NewRequestPanel({ subId }: { subId?: string }) {
+export default async function NewRequestPanel({
+  subId,
+  requesterName,
+}: {
+  subId?: string;
+  requesterName: string;
+}) {
   const categories = await prisma.requestCategory.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -82,11 +88,13 @@ export default async function NewRequestPanel({ subId }: { subId?: string }) {
                 key={f.id}
                 field={f}
                 fixedValue={
-                  f.optionSource === "SERVICE_TYPE"
-                    ? sub.category.name
-                    : f.optionSource === "SERVICE_SUBTYPE"
-                      ? sub.name
-                      : undefined
+                  f.key === "requestor"
+                    ? requesterName
+                    : f.optionSource === "SERVICE_TYPE"
+                      ? sub.category.name
+                      : f.optionSource === "SERVICE_SUBTYPE"
+                        ? sub.name
+                        : undefined
                 }
               />
             ))}

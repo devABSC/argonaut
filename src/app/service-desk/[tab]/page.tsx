@@ -66,7 +66,7 @@ export default async function ServiceDeskTab({
       activeSection="service-desk"
       activeTab={active.slug}
     >
-      {active.slug === "new-request" && <NewRequestPanel subId={sub} />}
+      {active.slug === "new-request" && <NewRequestPanel subId={sub} requesterName={user.name} />}
 
       {active.slug === "my-requests" && (
         <>
