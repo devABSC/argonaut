@@ -1,6 +1,7 @@
 import type { FormField } from "@prisma/client";
-import { addField, removeField, updateField } from "../actions/forms";
-import { IconSave, IconTrash, IconPlus } from "../icons";
+import { addField, removeField, updateField, moveField } from "../actions/forms";
+import { IconSave, IconTrash, IconPlus, IconUp, IconDown } from "../icons";
+import { LOOKUPS } from "@/lib/lookups";
 
 /** Display types offered when adding a field. */
 export const KINDS = [
@@ -8,6 +9,7 @@ export const KINDS = [
   { value: "TEXTAREA", label: "Text Area" },
   { value: "SELECT", label: "List" },
   { value: "FILE", label: "File Upload" },
+  { value: "LOOKUP", label: "Lookup" },
   { value: "NUMBER", label: "Number" },
   { value: "CURRENCY", label: "Amount" },
   { value: "DATE", label: "Date" },
@@ -31,15 +33,32 @@ export default function FieldEditor({
   return (
     <div className="fields">
       <div className="frow fhead">
-        <span>Label</span><span>Display Type</span><span>Choices</span><span>Required</span><span />
+        <span /><span>Label</span><span>Display Type</span><span>Choices</span><span>Required</span><span />
       </div>
 
       {fields.length === 0 ? (
         <p className="pvempty" style={{ padding: "12px 2px" }}>{emptyText}</p>
       ) : (
-        fields.map((f) => (
+        fields.map((f, i) => (
           <form className="frow" action={updateField} key={f.id}>
             <input type="hidden" name="fieldId" value={f.id} />
+
+            <span className="fmove">
+              <button
+                className="nudge" type="submit" title="Move up" aria-label="Move up"
+                disabled={i === 0}
+                formAction={moveField.bind(null, f.id, "up")}
+              >
+                <IconUp />
+              </button>
+              <button
+                className="nudge" type="submit" title="Move down" aria-label="Move down"
+                disabled={i === fields.length - 1}
+                formAction={moveField.bind(null, f.id, "down")}
+              >
+                <IconDown />
+              </button>
+            </span>
 
             <span className="fcell">
               <input name="label" defaultValue={f.label} required />
@@ -50,11 +69,17 @@ export default function FieldEditor({
               {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
             </select>
 
-            <input
-              name="options"
-              defaultValue={f.options.join(", ")}
-              placeholder="Only used by List — e.g. Cash, Cheque"
-            />
+            <span className="fcell">
+              <input
+                name="options"
+                defaultValue={f.options.join(", ")}
+                placeholder="List choices — Cash, Cheque"
+              />
+              <select name="optionSource" defaultValue={f.optionSource ?? ""}>
+                <option value="">Table source — none</option>
+                {LOOKUPS.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
+              </select>
+            </span>
 
             <label className="req">
               <input type="checkbox" name="required" defaultChecked={f.required} />
@@ -70,12 +95,19 @@ export default function FieldEditor({
       )}
 
       <form action={addField} className="frow fadd">
+        <span className="fmove" />
         <input type="hidden" name="formTypeId" value={formTypeId} />
         <input name="label" placeholder="New field label — e.g. Amount requested" required />
         <select name="kind" defaultValue="TEXT">
           {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
         </select>
-        <input name="options" placeholder="Only used by List — e.g. Cash, Cheque" />
+        <span className="fcell">
+          <input name="options" placeholder="List choices — Cash, Cheque" />
+          <select name="optionSource" defaultValue="">
+            <option value="">Table source — none</option>
+            {LOOKUPS.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
+          </select>
+        </span>
         <label className="req"><input type="checkbox" name="required" /> Required</label>
         <button className="save icon" type="submit" title="Add field" aria-label="Add field"><IconPlus /></button>
       </form>

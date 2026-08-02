@@ -220,7 +220,12 @@ button{font-family:inherit}
 .app .field-form .req input{accent-color:var(--cyan);width:15px;height:15px}
 /* Field editor — each row is its own form, laid out as a grid */
 .app .fields{margin-top:18px;display:flex;flex-direction:column;gap:7px}
-.app .frow{display:grid;grid-template-columns:minmax(180px,2fr) minmax(130px,1fr) minmax(160px,1.6fr) auto auto;gap:9px;align-items:center}
+.app .frow{display:grid;grid-template-columns:26px minmax(170px,2fr) minmax(130px,1fr) minmax(160px,1.6fr) auto auto;gap:9px;align-items:center}
+.app .fmove{display:flex;flex-direction:column;gap:2px}
+.app .fmove .nudge{display:grid;place-items:center;width:24px;height:17px;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--s3);color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s}
+.app .fmove .nudge svg{width:12px;height:12px}
+.app .fmove .nudge:hover:not(:disabled){color:var(--cyan);border-color:rgba(56,232,255,.45)}
+.app .fmove .nudge:disabled{opacity:.28;cursor:default}
 .app .frow.fhead{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px}
 .app .frow:not(.fhead){padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--s2)}
 .app .frow.fadd{border-style:dashed;background:transparent}
@@ -232,7 +237,7 @@ button{font-family:inherit}
 .app .frow .req{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted);white-space:nowrap;cursor:pointer}
 .app .frow .req input{accent-color:var(--cyan);width:15px;height:15px}
 .app .frow .rowacts{display:flex;gap:6px}
-@media (max-width:820px){.app .frow{grid-template-columns:1fr 1fr}.app .frow.fhead{display:none}}
+@media (max-width:820px){.app .frow{grid-template-columns:26px 1fr}.app .frow.fhead{display:none}.app .fmove{flex-direction:row}}
 
 /* Icon-only action buttons */
 .app button.icon{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;flex:0 0 34px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .16s,border-color .16s,color .16s}

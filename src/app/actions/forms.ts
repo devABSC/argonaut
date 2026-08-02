@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { canManageCatalog } from "@/lib/rbac";
 import { STANDARD_SLUG } from "@/lib/forms";
+import { isLookupKey } from "@/lib/lookups";
 
 const PATH = "/workflow/service-forms";
 
@@ -19,7 +20,7 @@ async function requireCatalogAdmin() {
 }
 
 const FIELD_KINDS: FieldKind[] = [
-  "TEXT", "TEXTAREA", "NUMBER", "CURRENCY", "DATE", "SELECT", "CHECKBOX", "FILE",
+  "TEXT", "TEXTAREA", "NUMBER", "CURRENCY", "DATE", "SELECT", "CHECKBOX", "FILE", "LOOKUP",
 ];
 
 /** Returns the kind only if it is a real enum member, else null. */
@@ -73,6 +74,8 @@ export async function addField(formData: FormData) {
   const kind = parseKind(formData.get("kind")) ?? "TEXT";
   const required = formData.get("required") === "on";
   const options = parseChoices(formData.get("options"));
+  const src = formData.get("optionSource");
+  const optionSource = kind === "LOOKUP" && isLookupKey(src) ? src : null;
 
   if (!formTypeId || !label) return;
 
@@ -96,6 +99,7 @@ export async function addField(formData: FormData) {
       kind,
       required,
       options: kind === "SELECT" ? options : [],
+      optionSource,
       sortOrder: (last?.sortOrder ?? 0) + 1,
     },
   });
@@ -121,11 +125,42 @@ export async function updateField(formData: FormData) {
   const kind = parseKind(formData.get("kind")) ?? existing.kind;
   const required = formData.get("required") === "on";
   const options = parseChoices(formData.get("options"));
+  const src = formData.get("optionSource");
+  const optionSource = kind === "LOOKUP" ? (isLookupKey(src) ? src : existing.optionSource) : null;
 
   await prisma.formField.update({
     where: { id },
-    data: { label, kind, required, options: kind === "SELECT" ? options : [] },
+    data: { label, kind, required, options: kind === "SELECT" ? options : [], optionSource },
   });
+  revalidatePath(PATH);
+}
+
+/**
+ * Moves a field one place up or down. Rewrites every sortOrder in the form so
+ * the sequence stays 1..n even if earlier rows shared a value.
+ */
+export async function moveField(fieldId: string, dir: "up" | "down") {
+  await requireCatalogAdmin();
+
+  const field = await prisma.formField.findUnique({ where: { id: fieldId } });
+  if (!field) return;
+
+  const all = await prisma.formField.findMany({
+    where: { formTypeId: field.formTypeId },
+    orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+  });
+
+  const i = all.findIndex((f) => f.id === fieldId);
+  const j = dir === "up" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= all.length) return;
+
+  [all[i], all[j]] = [all[j], all[i]];
+
+  await prisma.$transaction(
+    all.map((f, idx) =>
+      prisma.formField.update({ where: { id: f.id }, data: { sortOrder: idx + 1 } }),
+    ),
+  );
   revalidatePath(PATH);
 }
 

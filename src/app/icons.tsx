@@ -22,6 +22,18 @@ export const IconPlus = () => (
   </svg>
 );
 
+export const IconUp = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </svg>
+);
+
+export const IconDown = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </svg>
+);
+
 export const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
     <path d="M4.5 12.5l5 5 10-11" />

@@ -130,25 +130,28 @@ enum FieldKind {
   SELECT
   CHECKBOX
   FILE
+  LOOKUP
 }
 
 /// One admin-defined input on a form. `key` is the property name used inside
 /// ServiceRequest.details, so it is immutable once requests exist.
 model FormField {
-  id         String    @id @default(cuid())
-  formTypeId String
-  formType   FormType  @relation(fields: [formTypeId], references: [id], onDelete: Cascade)
-  key        String
-  label      String
-  kind       FieldKind @default(TEXT)
-  required   Boolean   @default(false)
-  helpText   String?
-  sortOrder  Int       @default(0)
+  id           String    @id @default(cuid())
+  formTypeId   String
+  formType     FormType  @relation(fields: [formTypeId], references: [id], onDelete: Cascade)
+  key          String
+  label        String
+  kind         FieldKind @default(TEXT)
+  required     Boolean   @default(false)
+  helpText     String?
+  sortOrder    Int       @default(0)
   /// Choices for SELECT fields, in display order. Empty for other kinds.
-  options    String[]  @default([])
+  options      String[]  @default([])
+  /// For TABLE fields: which lookup table supplies the choices at runtime.
+  optionSource String?
   /// Bounds for NUMBER / CURRENCY fields.
-  minValue   Decimal?  @db.Decimal(14, 2)
-  maxValue   Decimal?  @db.Decimal(14, 2)
+  minValue     Decimal?  @db.Decimal(14, 2)
+  maxValue     Decimal?  @db.Decimal(14, 2)
 
   @@unique([formTypeId, key])
 }

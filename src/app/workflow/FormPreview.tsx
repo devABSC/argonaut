@@ -1,7 +1,14 @@
 import type { FormField } from "@prisma/client";
+import { lookupLabel, lookupValues } from "@/lib/lookups";
 
 /** Read-only render of a form exactly as a requester would see it. */
-export default function FormPreview({ fields }: { fields: FormField[] }) {
+export default async function FormPreview({ fields }: { fields: FormField[] }) {
+  // Resolve each lookup source once so the preview shows real values.
+  const sources: Record<string, string[]> = {};
+  for (const f of fields) {
+    if (f.kind === "LOOKUP") sources[f.id] = await lookupValues(f.optionSource);
+  }
+
   return (
     <>
       <p>Preview only — nothing here can be submitted.</p>
@@ -35,6 +42,17 @@ export default function FormPreview({ fields }: { fields: FormField[] }) {
                 </svg>
                 Choose file
               </div>
+            )}
+            {f.kind === "LOOKUP" && (
+              <>
+                <select disabled>
+                  <option>{sources[f.id]?.[0] ?? "— no values in the source table —"}</option>
+                </select>
+                <span className="pvhelp">
+                  from {lookupLabel(f.optionSource) ?? "an unset source"}
+                  {sources[f.id] ? ` · ${sources[f.id].length} value(s)` : ""}
+                </span>
+              </>
             )}
             {f.kind === "CHECKBOX" && (
               <label className="pvcheck"><input type="checkbox" disabled /> Yes</label>
