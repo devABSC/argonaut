@@ -20,7 +20,6 @@ function slugify(s: string): string {
 }
 
 const PATH = "/workflow/service-type";
-const ROUTES = "/workflow/routes";
 
 export async function createCategory(formData: FormData) {
   await requireCatalogAdmin();
@@ -67,76 +66,8 @@ export async function createSubcategory(formData: FormData) {
   revalidatePath(PATH);
 }
 
-export async function addApprover(formData: FormData) {
-  await requireCatalogAdmin();
-  const subcategoryId = String(formData.get("subcategoryId") ?? "");
-  const approverId = String(formData.get("approverId") ?? "");
-  if (!subcategoryId || !approverId) return;
 
-  const last = await prisma.workflowApprover.findFirst({
-    where: { subcategoryId },
-    orderBy: { sequence: "desc" },
-    select: { sequence: true },
-  });
 
-  await prisma.workflowApprover.create({
-    data: { subcategoryId, approverId, sequence: (last?.sequence ?? 0) + 1 },
-  });
-  revalidatePath(ROUTES);
-  revalidatePath(PATH);
-}
-
-/** Moves an approver up or down the chain, reindexing the sequence to 1..n. */
-export async function moveApprover(approverRowId: string, dir: "up" | "down") {
-  await requireCatalogAdmin();
-
-  const row = await prisma.workflowApprover.findUnique({ where: { id: approverRowId } });
-  if (!row) return;
-
-  const all = await prisma.workflowApprover.findMany({
-    where: { subcategoryId: row.subcategoryId },
-    orderBy: { sequence: "asc" },
-  });
-
-  const i = all.findIndex((a) => a.id === approverRowId);
-  const j = dir === "up" ? i - 1 : i + 1;
-  if (i < 0 || j < 0 || j >= all.length) return;
-
-  [all[i], all[j]] = [all[j], all[i]];
-
-  // Sequence is unique per subcategory, so park them out of range first to
-  // avoid colliding with rows that still hold the target numbers.
-  await prisma.$transaction([
-    ...all.map((a, idx) =>
-      prisma.workflowApprover.update({ where: { id: a.id }, data: { sequence: -(idx + 1) } }),
-    ),
-    ...all.map((a, idx) =>
-      prisma.workflowApprover.update({ where: { id: a.id }, data: { sequence: idx + 1 } }),
-    ),
-  ]);
-  revalidatePath(ROUTES);
-  revalidatePath(PATH);
-}
-
-export async function removeApprover(approverRowId: string) {
-  await requireCatalogAdmin();
-  const row = await prisma.workflowApprover.findUnique({ where: { id: approverRowId } });
-  if (!row) return;
-
-  await prisma.workflowApprover.delete({ where: { id: approverRowId } });
-  // Close the gap so sequences stay 1..n and the chain has no holes.
-  const rest = await prisma.workflowApprover.findMany({
-    where: { subcategoryId: row.subcategoryId },
-    orderBy: { sequence: "asc" },
-  });
-  await prisma.$transaction(
-    rest.map((r, i) =>
-      prisma.workflowApprover.update({ where: { id: r.id }, data: { sequence: i + 1 } }),
-    ),
-  );
-  revalidatePath(ROUTES);
-  revalidatePath(PATH);
-}
 
 export async function deleteSubcategory(subcategoryId: string) {
   await requireCatalogAdmin();

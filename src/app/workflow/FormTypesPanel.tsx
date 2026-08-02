@@ -44,7 +44,11 @@ export default async function FormTypesPanel({ subId }: { subId?: string }) {
           Each subtype is its own form. Pick one to edit the fields it adds on
           top of the standard fields.
         </p>
-        <SubtypePicker options={options} selected={sub?.id ?? ""} />
+        <SubtypePicker
+          options={options}
+          selected={sub?.id ?? ""}
+          href={(id) => (id ? `/workflow/service-forms?t=types&form=${id}` : "/workflow/service-forms?t=types")}
+        />
       </div>
 
       {options.length === 0 && (

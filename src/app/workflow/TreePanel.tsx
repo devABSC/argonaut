@@ -8,7 +8,7 @@ export default async function TreePanel() {
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         include: {
           formType: { select: { name: true, _count: { select: { fields: true } } } },
-          _count: { select: { approvers: true, requests: true } },
+          _count: { select: { steps: true, requests: true } },
         },
       },
     },
@@ -58,9 +58,9 @@ export default async function TreePanel() {
                         <span className="tree-meta">
                           {s.formType._count.fields} field{s.formType._count.fields === 1 ? "" : "s"}
                         </span>
-                        {s._count.approvers === 0
-                          ? <span className="pill s-PENDING">no approvers</span>
-                          : <span className="pill s-ACTIVE">{s._count.approvers} approver{s._count.approvers === 1 ? "" : "s"}</span>}
+                        {s._count.steps === 0
+                          ? <span className="pill s-PENDING">no route</span>
+                          : <span className="pill s-ACTIVE">{s._count.steps} step{s._count.steps === 1 ? "" : "s"}</span>}
                         {s._count.requests > 0 && <span className="tree-meta">{s._count.requests} requests</span>}
                       </div>
                     </li>

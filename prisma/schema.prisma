@@ -48,9 +48,9 @@ model User {
   projects Project[]
 
   // Service desk
-  approverFor    WorkflowApprover[] @relation("ApproverOf")
-  requests       ServiceRequest[]   @relation("RequestedBy")
-  approvalsGiven RequestApproval[]  @relation("ApprovalsGiven")
+  workflowSteps  WorkflowStepApprover[] @relation("StepActorOf")
+  requests       ServiceRequest[]       @relation("RequestedBy")
+  approvalsGiven RequestApproval[]      @relation("ApprovalsGiven")
 }
 
 model Session {
@@ -108,8 +108,8 @@ model RequestSubcategory {
   formTypeId String
   formType   FormType @relation(fields: [formTypeId], references: [id])
 
-  approvers WorkflowApprover[]
-  requests  ServiceRequest[]
+  steps    WorkflowStep[]
+  requests ServiceRequest[]
 
   @@unique([categoryId, slug])
   @@unique([categoryId, code])
@@ -161,17 +161,41 @@ model FormField {
   @@unique([formTypeId, key])
 }
 
-/// Named approver in a subcategory's chain, lowest sequence first.
-model WorkflowApprover {
+/// Who acts at a step.
+enum StepActor {
+  REQUESTOR
+  APPROVER
+}
+
+/// One sequential step in a subtype's route, lowest sequence first.
+model WorkflowStep {
   id            String             @id @default(cuid())
   subcategoryId String
   subcategory   RequestSubcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
-  approverId    String
-  approver      User               @relation("ApproverOf", fields: [approverId], references: [id], onDelete: Cascade)
   sequence      Int
+  /// Route status the ticket takes on at this step, e.g. Initiated, Assessed.
+  name          String
+  description   String?
+  /// Service level in days for this step.
+  slaDays       Int                @default(1)
+  actor         StepActor          @default(APPROVER)
+  /// Reserved — group-based assignment is not wired up yet.
+  groupName     String?
+
+  approvers WorkflowStepApprover[]
 
   @@unique([subcategoryId, sequence])
-  @@unique([subcategoryId, approverId])
+}
+
+/// A step can require more than one named approver.
+model WorkflowStepApprover {
+  id     String       @id @default(cuid())
+  stepId String
+  step   WorkflowStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  userId String
+  user   User         @relation("StepActorOf", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([stepId, userId])
 }
 
 enum RequestStatus {

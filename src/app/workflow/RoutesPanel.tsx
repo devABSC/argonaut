@@ -1,111 +1,165 @@
 import { prisma } from "@/lib/prisma";
-import { addApprover, moveApprover, removeApprover } from "../actions/catalog";
-import { IconPlus, IconTrash, IconUp, IconDown } from "../icons";
+import { addStep, saveStep, deleteStep } from "../actions/routes";
+import { IconSave, IconTrash, IconPlus } from "../icons";
+import SubtypePicker from "./SubtypePicker";
+
+const ACTORS = [
+  { value: "REQUESTOR", label: "Requestor" },
+  { value: "APPROVER", label: "Approver" },
+];
 
 /**
- * The approval route for each subtype: named people in sequence. A request
- * copies this chain when it is submitted, so edits here only affect new tickets.
+ * The route for one subtype: sequential steps, each with a status, an SLA and
+ * the people who act on it. A ticket copies the chain when submitted.
  */
-export default async function RoutesPanel() {
-  const [cats, users] = await Promise.all([
+export default async function RoutesPanel({ subId }: { subId?: string }) {
+  const [cats, users, tasks] = await Promise.all([
     prisma.requestCategory.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      include: {
+      select: {
+        name: true,
         subcategories: {
           where: { isActive: true },
           orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-          include: {
-            approvers: {
-              orderBy: { sequence: "asc" },
-              include: { approver: { select: { name: true, role: true } } },
-            },
-          },
+          select: { id: true, name: true },
         },
       },
     }),
     prisma.user.findMany({
       where: { status: "ACTIVE" },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, role: true },
+      select: { id: true, name: true, email: true },
     }),
+    prisma.task.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
   ]);
 
-  const subs = cats.flatMap((c) => c.subcategories.map((s) => ({ ...s, categoryName: c.name })));
+  const options = cats.flatMap((c) =>
+    c.subcategories.map((s) => ({ id: s.id, label: `${c.name} ${s.name}` })),
+  );
+
+  const sub = subId
+    ? await prisma.requestSubcategory.findUnique({
+        where: { id: subId },
+        include: {
+          category: { select: { name: true } },
+          steps: {
+            orderBy: { sequence: "asc" },
+            include: { approvers: { select: { userId: true } } },
+          },
+        },
+      })
+    : null;
+
+  const statusOptions = tasks.map((t) => t.name);
 
   return (
     <>
       <div className="panel">
-        <h2>Approval routes</h2>
+        <h2>Route</h2>
         <p>
-          Each subtype has its own chain of named approvers, applied in order.
-          A ticket copies the chain when submitted, so changes here affect only
-          new tickets. A subtype with no approvers is approved on submission.
+          Pick a subtype, then define the steps a ticket moves through. Step
+          names come from the Tasks list. A subtype with no steps is approved on
+          submission.
         </p>
+        <SubtypePicker
+          options={options}
+          selected={sub?.id ?? ""}
+          href={(id) => (id ? `/workflow/routes?sub=${id}` : "/workflow/routes")}
+        />
       </div>
 
-      {subs.length === 0 ? (
+      {sub && (
         <div className="panel" style={{ marginTop: 18 }}>
-          <p>No subtypes yet — add one on the Service Type tab.</p>
-        </div>
-      ) : (
-        subs.map((s) => {
-          const taken = new Set(s.approvers.map((a) => a.approverId));
-          const available = users.filter((u) => !taken.has(u.id));
+          <div className="cat-head">
+            <h2>{sub.category.name} › {sub.name}</h2>
+            <span className="spacer" />
+            <span className="tree-meta">{sub.steps.length} step{sub.steps.length === 1 ? "" : "s"}</span>
+          </div>
 
-          return (
-            <div className="panel" key={s.id} style={{ marginTop: 18 }}>
-              <div className="cat-head">
-                <h2>{s.categoryName} › {s.name}</h2>
-                <span className="spacer" />
-                {s.approvers.length === 0
-                  ? <span className="pill s-PENDING">no approvers — auto-approved</span>
-                  : <span className="pill s-ACTIVE">{s.approvers.length} step{s.approvers.length === 1 ? "" : "s"}</span>}
-              </div>
+          {statusOptions.length === 0 && (
+            <p className="pvhelp" style={{ marginTop: 10 }}>
+              No tasks defined yet — add them on the Tasks tab and they become the
+              route status choices here.
+            </p>
+          )}
 
-              {s.approvers.length > 0 && (
-                <ol className="chain">
-                  {s.approvers.map((a, i) => (
-                    <li key={a.id}>
-                      <span className="seq">{a.sequence}</span>
-                      <span className="who">{a.approver.name}</span>
-                      <span className={`pill r-${a.approver.role}`}>{a.approver.role.replace("_", " ")}</span>
-                      <span className="spacer" />
-                      <form action={moveApprover.bind(null, a.id, "up")}>
-                        <button className="nudge" type="submit" title="Move up" aria-label="Move up" disabled={i === 0}>
-                          <IconUp />
-                        </button>
-                      </form>
-                      <form action={moveApprover.bind(null, a.id, "down")}>
-                        <button className="nudge" type="submit" title="Move down" aria-label="Move down" disabled={i === s.approvers.length - 1}>
-                          <IconDown />
-                        </button>
-                      </form>
-                      <form action={removeApprover.bind(null, a.id)}>
-                        <button className="reject icon" type="submit" title="Remove" aria-label="Remove">
-                          <IconTrash />
-                        </button>
-                      </form>
-                    </li>
-                  ))}
-                </ol>
-              )}
+          <div className="fields steps">
+            <div className="frow srow shead">
+              <span>Steps</span><span>Route Status</span><span>Description</span>
+              <span>SLA</span><span>User Role</span><span>Approvers</span><span>Groups</span><span />
+            </div>
 
-              <form action={addApprover} className="inline-form">
-                <input type="hidden" name="subcategoryId" value={s.id} />
-                <select name="approverId" required defaultValue="">
-                  <option value="" disabled>Add an approver…</option>
-                  {available.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name} — {u.role.replace("_", " ")}</option>
-                  ))}
-                </select>
-                <button type="submit" className="icon" title="Add approver" aria-label="Add approver" disabled={available.length === 0}>
+            {sub.steps.map((st) => {
+              const chosen = st.approvers.map((a) => a.userId);
+              return (
+                <form className="frow srow" action={saveStep} key={st.id}>
+                  <input type="hidden" name="stepId" value={st.id} />
+                  <span className="seqbox">{st.sequence}</span>
+
+                  <select name="name" defaultValue={st.name}>
+                    {!statusOptions.includes(st.name) && <option value={st.name}>{st.name}</option>}
+                    {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+
+                  <input name="description" defaultValue={st.description ?? ""} placeholder="What happens here" />
+                  <input name="slaDays" type="number" min="1" defaultValue={st.slaDays} />
+
+                  <select name="actor" defaultValue={st.actor}>
+                    {ACTORS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+                  </select>
+
+                  <select name="approverIds" multiple defaultValue={chosen} size={3}>
+                    {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
+                  </select>
+
+                  <select name="groupName" defaultValue={st.groupName ?? ""} disabled>
+                    <option value="">Select</option>
+                  </select>
+
+                  <span className="rowacts">
+                    <button className="save icon" type="submit" title="Save" aria-label="Save"><IconSave /></button>
+                    <button
+                      className="reject icon" type="submit" title="Delete" aria-label="Delete"
+                      formAction={deleteStep.bind(null, st.id)}
+                    ><IconTrash /></button>
+                  </span>
+                </form>
+              );
+            })}
+
+            <form className="frow srow fadd" action={addStep}>
+              <input type="hidden" name="subcategoryId" value={sub.id} />
+              <span className="seqbox">{sub.steps.length + 1}</span>
+
+              <select name="name" defaultValue="" required>
+                <option value="" disabled>Select Route</option>
+                {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              <input name="description" placeholder="What happens here" />
+              <input name="slaDays" type="number" min="1" defaultValue={1} />
+
+              <select name="actor" defaultValue="APPROVER">
+                {ACTORS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+              </select>
+
+              <select name="approverIds" multiple size={3} defaultValue={[]}>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
+              </select>
+
+              <select name="groupName" defaultValue="" disabled>
+                <option value="">Select</option>
+              </select>
+
+              <span className="rowacts">
+                <button className="add icon" type="submit" title="Add step" aria-label="Add step">
                   <IconPlus />
                 </button>
-              </form>
-            </div>
-          );
-        })
+              </span>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );

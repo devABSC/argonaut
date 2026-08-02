@@ -16,10 +16,10 @@ export default async function WorkflowTab({
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ view?: string; t?: string; preview?: string; form?: string }>;
+  searchParams: Promise<{ view?: string; t?: string; preview?: string; form?: string; sub?: string }>;
 }) {
   const { tab } = await params;
-  const { view, t, preview, form } = await searchParams;
+  const { view, t, preview, form, sub } = await searchParams;
 
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -87,7 +87,7 @@ export default async function WorkflowTab({
       {active.slug === "service-forms" &&
         (formsTab === "types" ? <FormTypesPanel subId={form} /> : <StandardPanel preview={preview === "1"} />)}
 
-      {active.slug === "routes" && <RoutesPanel />}
+      {active.slug === "routes" && <RoutesPanel subId={sub} />}
 
       {active.slug === "tasks" && <TasksPanel />}
     </AppShell>

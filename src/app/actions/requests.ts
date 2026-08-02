@@ -49,7 +49,7 @@ export async function createRequest(formData: FormData) {
     include: {
       category: { select: { name: true, code: true } },
       formType: { include: { fields: { orderBy: { sortOrder: "asc" } } } },
-      approvers: { orderBy: { sequence: "asc" } },
+      steps: { orderBy: { sequence: "asc" }, include: { approvers: true } },
     },
   });
   if (!sub || !sub.isActive) throw new Error("SUBCATEGORY_UNAVAILABLE");
@@ -89,16 +89,22 @@ export async function createRequest(formData: FormData) {
       subject,
       description,
       details: details as object,
-      status: sub.approvers.length > 0 ? "SUBMITTED" : "APPROVED",
+      status: sub.steps.length > 0 ? "SUBMITTED" : "APPROVED",
       submittedAt: new Date(),
-      closedAt: sub.approvers.length > 0 ? null : new Date(),
+      closedAt: sub.steps.length > 0 ? null : new Date(),
       currentSequence: 1,
       // Snapshot the chain so later edits to the workflow cannot rewrite history.
       approvals: {
-        create: sub.approvers.map((a) => ({
-          sequence: a.sequence,
-          approverId: a.approverId,
-        })),
+        // Only approver steps gate the ticket; a step with several approvers
+        // yields one approval row each, ordered after its step.
+        create: sub.steps
+          .filter((st) => st.actor === "APPROVER")
+          .flatMap((st, i) =>
+            st.approvers.map((a, k) => ({
+              sequence: (i + 1) * 100 + k,
+              approverId: a.userId,
+            })),
+          ),
       },
     },
   });

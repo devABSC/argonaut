@@ -25,9 +25,9 @@ export default async function NewRequestPanel({ subId }: { subId?: string }) {
         include: {
           category: { select: { id: true, name: true } },
           formType: { include: { fields: { orderBy: { sortOrder: "asc" } } } },
-          approvers: {
+          steps: {
             orderBy: { sequence: "asc" },
-            include: { approver: { select: { name: true } } },
+            include: { approvers: { include: { user: { select: { name: true } } } } },
           },
         },
       })
@@ -55,9 +55,15 @@ export default async function NewRequestPanel({ subId }: { subId?: string }) {
             <h2>{sub.category.name} › {sub.name}</h2>
             <span className="spacer" />
             <span className="tree-meta">
-              {sub.approvers.length === 0
-                ? "no approvers — auto-approved"
-                : `approvers: ${sub.approvers.map((a) => a.approver.name).join(" → ")}`}
+              {sub.steps.length === 0
+                ? "no route — auto-approved"
+                : sub.steps
+                    .map((st) =>
+                      st.actor === "REQUESTOR"
+                        ? `${st.name} (requestor)`
+                        : `${st.name} (${st.approvers.map((a) => a.user.name).join(", ") || "unassigned"})`,
+                    )
+                    .join(" → ")}
             </span>
           </div>
 

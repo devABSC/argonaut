@@ -10,7 +10,7 @@ export default async function CatalogPanel() {
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         include: {
           formType: { select: { name: true, _count: { select: { fields: true } } } },
-          _count: { select: { approvers: true, requests: true } },
+          _count: { select: { steps: true, requests: true } },
         },
       },
     },
@@ -52,7 +52,7 @@ export default async function CatalogPanel() {
               <div className="tablewrap">
                 <table className="utable">
                   <thead>
-                    <tr><th>Subtype</th><th>Form</th><th>Fields</th><th>Approvers</th><th>Requests</th><th /></tr>
+                    <tr><th>Subtype</th><th>Form</th><th>Fields</th><th>Steps</th><th>Requests</th><th /></tr>
                   </thead>
                   <tbody>
                     {c.subcategories.map((s) => (
@@ -61,9 +61,9 @@ export default async function CatalogPanel() {
                         <td className="muted">{s.formType.name}</td>
                         <td className="muted">{s.formType._count.fields}</td>
                         <td>
-                          {s._count.approvers === 0
-                            ? <span className="pill s-PENDING">none set</span>
-                            : <span className="pill s-ACTIVE">{s._count.approvers}</span>}
+                          {s._count.steps === 0
+                            ? <span className="pill s-PENDING">no route</span>
+                            : <span className="pill s-ACTIVE">{s._count.steps}</span>}
                         </td>
                         <td className="muted">{s._count.requests}</td>
                         <td>
