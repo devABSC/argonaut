@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "argonaut",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5199"],
-      "port": 5199,
+      "runtimeExecutable": "/Users/azimuth/argonaut/.claude/dev-server.sh",
+      "runtimeArgs": [],
+      "port": 5200,
       "autoPort": true
     }
   ]

@@ -23,3 +23,7 @@ npm-debug.log*
 # Editor
 .vscode/
 .idea/
+
+# next
+next-env.d.ts
+.vercel
