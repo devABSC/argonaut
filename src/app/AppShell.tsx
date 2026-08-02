@@ -127,22 +127,6 @@ export default function AppShell({
           <span className="top-avatar">{initial}</span>
         </header>
 
-        {section && section.tabs.length > 0 && (
-          <div className="tabs" role="tablist">
-            {section.tabs.map((t) => (
-              <Link
-                key={t.slug}
-                href={`/${section.key}/${t.slug}`}
-                role="tab"
-                aria-selected={t.slug === activeTab}
-                className={t.slug === activeTab ? "tab active" : "tab"}
-              >
-                {t.label}
-              </Link>
-            ))}
-          </div>
-        )}
-
         <div className="content">{children}</div>
       </div>
     </div>
