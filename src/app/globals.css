@@ -234,6 +234,7 @@ button{font-family:inherit}
 .app .frow input:focus,.app .frow select:focus{outline:none;border-color:var(--cyan)}
 .app .fcell{display:flex;flex-direction:column;gap:4px;min-width:0}
 .app .fkey{font-family:var(--mono);font-size:.6rem;color:var(--faint);padding-left:3px}
+.app .fnone{color:var(--faint);font-size:.85rem;padding-left:4px}
 .app .frow .req{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted);white-space:nowrap;cursor:pointer}
 .app .frow .req input{accent-color:var(--cyan);width:15px;height:15px}
 .app .frow .rowacts{display:flex;gap:6px}
