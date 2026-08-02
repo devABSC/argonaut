@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Row = {
   id: string;
   reference: string;
@@ -41,17 +43,26 @@ export default function RequestList({
           <table className="utable">
             <thead>
               <tr>
+                <th className="numcol">No.</th>
                 <th>Ticket ID</th>
                 {showRequester && <th>Requester</th>}
-                <th>Subject</th><th>Service</th><th>Status</th><th>With</th><th>Raised</th>
+                <th>Subject</th><th>Service</th><th>Status</th><th>Awaiting</th><th>Raised</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => {
+              {rows.map((r, i) => {
                 const waiting = r.approvals.find((a) => a.decision === "PENDING");
                 return (
                   <tr key={r.id}>
-                    <td><code className="ticket">{r.reference}</code></td>
+                    <td className="numcol">{i + 1}</td>
+                    <td>
+                      <Link
+                        className="ticket"
+                        href={`/service-desk/ticket/${encodeURIComponent(r.reference)}`}
+                      >
+                        {r.reference}
+                      </Link>
+                    </td>
                     {showRequester && <td className="muted">{r.requester?.name ?? "—"}</td>}
                     <td><b>{r.subject}</b></td>
                     <td className="muted">{r.subcategory.category.name} › {r.subcategory.name}</td>

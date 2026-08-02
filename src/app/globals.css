@@ -262,7 +262,24 @@ button{font-family:inherit}
 .app .btn-primary{margin-top:22px;font-family:var(--font);font-weight:600;font-size:.98rem;color:var(--on-accent);border:0;border-radius:12px;padding:13px 26px;cursor:pointer;background:linear-gradient(135deg,var(--cyan),var(--blue) 55%,var(--violet));box-shadow:0 10px 28px -10px rgba(76,107,255,.6)}
 .app .btn-primary:hover{filter:brightness(1.07)}
 .app .banner{margin-bottom:16px;padding:13px 17px;border-radius:12px;border:1px solid rgba(55,232,160,.35);background:rgba(55,232,160,.1);color:#37E8A0;font-size:.92rem}
-.app .ticket{font-family:var(--mono);font-size:.8rem;color:var(--cyan);background:rgba(56,232,255,.09);border:1px solid rgba(56,232,255,.22);border-radius:6px;padding:3px 7px;white-space:nowrap}
+.app .ticket{display:inline-block;font-family:var(--mono);font-size:.8rem;color:var(--cyan);background:rgba(56,232,255,.09);border:1px solid rgba(56,232,255,.22);border-radius:6px;padding:3px 7px;white-space:nowrap}
+.app a.ticket:hover{background:rgba(56,232,255,.18);border-color:rgba(56,232,255,.5)}
+.app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* Ticket detail */
+.app .tsubject{margin-top:16px;font-family:var(--font);font-weight:600;font-size:1.25rem;letter-spacing:-.01em}
+.app .tdesc{margin-top:8px;color:var(--muted);font-size:.94rem;max-width:70ch}
+.app .tmeta{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.app .tmeta.wide{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.app .tmeta dt{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.app .tmeta dd{font-size:.94rem}
+.app .chain{list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:8px}
+.app .chain li{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 14px;border:1px solid var(--line);border-radius:11px;background:var(--s2)}
+.app .chain .seq{display:grid;place-items:center;width:26px;height:26px;flex:0 0 26px;border-radius:50%;font-family:var(--mono);font-size:.72rem;color:var(--muted);border:1px solid var(--line)}
+.app .chain li.approved .seq{color:#37E8A0;border-color:rgba(55,232,160,.4)}
+.app .chain li.rejected .seq{color:#FF8FA3;border-color:rgba(255,143,163,.4)}
+.app .chain .who{font-weight:600;font-size:.94rem}
+.app .chain .remarks{flex-basis:100%;color:var(--muted);font-size:.88rem}
 
 /* Form preview */
 .app .formprev .pv{margin-top:20px;max-width:560px;display:flex;flex-direction:column;gap:16px}
