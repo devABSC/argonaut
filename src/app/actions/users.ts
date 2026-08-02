@@ -27,7 +27,7 @@ export async function approveRegistration(userId: string) {
     where: { id: userId },
     data: { status: "ACTIVE", approvedAt: new Date(), approvedById: me.id },
   });
-  revalidatePath("/admin/approvals");
+  revalidatePath("/settings/users");
 }
 
 export async function rejectRegistration(userId: string) {
@@ -43,7 +43,7 @@ export async function rejectRegistration(userId: string) {
   });
   // Kill any session the account may already hold.
   await prisma.session.deleteMany({ where: { userId } });
-  revalidatePath("/admin/approvals");
+  revalidatePath("/settings/users");
 }
 
 export async function setUserRole(userId: string, role: Role) {
@@ -60,7 +60,28 @@ export async function setUserRole(userId: string, role: Role) {
   }
 
   await prisma.user.update({ where: { id: userId }, data: { role } });
-  revalidatePath("/admin/approvals");
+  revalidatePath("/settings/users");
+}
+
+/**
+ * Form-driven edit from the Settings -> Users table: applies role and
+ * reporting line together. Each field is permission-checked separately.
+ */
+export async function updateUserFromForm(formData: FormData) {
+  const userId = String(formData.get("userId") ?? "");
+  const role = String(formData.get("role") ?? "") as Role;
+  const managerRaw = String(formData.get("managerId") ?? "");
+  const managerId = managerRaw === "" ? null : managerRaw;
+
+  const me = await actor();
+  const target = await prisma.user.findUnique({ where: { id: userId } });
+  if (!target) deny();
+  if (!canManageUser(me, target)) deny();
+
+  if (role && role !== target.role) await setUserRole(userId, role);
+  if (managerId !== target.managerId) await setUserManager(userId, managerId);
+
+  revalidatePath("/settings/users");
 }
 
 /** Sets who this user reports to. Pass null to clear the reporting line. */
@@ -72,5 +93,5 @@ export async function setUserManager(userId: string, managerId: string | null) {
   if (managerId === userId) throw new Error("SELF_MANAGER");
 
   await prisma.user.update({ where: { id: userId }, data: { managerId } });
-  revalidatePath("/admin/approvals");
+  revalidatePath("/settings/users");
 }

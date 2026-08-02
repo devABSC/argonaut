@@ -69,18 +69,26 @@ const keys = (role: any) => visibleNav(role).map((s) => s.key);
 
 assert.deepEqual(keys("EMPLOYEE"), ["service-desk", "hris"], "employee sees only service desk + hris");
 assert.deepEqual(keys("SUPERVISOR"), ["service-desk", "hris"], "supervisor sees only service desk + hris");
-assert.deepEqual(keys("HR_SUPERVISOR"), ["service-desk", "hris"], "hr supervisor sees only service desk + hris");
+assert.deepEqual(
+  keys("HR_SUPERVISOR"),
+  ["service-desk", "hris", "settings"],
+  "hr supervisor gets settings (registration approvals live there) but not finance/workflow",
+);
 assert.deepEqual(
   keys("ADMINISTRATOR"),
-  ["service-desk", "hris", "finance", "workflow"],
-  "administrator sees finance + workflow config",
+  ["service-desk", "hris", "finance", "workflow", "settings"],
+  "administrator sees finance + workflow config + settings",
 );
 assert.deepEqual(
   keys("SUPER_USER"),
-  ["service-desk", "hris", "finance", "workflow"],
+  ["service-desk", "hris", "finance", "workflow", "settings"],
   "super user sees everything",
 );
 n += 5;
+
+ok("employee cannot open settings", !canViewSection("EMPLOYEE", "settings"));
+ok("plain supervisor cannot open settings", !canViewSection("SUPERVISOR", "settings"));
+ok("hr supervisor can open settings", canViewSection("HR_SUPERVISOR", "settings"));
 
 ok("employee cannot open workflow config", !canViewSection("EMPLOYEE", "workflow"));
 ok("employee cannot open finance", !canViewSection("EMPLOYEE", "finance"));

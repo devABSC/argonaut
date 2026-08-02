@@ -46,6 +46,13 @@ export const NAV: NavSection[] = [
     tabs: [{ slug: "category-subcategory", label: "Category-Subcategory" }],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
+  {
+    key: "settings",
+    label: "Settings",
+    tabs: [{ slug: "users", label: "Users" }],
+    // HR Supervisor is included because registration approvals live here.
+    roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
+  },
 ];
 
 export function visibleNav(role: Role): NavSection[] {
