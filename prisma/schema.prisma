@@ -85,6 +85,8 @@ model RequestCategory {
   id        String  @id @default(cuid())
   name      String  @unique
   slug      String  @unique
+  /// 3-digit code used in ticket references: YYMM-CCC-SSS-NNNN.
+  code      Int     @unique @default(0)
   isActive  Boolean @default(true)
   sortOrder Int     @default(0)
 
@@ -97,6 +99,8 @@ model RequestSubcategory {
   category   RequestCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   name       String
   slug       String
+  /// 3-digit code, unique within its category.
+  code       Int             @default(0)
   isActive   Boolean         @default(true)
   sortOrder  Int             @default(0)
 
@@ -108,6 +112,7 @@ model RequestSubcategory {
   requests  ServiceRequest[]
 
   @@unique([categoryId, slug])
+  @@unique([categoryId, code])
 }
 
 /// An admin-built form definition. Reusable across subcategories.

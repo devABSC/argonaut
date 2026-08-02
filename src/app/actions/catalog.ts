@@ -26,8 +26,15 @@ export async function createCategory(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
+  // Codes are sequential and become part of every ticket reference, so they
+  // are allocated once and never reused.
+  const last = await prisma.requestCategory.findFirst({
+    orderBy: { code: "desc" },
+    select: { code: true },
+  });
+
   await prisma.requestCategory.create({
-    data: { name, slug: slugify(name) },
+    data: { name, slug: slugify(name), code: (last?.code ?? 0) + 1 },
   });
   revalidatePath(PATH);
 }
@@ -47,8 +54,14 @@ export async function createSubcategory(formData: FormData) {
     data: existing ? { name: `${name} (${slug})`, slug: `${slug}-${Date.now()}` } : { name, slug },
   });
 
+  const lastSub = await prisma.requestSubcategory.findFirst({
+    where: { categoryId },
+    orderBy: { code: "desc" },
+    select: { code: true },
+  });
+
   await prisma.requestSubcategory.create({
-    data: { categoryId, name, slug, formTypeId: form.id },
+    data: { categoryId, name, slug, formTypeId: form.id, code: (lastSub?.code ?? 0) + 1 },
   });
   revalidatePath(PATH);
 }
