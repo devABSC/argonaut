@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { getStandardForm } from "@/lib/forms";
@@ -79,6 +80,41 @@ export async function createRequest(formData: FormData) {
   details.__serviceType = sub.category.name;
   details.__serviceSubtype = sub.name;
 
+  // Anything still needing a decision after submission?
+  const gated = sub.steps.some(
+    (st, i) => (st.actor === "APPROVER" && st.approvers.length > 0) || (st.actor === "REQUESTOR" && i > 0),
+  );
+
+  // Snapshot every step — requestor steps included — so the ticket keeps the
+  // route exactly as configured when it was raised.
+  const approvalRows: Prisma.RequestApprovalUncheckedCreateWithoutRequestInput[] = [];
+  sub.steps.forEach((st, i) => {
+    const base = (i + 1) * 100;
+
+    if (st.actor === "REQUESTOR") {
+      approvalRows.push({
+        sequence: base,
+        stepName: st.name,
+        actor: "REQUESTOR",
+        approverId: user.id,
+        // Raising the ticket completes the opening requestor step.
+        ...(i === 0
+          ? { decision: "APPROVED", decidedAt: new Date(), remarks: "Ticket raised" }
+          : {}),
+      });
+      return;
+    }
+
+    st.approvers.forEach((a, k) => {
+      approvalRows.push({
+        sequence: base + k,
+        stepName: st.name,
+        actor: "APPROVER",
+        approverId: a.userId,
+      });
+    });
+  });
+
   const reference = await nextReference(sub.id, sub.category.code, sub.code);
 
   const created = await prisma.serviceRequest.create({
@@ -89,23 +125,14 @@ export async function createRequest(formData: FormData) {
       subject,
       description,
       details: details as object,
-      status: sub.steps.length > 0 ? "SUBMITTED" : "APPROVED",
+      status: gated ? "SUBMITTED" : "APPROVED",
       submittedAt: new Date(),
-      closedAt: sub.steps.length > 0 ? null : new Date(),
+      closedAt: gated ? null : new Date(),
       currentSequence: 1,
-      // Snapshot the chain so later edits to the workflow cannot rewrite history.
-      approvals: {
-        // Only approver steps gate the ticket; a step with several approvers
-        // yields one approval row each, ordered after its step.
-        create: sub.steps
-          .filter((st) => st.actor === "APPROVER")
-          .flatMap((st, i) =>
-            st.approvers.map((a, k) => ({
-              sequence: (i + 1) * 100 + k,
-              approverId: a.userId,
-            })),
-          ),
-      },
+      // Snapshot every step — requestor steps included — so the ticket shows
+      // the route exactly as configured when it was raised, whatever changes
+      // to the workflow come later.
+      approvals: { create: approvalRows },
     },
   });
 

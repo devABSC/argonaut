@@ -6,6 +6,7 @@ import { visibleNav } from "@/lib/nav";
 import { ROLE_LABEL, canViewAllProjects, supervises } from "@/lib/rbac";
 import { getStandardForm } from "@/lib/forms";
 import AppShell from "../../../AppShell";
+import RouteTrail from "../../RouteTrail";
 
 const STATUS_PILL: Record<string, string> = {
   DRAFT: "s-PENDING", SUBMITTED: "s-PENDING", IN_REVIEW: "s-PENDING",
@@ -100,30 +101,11 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
         )}
       </div>
 
-      <div className="panel" style={{ marginTop: 18 }}>
-        <h2>Approval chain <span className="count">{t.approvals.length}</span></h2>
-        {t.approvals.length === 0 ? (
-          <p style={{ marginTop: 14 }}>
-            No approvers are configured for this subtype, so the request was approved on submission.
-          </p>
-        ) : (
-          <ol className="chain">
-            {t.approvals.map((a) => (
-              <li key={a.id} className={a.decision.toLowerCase()}>
-                <span className="seq">{a.sequence}</span>
-                <span className="who">{a.approver.name}</span>
-                <span className={`pill ${a.decision === "APPROVED" ? "s-ACTIVE" : a.decision === "REJECTED" ? "s-REJECTED" : "s-PENDING"}`}>
-                  {a.decision}
-                </span>
-                {a.decidedAt && (
-                  <span className="tree-meta">{a.decidedAt.toISOString().slice(0, 16).replace("T", " ")}</span>
-                )}
-                {a.remarks && <span className="remarks">{a.remarks}</span>}
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+      <RouteTrail
+        rows={t.approvals}
+        viewerId={user.id}
+        closed={t.status === "APPROVED" || t.status === "REJECTED" || t.status === "CANCELLED"}
+      />
     </AppShell>
   );
 }

@@ -250,6 +250,9 @@ model RequestApproval {
   requestId  String
   request    ServiceRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
   sequence   Int
+  /// Route status copied from the step at submit time.
+  stepName   String           @default("")
+  actor      StepActor        @default(APPROVER)
   approverId String
   approver   User             @relation("ApprovalsGiven", fields: [approverId], references: [id], onDelete: Cascade)
   decision   ApprovalDecision @default(PENDING)

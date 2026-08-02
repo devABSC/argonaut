@@ -286,6 +286,28 @@ button{font-family:inherit}
 .app a.ticket:hover{background:rgba(56,232,255,.18);border-color:rgba(56,232,255,.5)}
 .app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
 
+/* Ticket detail — route trail */
+.app .trail{list-style:none;margin-top:20px;position:relative}
+.app .trailrow{position:relative;display:flex;gap:14px;padding:0 0 4px 0}
+.app .trailrow:not(:last-child)::before{content:"";position:absolute;left:7px;top:20px;bottom:-6px;width:2px;background:var(--line)}
+.app .trailrow.approved:not(:last-child)::before{background:rgba(55,232,160,.4)}
+.app .dot{position:relative;z-index:1;flex:0 0 16px;width:16px;height:16px;margin-top:9px;border-radius:50%;border:2px solid var(--line);background:var(--bg)}
+.app .trailrow.approved .dot{border-color:#37E8A0;background:#37E8A0}
+.app .trailrow.rejected .dot{border-color:#FF8FA3;background:#FF8FA3}
+.app .trailrow.current .dot{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(56,232,255,.16)}
+.app .trailmain{flex:1;min-width:0;padding:8px 0 14px}
+.app .trailrow.current .trailmain{padding:10px 14px 14px;margin-left:-6px;border:1px solid rgba(56,232,255,.3);border-radius:12px;background:rgba(56,232,255,.05)}
+.app .trailtop{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.app .trailtop .route{font-family:var(--font);font-size:.98rem;font-weight:600}
+.app .trailtop .who{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.app .trailtop .spacer{flex:1}
+.app .trailtop .when{font-family:var(--mono);font-size:.68rem;color:var(--faint);white-space:nowrap}
+.app .trailrow.waiting .trailtop .route,.app .trailrow.waiting .trailtop .who{opacity:.6}
+.app .reason{margin-top:6px;color:var(--muted);font-size:.9rem}
+.app .decide{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.app .decide input{flex:1;min-width:200px;font-family:var(--body);font-size:.9rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.app .decide input:focus{outline:none;border-color:var(--cyan)}
+
 /* Ticket detail */
 .app .tsubject{margin-top:16px;font-family:var(--font);font-weight:600;font-size:1.25rem;letter-spacing:-.01em}
 .app .tdesc{margin-top:8px;color:var(--muted);font-size:.94rem;max-width:70ch}
