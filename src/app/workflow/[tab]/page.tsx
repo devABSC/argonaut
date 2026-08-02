@@ -14,10 +14,10 @@ export default async function WorkflowTab({
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ view?: string; t?: string }>;
+  searchParams: Promise<{ view?: string; t?: string; preview?: string }>;
 }) {
   const { tab } = await params;
-  const { view, t } = await searchParams;
+  const { view, t, preview } = await searchParams;
 
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -82,7 +82,7 @@ export default async function WorkflowTab({
       )}
 
       {active.slug === "service-forms" &&
-        (formsTab === "types" ? <FormTypesPanel /> : <StandardPanel />)}
+        (formsTab === "types" ? <FormTypesPanel /> : <StandardPanel preview={preview === "1"} />)}
 
       {active.slug === "routes" && (
         <div className="panel">

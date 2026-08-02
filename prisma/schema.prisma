@@ -129,6 +129,7 @@ enum FieldKind {
   DATE
   SELECT
   CHECKBOX
+  FILE
 }
 
 /// One admin-defined input on a form. `key` is the property name used inside

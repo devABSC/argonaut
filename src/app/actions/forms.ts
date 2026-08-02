@@ -86,6 +86,29 @@ export async function addField(formData: FormData) {
   revalidatePath(PATH);
 }
 
+/**
+ * Edits an existing field. `key` is deliberately not editable — it is the
+ * property name already stored inside submitted requests' details.
+ */
+export async function updateField(formData: FormData) {
+  await requireCatalogAdmin();
+
+  const id = String(formData.get("fieldId") ?? "");
+  const label = String(formData.get("label") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "TEXT") as FieldKind;
+  const required = formData.get("required") === "on";
+  const options = String(formData.get("options") ?? "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+
+  if (!id || !label) return;
+
+  await prisma.formField.update({
+    where: { id },
+    data: { label, kind, required, options: kind === "SELECT" ? options : [] },
+  });
+  revalidatePath(PATH);
+}
+
 export async function removeField(fieldId: string) {
   await requireCatalogAdmin();
   await prisma.formField.delete({ where: { id: fieldId } });
