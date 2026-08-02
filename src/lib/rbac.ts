@@ -66,6 +66,13 @@ export function canApproveRegistrations(actor: Actor): boolean {
   return actor.role === "SUPER_USER" || actor.role === "HR_SUPERVISOR";
 }
 
+/* -------------------------------------------------- service desk catalog --- */
+
+/** Can create/edit request categories, subcategories and approver chains. */
+export function canManageCatalog(actor: Actor): boolean {
+  return actor.role === "SUPER_USER" || actor.role === "ADMINISTRATOR";
+}
+
 /* ------------------------------------------------------------- projects --- */
 
 export function canViewAllProjects(actor: Actor): boolean {

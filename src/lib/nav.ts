@@ -43,7 +43,7 @@ export const NAV: NavSection[] = [
   {
     key: "workflow",
     label: "Workflow",
-    tabs: [{ slug: "category-subcategory", label: "Category-Subcategory" }],
+    tabs: [{ slug: "service-type", label: "Service Type" }],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
