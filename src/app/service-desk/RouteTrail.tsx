@@ -1,7 +1,7 @@
 import { decide } from "../actions/approvals";
 import { IconCheck, IconX } from "../icons";
 
-type Row = {
+type Approval = {
   id: string;
   sequence: number;
   stepName: string;
@@ -13,6 +13,16 @@ type Row = {
   approver: { name: string };
 };
 
+type Step = {
+  id: string;
+  sequence: number;
+  name: string;
+  description: string | null;
+  slaDays: number;
+  actor: string;
+  approvers: { user: { name: string } }[];
+};
+
 const fmt = (d: Date) =>
   d.toLocaleString("en-GB", {
     timeZone: "Asia/Manila",
@@ -21,67 +31,112 @@ const fmt = (d: Date) =>
   });
 
 /**
- * The route as it stands on this ticket: every step, who owns it, when it was
- * decided and why. The step awaiting the signed-in user carries its own
- * decision form, so acting never means hunting for a separate screen.
+ * Every step of the subtype's route, with the ticket's recorded decisions laid
+ * over the top. Driven by the route itself rather than only by the snapshot, so
+ * a step with nobody assigned still appears — otherwise it would silently
+ * vanish from the ticket.
  */
 export default function RouteTrail({
-  rows,
+  steps,
+  approvals,
   viewerId,
   closed,
 }: {
-  rows: Row[];
+  steps: Step[];
+  approvals: Approval[];
   viewerId: string;
   closed: boolean;
 }) {
-  const ordered = [...rows].sort((a, b) => a.sequence - b.sequence);
-  const firstPending = ordered.find((r) => r.decision === "PENDING");
+  const pending = approvals.filter((a) => a.decision === "PENDING");
+  const currentSeq = pending.length ? Math.min(...pending.map((a) => a.sequence)) : null;
 
   return (
     <div className="panel" style={{ marginTop: 18 }}>
-      <h2>Routes <span className="count">{ordered.length} step{ordered.length === 1 ? "" : "s"}</span></h2>
+      <h2>Routes <span className="count">{steps.length} step{steps.length === 1 ? "" : "s"}</span></h2>
 
-      {ordered.length === 0 ? (
+      {steps.length === 0 ? (
         <p style={{ marginTop: 14 }}>
           This subtype has no route configured, so the ticket was approved on submission.
         </p>
       ) : (
         <ol className="trail">
-          {ordered.map((r) => {
-            const done = r.decision !== "PENDING";
-            const isCurrent = firstPending?.id === r.id;
-            const mine = isCurrent && r.approverId === viewerId && !closed;
-            const state = done ? r.decision.toLowerCase() : isCurrent ? "current" : "waiting";
+          {steps.map((st) => {
+            // Decisions recorded against this step, matched on the snapshotted name.
+            const rows = approvals
+              .filter((a) => a.stepName === st.name)
+              .sort((a, b) => a.sequence - b.sequence);
+
+            const decided = rows.length > 0 && rows.every((r) => r.decision !== "PENDING");
+            const rejected = rows.some((r) => r.decision === "REJECTED");
+            const isCurrent = currentSeq !== null && rows.some((r) => r.sequence === currentSeq);
+            const unassigned = rows.length === 0;
+
+            const state = rejected
+              ? "rejected"
+              : decided
+                ? "approved"
+                : isCurrent
+                  ? "current"
+                  : unassigned
+                    ? "skipped"
+                    : "waiting";
 
             return (
-              <li key={r.id} className={`trailrow ${state}`}>
+              <li key={st.id} className={`trailrow ${state}`}>
                 <span className="dot" aria-hidden="true" />
 
                 <div className="trailmain">
                   <div className="trailtop">
-                    <b className="route">{r.stepName}</b>
+                    <b className="route">{st.name}</b>
                     <span className="who">
-                      {done ? r.approver.name : r.actor === "REQUESTOR" ? "REQUESTOR" : r.approver.name}
+                      {st.actor === "REQUESTOR"
+                        ? "REQUESTOR"
+                        : st.approvers.map((a) => a.user.name).join(", ").toUpperCase() || "UNASSIGNED"}
                     </span>
                     <span className="spacer" />
-                    {done && <span className="when">{r.decidedAt ? fmt(r.decidedAt) : ""}</span>}
-                    <span className={`pill ${done ? (r.decision === "APPROVED" ? "s-ACTIVE" : "s-REJECTED") : isCurrent ? "s-PENDING" : "s-SUSPENDED"}`}>
-                      {done ? r.decision : isCurrent ? "AWAITING" : "QUEUED"}
+                    <span className="when">SLA {st.slaDays}d</span>
+                    <span className={`pill ${
+                      rejected ? "s-REJECTED"
+                        : decided ? "s-ACTIVE"
+                        : isCurrent ? "s-PENDING"
+                        : "s-SUSPENDED"
+                    }`}>
+                      {rejected ? "REJECTED" : decided ? "APPROVED" : isCurrent ? "AWAITING" : unassigned ? "NO ONE ASSIGNED" : "QUEUED"}
                     </span>
                   </div>
 
-                  {r.remarks && <p className="reason">{r.remarks}</p>}
+                  {st.description && <p className="reason dim">{st.description}</p>}
 
-                  {mine && (
-                    <form className="decide" action={decide.bind(null, r.id)}>
-                      <input name="remarks" placeholder="Remarks or reason (optional)" />
-                      <button className="approve icon" type="submit" name="decision" value="APPROVED" title="Approve" aria-label="Approve">
-                        <IconCheck />
-                      </button>
-                      <button className="reject icon" type="submit" name="decision" value="REJECTED" title="Reject" aria-label="Reject">
-                        <IconX />
-                      </button>
-                    </form>
+                  {rows.map((r) => {
+                    const mine = r.decision === "PENDING" && r.sequence === currentSeq && r.approverId === viewerId && !closed;
+                    return (
+                      <div className="act" key={r.id}>
+                        <span className="actwho">{r.approver.name}</span>
+                        <span className={`pill ${
+                          r.decision === "APPROVED" ? "s-ACTIVE" : r.decision === "REJECTED" ? "s-REJECTED" : "s-PENDING"
+                        }`}>{r.decision}</span>
+                        {r.decidedAt && <span className="when">{fmt(r.decidedAt)}</span>}
+                        {r.remarks && <span className="reason">{r.remarks}</span>}
+
+                        {mine && (
+                          <form className="decide" action={decide.bind(null, r.id)}>
+                            <input name="remarks" placeholder="Remarks or reason (optional)" />
+                            <button className="approve icon" type="submit" name="decision" value="APPROVED" title="Approve" aria-label="Approve">
+                              <IconCheck />
+                            </button>
+                            <button className="reject icon" type="submit" name="decision" value="REJECTED" title="Reject" aria-label="Reject">
+                              <IconX />
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {unassigned && (
+                    <p className="reason dim">
+                      No approver was assigned to this step when the ticket was raised, so it is not awaiting anyone.
+                    </p>
                   )}
                 </div>
               </li>

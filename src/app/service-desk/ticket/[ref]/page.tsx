@@ -28,6 +28,10 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
           name: true,
           category: { select: { name: true } },
           formType: { include: { fields: { orderBy: { sortOrder: "asc" } } } },
+          steps: {
+            orderBy: { sequence: "asc" },
+            include: { approvers: { include: { user: { select: { name: true } } } } },
+          },
         },
       },
       approvals: {
@@ -102,7 +106,8 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
       </div>
 
       <RouteTrail
-        rows={t.approvals}
+        steps={t.subcategory.steps}
+        approvals={t.approvals}
         viewerId={user.id}
         closed={t.status === "APPROVED" || t.status === "REJECTED" || t.status === "CANCELLED"}
       />

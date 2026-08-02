@@ -304,6 +304,12 @@ button{font-family:inherit}
 .app .trailtop .when{font-family:var(--mono);font-size:.68rem;color:var(--faint);white-space:nowrap}
 .app .trailrow.waiting .trailtop .route,.app .trailrow.waiting .trailtop .who{opacity:.6}
 .app .reason{margin-top:6px;color:var(--muted);font-size:.9rem}
+.app .reason.dim{color:var(--faint);font-size:.86rem}
+.app .act{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--s2)}
+.app .actwho{font-size:.9rem;font-weight:600}
+.app .act .reason{flex-basis:100%;margin-top:0}
+.app .act .decide{flex-basis:100%;margin-top:4px}
+.app .trailrow.skipped .dot{border-style:dashed;opacity:.6}
 .app .decide{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .app .decide input{flex:1;min-width:200px;font-family:var(--body);font-size:.9rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
 .app .decide input:focus{outline:none;border-color:var(--cyan)}
