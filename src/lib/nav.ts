@@ -46,6 +46,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "service-type", label: "Service Type" },
       { slug: "service-type-2", label: "Service Type2" },
+      { slug: "service-forms", label: "Service Forms" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },

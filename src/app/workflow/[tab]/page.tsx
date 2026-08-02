@@ -5,6 +5,7 @@ import { ROLE_LABEL } from "@/lib/rbac";
 import AppShell from "../../AppShell";
 import CatalogPanel from "../CatalogPanel";
 import TreePanel from "../TreePanel";
+import ServiceFormsPanel from "../ServiceFormsPanel";
 
 export default async function WorkflowTab({ params }: { params: Promise<{ tab: string }> }) {
   const { tab } = await params;
@@ -26,6 +27,7 @@ export default async function WorkflowTab({ params }: { params: Promise<{ tab: s
     >
       {active.slug === "service-type" && <CatalogPanel />}
       {active.slug === "service-type-2" && <TreePanel />}
+      {active.slug === "service-forms" && <ServiceFormsPanel />}
     </AppShell>
   );
 }

@@ -78,15 +78,32 @@ export default function AppShell({
 
         <nav className="nav">
           {nav.map((s) => (
-            <Link
-              key={s.key}
-              href={`/${s.key}/${s.tabs[0].slug}`}
-              className={s.key === activeSection ? "active" : undefined}
-              onClick={() => setOpen(false)}
-            >
-              {ICONS[s.key]}
-              <span className="navtext">{s.label}</span>
-            </Link>
+            <div key={s.key}>
+              <Link
+                href={`/${s.key}/${s.tabs[0].slug}`}
+                className={s.key === activeSection ? "active" : undefined}
+                onClick={() => setOpen(false)}
+              >
+                {ICONS[s.key]}
+                <span className="navtext">{s.label}</span>
+              </Link>
+
+              {/* Sub-items of the open section, nested in the rail. */}
+              {s.key === activeSection && s.tabs.length > 1 && (
+                <div className="subnav navtext">
+                  {s.tabs.map((t) => (
+                    <Link
+                      key={t.slug}
+                      href={`/${s.key}/${t.slug}`}
+                      className={t.slug === activeTab ? "subactive" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
+                      {t.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
 
