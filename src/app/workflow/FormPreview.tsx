@@ -1,5 +1,6 @@
 import type { FormField } from "@prisma/client";
-import { lookupLabel, lookupValues } from "@/lib/lookups";
+import { lookupLabel, lookupValues, serviceTypeTree } from "@/lib/lookups";
+import CascadeLookup from "./CascadeLookup";
 
 /** Read-only render of a form exactly as a requester would see it. */
 export default async function FormPreview({ fields }: { fields: FormField[] }) {
@@ -8,6 +9,11 @@ export default async function FormPreview({ fields }: { fields: FormField[] }) {
   for (const f of fields) {
     if (f.kind === "LOOKUP") sources[f.id] = await lookupValues(f.optionSource);
   }
+
+  const typeField = fields.find((f) => f.kind === "LOOKUP" && f.optionSource === "SERVICE_TYPE");
+  const subtypeField = fields.find((f) => f.kind === "LOOKUP" && f.optionSource === "SERVICE_SUBTYPE");
+  const cascade = Boolean(typeField && subtypeField);
+  const tree = cascade ? await serviceTypeTree() : {};
 
   return (
     <>
@@ -23,7 +29,24 @@ export default async function FormPreview({ fields }: { fields: FormField[] }) {
           <textarea disabled rows={3} placeholder="Any detail the approver needs" />
         </div>
 
-        {fields.map((f) => (
+        {fields.map((f) => {
+          // Service Type + Service Subtype render as one linked pair, drawn at
+          // the position of the type field; the subtype row is skipped.
+          if (cascade && f.id === subtypeField!.id) return null;
+          if (cascade && f.id === typeField!.id) {
+            return (
+              <CascadeLookup
+                key={f.id}
+                tree={tree}
+                typeLabel={typeField!.label}
+                subtypeLabel={subtypeField!.label}
+                typeRequired={typeField!.required}
+                subtypeRequired={subtypeField!.required}
+              />
+            );
+          }
+
+          return (
           <div className="pvf" key={f.id}>
             <label>
               {f.label} {f.required && <span className="rq">*</span>}
@@ -64,7 +87,8 @@ export default async function FormPreview({ fields }: { fields: FormField[] }) {
 
             {f.helpText && <span className="pvhelp">{f.helpText}</span>}
           </div>
-        ))}
+          );
+        })}
 
         {fields.length === 0 && (
           <p className="pvempty">No fields added yet — only Subject and Description would appear.</p>

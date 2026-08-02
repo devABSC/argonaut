@@ -21,6 +21,26 @@ export function lookupLabel(key: string | null): string | null {
   return LOOKUPS.find((l) => l.key === key)?.label ?? null;
 }
 
+/**
+ * Service type -> its subtypes. Drives the cascade: choosing a type narrows the
+ * subtype list to that type's children instead of showing all of them.
+ */
+export async function serviceTypeTree(): Promise<Record<string, string[]>> {
+  const cats = await prisma.requestCategory.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: {
+      name: true,
+      subcategories: {
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { name: true },
+      },
+    },
+  });
+  return Object.fromEntries(cats.map((c) => [c.name, c.subcategories.map((s) => s.name)]));
+}
+
 export async function lookupValues(key: string | null): Promise<string[]> {
   switch (key) {
     case "SERVICE_TYPE":

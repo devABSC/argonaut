@@ -76,7 +76,7 @@ export default function FieldEditor({
                 placeholder="List choices — Cash, Cheque"
               />
               <select name="optionSource" defaultValue={f.optionSource ?? ""}>
-                <option value="">Table source — none</option>
+                <option value="">Lookup source — none</option>
                 {LOOKUPS.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
               </select>
             </span>
@@ -104,7 +104,7 @@ export default function FieldEditor({
         <span className="fcell">
           <input name="options" placeholder="List choices — Cash, Cheque" />
           <select name="optionSource" defaultValue="">
-            <option value="">Table source — none</option>
+            <option value="">Lookup source — none</option>
             {LOOKUPS.map((l) => <option key={l.key} value={l.key}>{l.label}</option>)}
           </select>
         </span>

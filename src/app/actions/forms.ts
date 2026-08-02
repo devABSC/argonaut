@@ -75,7 +75,9 @@ export async function addField(formData: FormData) {
   const required = formData.get("required") === "on";
   const options = parseChoices(formData.get("options"));
   const src = formData.get("optionSource");
-  const optionSource = kind === "LOOKUP" && isLookupKey(src) ? src : null;
+  // Kept whatever the kind is — clearing it on save silently lost the setting
+  // when the type had not been switched to Lookup yet.
+  const optionSource = isLookupKey(src) ? src : null;
 
   if (!formTypeId || !label) return;
 
@@ -126,7 +128,7 @@ export async function updateField(formData: FormData) {
   const required = formData.get("required") === "on";
   const options = parseChoices(formData.get("options"));
   const src = formData.get("optionSource");
-  const optionSource = kind === "LOOKUP" ? (isLookupKey(src) ? src : existing.optionSource) : null;
+  const optionSource = isLookupKey(src) ? src : null;
 
   await prisma.formField.update({
     where: { id },
