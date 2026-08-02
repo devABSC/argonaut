@@ -38,7 +38,7 @@ export default async function WorkflowTab({
           { href: "/workflow/service-forms?t=types", label: "Form Type", on: formsTab === "types" },
         ]
       : [
-          { href: "/workflow/service-type", label: "Workflow", on: active.slug === "service-type" },
+          { href: "/workflow/service-type", label: "Service Type", on: active.slug === "service-type" },
           { href: "/workflow/routes", label: "Routes", on: active.slug === "routes" },
         ];
 
