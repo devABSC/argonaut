@@ -218,6 +218,32 @@ button{font-family:inherit}
 .app .field-form select{font-family:var(--body);font-size:.9rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .app .field-form .req{display:inline-flex;align-items:center;gap:7px;font-size:.86rem;color:var(--muted);white-space:nowrap;cursor:pointer}
 .app .field-form .req input{accent-color:var(--cyan);width:15px;height:15px}
+/* Field editor — each row is its own form, laid out as a grid */
+.app .fields{margin-top:18px;display:flex;flex-direction:column;gap:7px}
+.app .frow{display:grid;grid-template-columns:minmax(180px,2fr) minmax(130px,1fr) minmax(160px,1.6fr) auto auto;gap:9px;align-items:center}
+.app .frow.fhead{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px}
+.app .frow:not(.fhead){padding:9px 11px;border:1px solid var(--line);border-radius:11px;background:var(--s2)}
+.app .frow.fadd{border-style:dashed;background:transparent}
+.app .frow input[type=text],.app .frow input:not([type]),.app .frow select{width:100%;font-family:var(--body);font-size:.88rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+.app .frow input::placeholder{color:var(--faint)}
+.app .frow input:focus,.app .frow select:focus{outline:none;border-color:var(--cyan)}
+.app .fcell{display:flex;flex-direction:column;gap:4px;min-width:0}
+.app .fkey{font-family:var(--mono);font-size:.6rem;color:var(--faint);padding-left:3px}
+.app .frow .req{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted);white-space:nowrap;cursor:pointer}
+.app .frow .req input{accent-color:var(--cyan);width:15px;height:15px}
+.app .frow .rowacts{display:flex;gap:6px}
+@media (max-width:820px){.app .frow{grid-template-columns:1fr 1fr}.app .frow.fhead{display:none}}
+
+/* Icon-only action buttons */
+.app button.icon{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;flex:0 0 34px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .16s,border-color .16s,color .16s}
+.app button.icon.save,.app .inline-form button.icon,.app button.approve.icon{color:var(--on-accent);background:linear-gradient(135deg,var(--cyan),var(--blue));border:0}
+.app button.icon.save:hover,.app .inline-form button.icon:hover,.app button.approve.icon:hover{filter:brightness(1.08)}
+.app button.reject.icon{color:#FF8FA3;background:transparent;border-color:rgba(255,143,163,.32)}
+.app button.reject.icon:hover{background:rgba(255,143,163,.12)}
+.app .rowform{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.app .rowform select{font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+.app .rowform select:focus{outline:none;border-color:var(--cyan)}
+
 /* Form preview */
 .app .formprev .pv{margin-top:20px;max-width:560px;display:flex;flex-direction:column;gap:16px}
 .app .pvf{display:flex;flex-direction:column;gap:7px}

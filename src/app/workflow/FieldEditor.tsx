@@ -1,5 +1,6 @@
 import type { FormField } from "@prisma/client";
 import { addField, removeField, updateField } from "../actions/forms";
+import { IconSave, IconTrash, IconPlus } from "../icons";
 
 /** Display types offered when adding a field. */
 export const KINDS = [
@@ -13,9 +14,11 @@ export const KINDS = [
   { value: "CHECKBOX", label: "Checkbox" },
 ];
 
-const KIND_LABEL = Object.fromEntries(KINDS.map((k) => [k.value, k.label]));
-
-/** Field table + add-field row for one form. Used by both Service Forms tabs. */
+/**
+ * Field list + add row for one form. Each existing field is its own <form> with
+ * every input nested inside it — associating inputs by `form=` id is unreliable
+ * with server actions, which silently drops the values on submit.
+ */
 export default function FieldEditor({
   formTypeId,
   fields,
@@ -26,68 +29,56 @@ export default function FieldEditor({
   emptyText?: string;
 }) {
   return (
-    <>
+    <div className="fields">
+      <div className="frow fhead">
+        <span>Label</span><span>Display Type</span><span>Choices</span><span>Required</span><span />
+      </div>
+
       {fields.length === 0 ? (
-        <p style={{ marginTop: 14 }}>{emptyText}</p>
+        <p className="pvempty" style={{ padding: "12px 2px" }}>{emptyText}</p>
       ) : (
-        <div className="tablewrap">
-          <table className="utable">
-            <thead>
-              <tr><th>Label</th><th>Key</th><th>Display Type</th><th>Required</th><th>Choices</th><th /></tr>
-            </thead>
-            <tbody>
-              {fields.map((f) => (
-                <tr key={f.id}>
-                  <td>
-                    <form id={`ff-${f.id}`} action={updateField}>
-                      <input type="hidden" name="fieldId" value={f.id} />
-                    </form>
-                    <input name="label" form={`ff-${f.id}`} defaultValue={f.label} required />
-                  </td>
-                  <td className="muted"><code>{f.key}</code></td>
-                  <td>
-                    <select name="kind" form={`ff-${f.id}`} defaultValue={f.kind}>
-                      {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
-                    </select>
-                  </td>
-                  <td>
-                    <label className="req">
-                      <input type="checkbox" name="required" form={`ff-${f.id}`} defaultChecked={f.required} />
-                      Required
-                    </label>
-                  </td>
-                  <td>
-                    <input
-                      name="options"
-                      form={`ff-${f.id}`}
-                      defaultValue={f.options.join(", ")}
-                      placeholder="—"
-                    />
-                  </td>
-                  <td className="rowacts">
-                    <button className="save" type="submit" form={`ff-${f.id}`}>Save</button>
-                    <form action={removeField.bind(null, f.id)}>
-                      <button className="reject" type="submit">Remove</button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        fields.map((f) => (
+          <form className="frow" action={updateField} key={f.id}>
+            <input type="hidden" name="fieldId" value={f.id} />
+
+            <span className="fcell">
+              <input name="label" defaultValue={f.label} required />
+              <code className="fkey">{f.key}</code>
+            </span>
+
+            <select name="kind" defaultValue={f.kind}>
+              {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+            </select>
+
+            <input
+              name="options"
+              defaultValue={f.options.join(", ")}
+              placeholder="Only used by List — e.g. Cash, Cheque"
+            />
+
+            <label className="req">
+              <input type="checkbox" name="required" defaultChecked={f.required} />
+              Required
+            </label>
+
+            <span className="rowacts">
+              <button className="save icon" type="submit" title="Save" aria-label="Save"><IconSave /></button>
+              <button className="reject icon" type="submit" title="Remove" aria-label="Remove" formAction={removeField.bind(null, f.id)}><IconTrash /></button>
+            </span>
+          </form>
+        ))
       )}
 
-      <form action={addField} className="field-form">
+      <form action={addField} className="frow fadd">
         <input type="hidden" name="formTypeId" value={formTypeId} />
-        <input name="label" placeholder="Field label — e.g. Amount requested" required />
-        <span className="flabel">Display Type</span>
+        <input name="label" placeholder="New field label — e.g. Amount requested" required />
         <select name="kind" defaultValue="TEXT">
           {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
         </select>
-        <input name="options" placeholder="Dropdown choices, comma separated" />
+        <input name="options" placeholder="Only used by List — e.g. Cash, Cheque" />
         <label className="req"><input type="checkbox" name="required" /> Required</label>
-        <button type="submit">Add field</button>
+        <button className="save icon" type="submit" title="Add field" aria-label="Add field"><IconPlus /></button>
       </form>
-    </>
+    </div>
   );
 }

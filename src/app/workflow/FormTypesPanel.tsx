@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { STANDARD_SLUG } from "@/lib/forms";
 import { createFormType, deleteFormType } from "../actions/forms";
+import { IconPlus, IconTrash } from "../icons";
 import FieldEditor from "./FieldEditor";
 
 export default async function FormTypesPanel() {
@@ -23,7 +24,7 @@ export default async function FormTypesPanel() {
         </p>
         <form action={createFormType} className="inline-form">
           <input name="name" placeholder="New form name — e.g. Cash Advance Request" required />
-          <button type="submit">Create form</button>
+          <button type="submit" className="icon" title="Create form" aria-label="Create form"><IconPlus /></button>
         </form>
       </div>
 
@@ -45,7 +46,7 @@ export default async function FormTypesPanel() {
                 <span className="tree-meta">{f.fields.length} field{f.fields.length === 1 ? "" : "s"}</span>
                 {f.subcategories.length === 0 && (
                   <form action={deleteFormType.bind(null, f.id)}>
-                    <button className="reject" type="submit">Delete</button>
+                    <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
                   </form>
                 )}
               </div>

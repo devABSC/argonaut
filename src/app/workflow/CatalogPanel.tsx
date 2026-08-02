@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createCategory, createSubcategory, deleteCategory, deleteSubcategory } from "../actions/catalog";
+import { IconPlus, IconTrash } from "../icons";
 
 export default async function CatalogPanel() {
   const categories = await prisma.requestCategory.findMany({
@@ -25,7 +26,7 @@ export default async function CatalogPanel() {
         </p>
         <form action={createCategory} className="inline-form">
           <input name="name" placeholder="New service type — e.g. Finance" required />
-          <button type="submit">Add service type</button>
+          <button type="submit" className="icon" title="Add service type" aria-label="Add service type"><IconPlus /></button>
         </form>
       </div>
 
@@ -42,7 +43,7 @@ export default async function CatalogPanel() {
               <span className="spacer" />
               {c.subcategories.length === 0 && (
                 <form action={deleteCategory.bind(null, c.id)}>
-                  <button className="reject" type="submit">Delete</button>
+                  <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
                 </form>
               )}
             </div>
@@ -68,7 +69,7 @@ export default async function CatalogPanel() {
                         <td>
                           {s._count.requests === 0 && (
                             <form action={deleteSubcategory.bind(null, s.id)}>
-                              <button className="reject" type="submit">Delete</button>
+                              <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
                             </form>
                           )}
                         </td>
@@ -82,7 +83,7 @@ export default async function CatalogPanel() {
             <form action={createSubcategory} className="inline-form">
               <input type="hidden" name="categoryId" value={c.id} />
               <input name="name" placeholder={`New subtype under ${c.name} — e.g. Cash Advance`} required />
-              <button type="submit">Add subtype</button>
+              <button type="submit" className="icon" title="Add subtype" aria-label="Add subtype"><IconPlus /></button>
             </form>
           </div>
         ))

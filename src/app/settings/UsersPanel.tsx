@@ -8,6 +8,7 @@ import {
   type Actor,
 } from "@/lib/rbac";
 import { approveRegistration, rejectRegistration, updateUserFromForm } from "../actions/users";
+import { IconSave, IconCheck, IconX } from "../icons";
 
 const STATUS_LABEL: Record<string, string> = {
   ACTIVE: "Active",
@@ -57,10 +58,10 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                   </div>
                   <div className="queue-act">
                     <form action={approveRegistration.bind(null, p.id)}>
-                      <button className="approve" type="submit">Approve</button>
+                      <button className="approve icon" type="submit" title="Approve" aria-label="Approve"><IconCheck /></button>
                     </form>
                     <form action={rejectRegistration.bind(null, p.id)}>
-                      <button className="reject" type="submit">Reject</button>
+                      <button className="reject icon" type="submit" title="Reject" aria-label="Reject"><IconX /></button>
                     </form>
                   </div>
                 </li>
@@ -97,46 +98,38 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                     </td>
                     <td className="muted">{u.email}</td>
 
+                    {/* All inputs live inside the row's own form — linking them
+                        by `form=` id drops the values under server actions. */}
                     {editable ? (
-                      <>
-                        <td>
-                          <select name="role" form={`f-${u.id}`} defaultValue={u.role}>
-                            {/* The current role is always listed, even if this
-                                actor could not otherwise assign it. */}
+                      <td colSpan={3}>
+                        <form action={updateUserFromForm} className="rowform">
+                          <input type="hidden" name="userId" value={u.id} />
+                          <select name="role" defaultValue={u.role}>
                             {(roleChoices.includes(u.role) ? roleChoices : [u.role, ...roleChoices])
                               .map((r) => (
                                 <option key={r} value={r}>{ROLE_LABEL[r]}</option>
                               ))}
                           </select>
-                        </td>
-                        <td>
-                          <select name="managerId" form={`f-${u.id}`} defaultValue={u.managerId ?? ""}>
-                            <option value="">— none —</option>
+                          <select name="managerId" defaultValue={u.managerId ?? ""}>
+                            <option value="">— reports to nobody —</option>
                             {managers.filter((m) => m.id !== u.id).map((m) => (
                               <option key={m.id} value={m.id}>{m.name}</option>
                             ))}
                           </select>
-                        </td>
-                      </>
+                          <span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span>
+                          <button className="save icon" type="submit" title="Save" aria-label="Save">
+                            <IconSave />
+                          </button>
+                        </form>
+                      </td>
                     ) : (
                       <>
                         <td><span className={`pill r-${u.role}`}>{ROLE_LABEL[u.role]}</span></td>
                         <td className="muted">{u.manager?.name ?? "—"}</td>
+                        <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
                       </>
                     )}
-
-                    <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
-
-                    {canEdit && (
-                      <td>
-                        {editable && (
-                          <form id={`f-${u.id}`} action={updateUserFromForm}>
-                            <input type="hidden" name="userId" value={u.id} />
-                            <button className="save" type="submit">Save</button>
-                          </form>
-                        )}
-                      </td>
-                    )}
+                    {canEdit && !editable && <td />}
                   </tr>
                 );
               })}
