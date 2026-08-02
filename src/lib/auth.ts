@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
@@ -13,11 +14,10 @@ export async function verifyPassword(pw: string, hash: string): Promise<boolean>
   return bcrypt.compare(pw, hash);
 }
 
-function randToken(len = 40): string {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let s = "";
-  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+// Session tokens must be unguessable — Math.random() is not a CSPRNG and would
+// let an attacker forge a session, bypassing every role check below.
+function randToken(bytes = 32): string {
+  return randomBytes(bytes).toString("base64url");
 }
 
 export async function createSession(userId: string): Promise<void> {
@@ -48,6 +48,9 @@ export async function getCurrentUser(): Promise<User | null> {
   if (!token) return null;
   const session = await prisma.session.findUnique({ where: { token }, include: { user: true } });
   if (!session || session.expiresAt < new Date()) return null;
+  // Re-checked on every request, so a suspension or rejection takes effect
+  // immediately rather than waiting for the 30-day cookie to lapse.
+  if (session.user.status !== "ACTIVE") return null;
   return session.user;
 }
 

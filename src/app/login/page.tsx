@@ -74,6 +74,7 @@ export default function LoginPage() {
               )}
 
               {state.error && <p className="err">{state.error}</p>}
+              {state.notice && <p className="notice">{state.notice}</p>}
 
               <button className="btn" type="submit" disabled={pending}>
                 {pending ? "Please wait…" : isSignup ? "Create account →" : "Enter workspace →"}

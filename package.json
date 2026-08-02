@@ -7,7 +7,8 @@
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "postinstall": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "test": "node --experimental-strip-types --no-warnings tests/rbac.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

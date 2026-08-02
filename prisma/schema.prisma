@@ -8,15 +8,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  SUPER_USER
+  ADMINISTRATOR
+  HR_SUPERVISOR
+  SUPERVISOR
+  EMPLOYEE
+}
+
+/// Account lifecycle. Self-registration creates PENDING; an HR approver or
+/// Super User moves it to ACTIVE. Only ACTIVE accounts can hold a session.
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String        @id @default(cuid())
+  email        String        @unique
   name         String
   passwordHash String // bcrypt
-  createdAt    DateTime  @default(now())
+  role         Role          @default(EMPLOYEE)
+  status       AccountStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+
+  approvedAt   DateTime?
+  approvedById String?
+  approvedBy   User?     @relation("Approvals", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvals    User[]    @relation("Approvals")
+
+  // Reporting line: an Employee/Supervisor reports to one Supervisor (or above).
+  managerId String?
+  manager   User?   @relation("Reports", fields: [managerId], references: [id], onDelete: SetNull)
+  reports   User[]  @relation("Reports")
 
   sessions Session[]
   projects Project[]
+
+  // Service desk
+  approverFor    WorkflowApprover[] @relation("ApproverOf")
+  requests       ServiceRequest[]   @relation("RequestedBy")
+  approvalsGiven RequestApproval[]  @relation("ApprovalsGiven")
 }
 
 model Session {
@@ -37,4 +71,158 @@ model Project {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/**
+ * ======================================================== SERVICE DESK ====
+ * Category -> Subcategory -> FormType. Choosing a category then a subcategory
+ * in the Service Desk resolves to exactly one form and one approver chain.
+ * Fields common to every request are columns on ServiceRequest; the per-form
+ * additions are FormField rows, with their values stored in `details`.
+ */
+
+model RequestCategory {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  slug      String  @unique
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  subcategories RequestSubcategory[]
+}
+
+model RequestSubcategory {
+  id         String          @id @default(cuid())
+  categoryId String
+  category   RequestCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  slug       String
+  isActive   Boolean         @default(true)
+  sortOrder  Int             @default(0)
+
+  /// The form presented for this subcategory.
+  formTypeId String
+  formType   FormType @relation(fields: [formTypeId], references: [id])
+
+  approvers WorkflowApprover[]
+  requests  ServiceRequest[]
+
+  @@unique([categoryId, slug])
+}
+
+/// An admin-built form definition. Reusable across subcategories.
+model FormType {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  slug     String  @unique
+  isActive Boolean @default(true)
+
+  fields        FormField[]
+  subcategories RequestSubcategory[]
+}
+
+enum FieldKind {
+  TEXT
+  TEXTAREA
+  NUMBER
+  CURRENCY
+  DATE
+  SELECT
+  CHECKBOX
+}
+
+/// One admin-defined input on a form. `key` is the property name used inside
+/// ServiceRequest.details, so it is immutable once requests exist.
+model FormField {
+  id         String    @id @default(cuid())
+  formTypeId String
+  formType   FormType  @relation(fields: [formTypeId], references: [id], onDelete: Cascade)
+  key        String
+  label      String
+  kind       FieldKind @default(TEXT)
+  required   Boolean   @default(false)
+  helpText   String?
+  sortOrder  Int       @default(0)
+  /// Choices for SELECT fields, in display order. Empty for other kinds.
+  options    String[]  @default([])
+  /// Bounds for NUMBER / CURRENCY fields.
+  minValue   Decimal?  @db.Decimal(14, 2)
+  maxValue   Decimal?  @db.Decimal(14, 2)
+
+  @@unique([formTypeId, key])
+}
+
+/// Named approver in a subcategory's chain, lowest sequence first.
+model WorkflowApprover {
+  id            String             @id @default(cuid())
+  subcategoryId String
+  subcategory   RequestSubcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  approverId    String
+  approver      User               @relation("ApproverOf", fields: [approverId], references: [id], onDelete: Cascade)
+  sequence      Int
+
+  @@unique([subcategoryId, sequence])
+  @@unique([subcategoryId, approverId])
+}
+
+enum RequestStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model ServiceRequest {
+  id            String             @id @default(cuid())
+  /// Human-facing reference, e.g. SD-000142.
+  reference     String             @unique
+  requesterId   String
+  requester     User               @relation("RequestedBy", fields: [requesterId], references: [id], onDelete: Cascade)
+  subcategoryId String
+  subcategory   RequestSubcategory @relation(fields: [subcategoryId], references: [id])
+
+  // --- fields common to every service desk request ---
+  subject     String
+  description String?
+  status      RequestStatus @default(DRAFT)
+
+  /// Values for the form type's admin-defined fields, keyed by FormField.key.
+  details Json @default("{}")
+
+  /// Sequence of the approval step currently awaiting a decision.
+  currentSequence Int       @default(1)
+  submittedAt     DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  approvals RequestApproval[]
+
+  @@index([requesterId, status])
+  @@index([status])
+}
+
+enum ApprovalDecision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A snapshot of one step in a request's chain. Copied from WorkflowApprover at
+/// submit time so later edits to the chain never rewrite decided history.
+model RequestApproval {
+  id         String           @id @default(cuid())
+  requestId  String
+  request    ServiceRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sequence   Int
+  approverId String
+  approver   User             @relation("ApprovalsGiven", fields: [approverId], references: [id], onDelete: Cascade)
+  decision   ApprovalDecision @default(PENDING)
+  remarks    String?
+  decidedAt  DateTime?
+
+  @@unique([requestId, sequence])
+  @@index([approverId, decision])
 }

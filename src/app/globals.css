@@ -80,6 +80,7 @@ button{font-family:inherit}
 .login-page .btn:active{transform:translateY(1px)}
 .login-page .btn:disabled{opacity:.6;cursor:default}
 .login-page .err{margin-top:14px;color:#FF8FA3;font-size:.85rem;text-align:center}
+.login-page .notice{margin-top:14px;color:var(--cyan);font-size:.85rem;text-align:center;line-height:1.45}
 .login-page .toggle{margin-top:22px;text-align:center;color:var(--muted);font-size:.86rem}
 
 @media (prefers-reduced-motion:reduce){.login-page .orb,.login-page .card,.login-page .visual__img,.login-page .eyebrow .live,.login-page .visual__eyebrow .live{animation:none}}
@@ -102,6 +103,30 @@ button{font-family:inherit}
 .app .avatar{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:grid;place-items:center;font-family:var(--font);font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#06070B}
 .app .u-meta{display:flex;flex-direction:column;min-width:0}
 .app .u-meta b{font-size:.9rem;font-weight:600}
+.app .u-role{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+
+/* Section tab strip (HRIS tabs, Finance tabs) */
+.app .tabs{display:flex;gap:2px;padding:0 24px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.app .tabs::-webkit-scrollbar{display:none}
+.app .tab{position:relative;white-space:nowrap;padding:13px 15px;font-size:.9rem;font-weight:500;color:var(--muted);text-decoration:none;transition:color .18s}
+.app .tab:hover{color:var(--text)}
+.app .tab.active{color:var(--text)}
+.app .tab.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+
+.app .panel{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);padding:22px}
+.app .panel h2{font-family:var(--font);font-weight:600;font-size:1.15rem;letter-spacing:-.01em}
+.app .panel p{color:var(--muted);font-size:.92rem;margin-top:8px;max-width:60ch}
+
+.app .queue{list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:8px}
+.app .queue li{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}
+.app .queue-who{display:flex;flex-direction:column;min-width:0;flex:1}
+.app .queue-who b{font-size:.94rem;font-weight:600}
+.app .queue-who span{font-size:.84rem;color:var(--muted)}
+.app .queue-act{display:flex;gap:8px}
+.app .queue-act button{font-family:var(--body);font-size:.85rem;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+.app .queue-act .approve{color:#06070B;background:linear-gradient(135deg,var(--cyan),var(--blue))}
+.app .queue-act .reject{color:#FF8FA3;background:transparent;border-color:rgba(255,143,163,.35)}
+.app .queue-act .reject:hover{background:rgba(255,143,163,.1)}
 
 @media(min-width:901px){
   .app.nav-rail .sidebar{width:76px}

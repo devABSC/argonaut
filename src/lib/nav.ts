@@ -1,0 +1,67 @@
+// Argonaut — main navigation. The single place the nav structure is declared;
+// AppShell renders it and the route pages validate against it.
+import type { Role } from "@prisma/client";
+
+export type NavTab = { slug: string; label: string };
+export type NavSection = {
+  key: string;
+  label: string;
+  tabs: NavTab[];
+  /** When set, only these roles see the section. Unset = every signed-in user. */
+  roles?: Role[];
+};
+
+export const NAV: NavSection[] = [
+  {
+    key: "service-desk",
+    label: "Service Desk",
+    tabs: [
+      { slug: "new-request", label: "New Request" },
+      { slug: "my-requests", label: "My Requests" },
+      { slug: "approvals", label: "For My Approval" },
+    ],
+  },
+  {
+    key: "hris",
+    label: "HRIS",
+    tabs: [
+      { slug: "personal-info", label: "Personal Info" },
+      { slug: "contract", label: "Contract" },
+      { slug: "vlsl", label: "VLSL" },
+      { slug: "report-to", label: "Report To" },
+      { slug: "statutory", label: "Statutory" },
+      { slug: "201-logs", label: "201 Logs" },
+      { slug: "medical", label: "Medical" },
+    ],
+  },
+  {
+    key: "finance",
+    label: "Finance",
+    tabs: [{ slug: "issue-cash-advance", label: "Issue Cash Advance" }],
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+  {
+    key: "workflow",
+    label: "Workflow",
+    tabs: [{ slug: "category-subcategory", label: "Category-Subcategory" }],
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+];
+
+export function visibleNav(role: Role): NavSection[] {
+  return NAV.filter((s) => !s.roles || s.roles.includes(role));
+}
+
+export function sectionHref(s: NavSection): string {
+  return `/${s.key}/${s.tabs[0].slug}`;
+}
+
+export function findSection(key: string): NavSection | undefined {
+  return NAV.find((s) => s.key === key);
+}
+
+/** Whether `role` may open this section at all. */
+export function canViewSection(role: Role, key: string): boolean {
+  const s = findSection(key);
+  return !!s && (!s.roles || s.roles.includes(role));
+}
