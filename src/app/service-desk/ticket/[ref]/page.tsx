@@ -85,7 +85,7 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
       </div>
 
       <div className="panel" style={{ marginTop: 18 }}>
-        <h2>Form answers <span className="count">{answered.length}</span></h2>
+        <h2>{t.subcategory.name} Details <span className="count">{answered.length}</span></h2>
         {answered.length === 0 ? (
           <p style={{ marginTop: 14 }}>No field answers were recorded.</p>
         ) : (
