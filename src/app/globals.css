@@ -248,6 +248,9 @@ button{font-family:inherit}
 .app .frow.srow{grid-template-columns:44px minmax(130px,1fr) minmax(150px,1.4fr) 70px minmax(115px,.9fr) minmax(190px,1.4fr) minmax(100px,.8fr) auto;align-items:start}
 .app .frow.srow.shead{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px;align-items:end}
 .app .seqbox{display:grid;place-items:center;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--s3);font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.app .approvercell{display:flex;flex-direction:column;gap:4px;min-width:0}
+.app .approvercell .assigned{font-size:.78rem;font-weight:600;color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app .approvercell .hint{font-size:.66rem;color:var(--faint)}
 .app .frow.srow select[multiple]{padding:4px;min-height:66px}
 .app .frow.srow select:disabled{opacity:.45;cursor:default}
 .app .frow.srow select.blanked{color:var(--faint);font-style:italic;background:var(--s2)}

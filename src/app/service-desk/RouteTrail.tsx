@@ -60,10 +60,14 @@ export default function RouteTrail({
         </p>
       ) : (
         <ol className="trail">
-          {steps.map((st) => {
-            // Decisions recorded against this step, matched on the snapshotted name.
+          {steps.map((st, idx) => {
+            // Matched on the snapshotted step name. Rows saved before names were
+            // recorded fall back to the sequence band the snapshot used.
+            const band = (idx + 1) * 100;
             const rows = approvals
-              .filter((a) => a.stepName === st.name)
+              .filter((a) =>
+                a.stepName ? a.stepName === st.name : a.sequence >= band && a.sequence < band + 100,
+              )
               .sort((a, b) => a.sequence - b.sequence);
 
             const decided = rows.length > 0 && rows.every((r) => r.decision !== "PENDING");

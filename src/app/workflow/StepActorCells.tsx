@@ -35,9 +35,17 @@ export default function StepActorCells({
           <option>Goes back to the requestor</option>
         </select>
       ) : (
-        <select name="approverIds" multiple size={3} defaultValue={selected}>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
-        </select>
+        <span className="approvercell">
+          <span className="assigned">
+            {selected.length === 0
+              ? "None assigned"
+              : users.filter((u) => selected.includes(u.id)).map((u) => u.email).join(", ")}
+          </span>
+          <select name="approverIds" multiple size={3} defaultValue={selected}>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.email}</option>)}
+          </select>
+          <span className="hint">Ctrl/Cmd-click to select more than one</span>
+        </span>
       )}
     </>
   );
