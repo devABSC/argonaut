@@ -5,6 +5,7 @@ import type { FieldKind } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { canManageCatalog } from "@/lib/rbac";
+import { STANDARD_SLUG } from "@/lib/forms";
 
 const PATH = "/workflow/service-forms";
 
@@ -20,6 +21,31 @@ async function requireCatalogAdmin() {
 /** Property name used inside ServiceRequest.details. Stable once requests exist. */
 function keyFor(label: string): string {
   return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+export async function createFormType(formData: FormData) {
+  await requireCatalogAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return;
+
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (!slug || slug === STANDARD_SLUG) return;
+
+  if (await prisma.formType.findUnique({ where: { slug } })) {
+    throw new Error("FORM_NAME_TAKEN");
+  }
+
+  await prisma.formType.create({ data: { name, slug } });
+  revalidatePath(PATH);
+}
+
+export async function deleteFormType(formTypeId: string) {
+  await requireCatalogAdmin();
+  const used = await prisma.requestSubcategory.count({ where: { formTypeId } });
+  if (used > 0) throw new Error("FORM_IN_USE");
+
+  await prisma.formType.delete({ where: { id: formTypeId } });
+  revalidatePath(PATH);
 }
 
 export async function addField(formData: FormData) {

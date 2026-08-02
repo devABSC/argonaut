@@ -45,23 +45,41 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
+export type TopTab = { href: string; label: string; on: boolean };
+
 export default function AppShell({
   user,
   nav,
   activeSection,
   activeTab,
+  topTabs,
   children,
 }: {
   user: { name: string; roleLabel: string };
   nav: NavSection[];
   activeSection: string;
   activeTab: string;
+  /** Tab strip above the content. Supplied by the page, since a single section
+   *  can show different strips on different sublinks. */
+  topTabs?: TopTab[];
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [rail, setRail] = useState(false);
   const initial = user.name.trim().charAt(0).toUpperCase() || "A";
   const section = nav.find((s) => s.key === activeSection);
+
+  // Sections that declare plain tabs (HRIS, Service Desk) get a strip derived
+  // from their own children; anything else supplies one explicitly.
+  const strip: TopTab[] =
+    topTabs ??
+    (section && section.children !== "submenu" && section.tabs.length > 1
+      ? section.tabs.map((t) => ({
+          href: `/${section.key}/${t.slug}`,
+          label: t.label,
+          on: t.slug === activeTab,
+        }))
+      : []);
 
   function toggle() {
     if (typeof window !== "undefined" && window.matchMedia("(max-width:900px)").matches) setOpen((v) => !v);
@@ -130,28 +148,19 @@ export default function AppShell({
           <span className="top-avatar">{initial}</span>
         </header>
 
-        {section && (section.topTabs ?? (section.children !== "submenu" && section.tabs.length > 1 ? section.tabs : [])).length > 0 && (
+        {strip.length > 0 && (
           <div className="tabs" role="tablist">
-            {(() => {
-              const strip = section.topTabs ?? section.tabs;
-              // A left-pane sublink (e.g. Service Forms) may not be in the strip;
-              // in that case the first tab stays highlighted.
-              const matched = strip.some((t) => t.slug === activeTab);
-              return strip.map((t, i) => {
-                const on = matched ? t.slug === activeTab : i === 0;
-                return (
-                  <Link
-                    key={t.slug}
-                    href={`/${section.key}/${t.slug}`}
-                    role="tab"
-                    aria-selected={on}
-                    className={on ? "tab active" : "tab"}
-                  >
-                    {t.label}
-                  </Link>
-                );
-              });
-            })()}
+            {strip.map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                role="tab"
+                aria-selected={t.on}
+                className={t.on ? "tab active" : "tab"}
+              >
+                {t.label}
+              </Link>
+            ))}
           </div>
         )}
 

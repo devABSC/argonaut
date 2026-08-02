@@ -3,30 +3,44 @@ import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { visibleNav, findSection, canViewSection } from "@/lib/nav";
 import { ROLE_LABEL } from "@/lib/rbac";
-import AppShell from "../../AppShell";
+import AppShell, { type TopTab } from "../../AppShell";
 import CatalogPanel from "../CatalogPanel";
 import TreePanel from "../TreePanel";
-import ServiceFormsPanel from "../ServiceFormsPanel";
+import StandardPanel from "../StandardPanel";
+import FormTypesPanel from "../FormTypesPanel";
 
 export default async function WorkflowTab({
   params,
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; t?: string }>;
 }) {
   const { tab } = await params;
-  const { view } = await searchParams;
+  const { view, t } = await searchParams;
 
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!canViewSection(user.role, "workflow")) notFound();
 
   const section = findSection("workflow");
-  const active = section?.tabs.find((t) => t.slug === tab);
+  const active = section?.tabs.find((x) => x.slug === tab);
   if (!section || !active) notFound();
 
   const tree = view === "tree";
+  const formsTab = t === "types" ? "types" : "standard";
+
+  // Service Forms has its own strip; everything else shows Workflow | Routes.
+  const topTabs: TopTab[] =
+    active.slug === "service-forms"
+      ? [
+          { href: "/workflow/service-forms", label: "Standard", on: formsTab === "standard" },
+          { href: "/workflow/service-forms?t=types", label: "Form Type", on: formsTab === "types" },
+        ]
+      : [
+          { href: "/workflow/service-type", label: "Workflow", on: active.slug === "service-type" },
+          { href: "/workflow/routes", label: "Routes", on: active.slug === "routes" },
+        ];
 
   return (
     <AppShell
@@ -34,6 +48,7 @@ export default async function WorkflowTab({
       nav={visibleNav(user.role)}
       activeSection="workflow"
       activeTab={active.slug}
+      topTabs={topTabs}
     >
       {active.slug === "service-type" && (
         <>
@@ -66,7 +81,8 @@ export default async function WorkflowTab({
         </>
       )}
 
-      {active.slug === "service-forms" && <ServiceFormsPanel />}
+      {active.slug === "service-forms" &&
+        (formsTab === "types" ? <FormTypesPanel /> : <StandardPanel />)}
 
       {active.slug === "routes" && (
         <div className="panel">
