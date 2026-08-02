@@ -18,6 +18,23 @@ async function requireCatalogAdmin() {
   if (!canManageCatalog({ id: u.id, role: u.role })) deny();
 }
 
+const FIELD_KINDS: FieldKind[] = [
+  "TEXT", "TEXTAREA", "NUMBER", "CURRENCY", "DATE", "SELECT", "CHECKBOX", "FILE",
+];
+
+/** Returns the kind only if it is a real enum member, else null. */
+function parseKind(v: FormDataEntryValue | null): FieldKind | null {
+  return typeof v === "string" && (FIELD_KINDS as string[]).includes(v) ? (v as FieldKind) : null;
+}
+
+/** Choices may be separated by commas or newlines — both are natural to type. */
+function parseChoices(v: FormDataEntryValue | null): string[] {
+  return String(v ?? "")
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 /** Property name used inside ServiceRequest.details. Stable once requests exist. */
 function keyFor(label: string): string {
   return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
@@ -53,10 +70,9 @@ export async function addField(formData: FormData) {
 
   const formTypeId = String(formData.get("formTypeId") ?? "");
   const label = String(formData.get("label") ?? "").trim();
-  const kind = String(formData.get("kind") ?? "TEXT") as FieldKind;
+  const kind = parseKind(formData.get("kind")) ?? "TEXT";
   const required = formData.get("required") === "on";
-  const options = String(formData.get("options") ?? "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  const options = parseChoices(formData.get("options"));
 
   if (!formTypeId || !label) return;
 
@@ -94,13 +110,17 @@ export async function updateField(formData: FormData) {
   await requireCatalogAdmin();
 
   const id = String(formData.get("fieldId") ?? "");
-  const label = String(formData.get("label") ?? "").trim();
-  const kind = String(formData.get("kind") ?? "TEXT") as FieldKind;
-  const required = formData.get("required") === "on";
-  const options = String(formData.get("options") ?? "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  if (!id) return;
 
-  if (!id || !label) return;
+  const existing = await prisma.formField.findUnique({ where: { id } });
+  if (!existing) return;
+
+  const label = String(formData.get("label") ?? "").trim() || existing.label;
+  // Fall back to the stored value rather than TEXT: a missing or unrecognised
+  // value must never silently reset the field's display type.
+  const kind = parseKind(formData.get("kind")) ?? existing.kind;
+  const required = formData.get("required") === "on";
+  const options = parseChoices(formData.get("options"));
 
   await prisma.formField.update({
     where: { id },
