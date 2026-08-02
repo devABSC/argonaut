@@ -1,16 +1,9 @@
 import type { FormField } from "@prisma/client";
 
 /** Read-only render of a form exactly as a requester would see it. */
-export default function FormPreview({
-  title,
-  fields,
-}: {
-  title: string;
-  fields: FormField[];
-}) {
+export default function FormPreview({ fields }: { fields: FormField[] }) {
   return (
-    <div className="panel formprev">
-      <h2>{title}</h2>
+    <>
       <p>Preview only — nothing here can be submitted.</p>
 
       <div className="pv">
@@ -59,6 +52,6 @@ export default function FormPreview({
           <p className="pvempty">No fields added yet — only Subject and Description would appear.</p>
         )}
       </div>
-    </div>
+    </>
   );
 }
