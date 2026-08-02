@@ -149,6 +149,11 @@ button{font-family:inherit}
 .app .utable select:focus{outline:none;border-color:var(--cyan)}
 .app .utable .save{font-family:var(--body);font-size:.82rem;font-weight:600;color:#06070B;background:linear-gradient(135deg,var(--cyan),var(--blue));border:0;border-radius:8px;padding:7px 14px;cursor:pointer}
 
+/* Workflow — view mode toggle */
+.app .viewbar{display:flex;justify-content:flex-end;margin-bottom:14px}
+.app .viewtoggle{display:inline-flex;align-items:center;gap:8px;font-size:.86rem;font-weight:500;color:var(--text);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:9px 15px;cursor:pointer;transition:border-color .18s,background .18s}
+.app .viewtoggle:hover{border-color:rgba(56,232,255,.45);background:rgba(56,232,255,.07);color:var(--cyan)}
+
 /* Workflow — tree view */
 .app .tree{list-style:none;margin-top:20px}
 .app .tree-cat+.tree-cat{margin-top:6px}
