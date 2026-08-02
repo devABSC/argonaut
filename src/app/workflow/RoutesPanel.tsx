@@ -65,7 +65,8 @@ export default async function RoutesPanel({ subId }: { subId?: string }) {
         <SubtypePicker
           options={options}
           selected={sub?.id ?? ""}
-          href={(id) => (id ? `/workflow/routes?sub=${id}` : "/workflow/routes")}
+          basePath="/workflow/routes"
+          param="sub"
         />
       </div>
 

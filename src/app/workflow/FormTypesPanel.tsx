@@ -47,7 +47,8 @@ export default async function FormTypesPanel({ subId }: { subId?: string }) {
         <SubtypePicker
           options={options}
           selected={sub?.id ?? ""}
-          href={(id) => (id ? `/workflow/service-forms?t=types&form=${id}` : "/workflow/service-forms?t=types")}
+          basePath="/workflow/service-forms?t=types"
+          param="form"
         />
       </div>
 
