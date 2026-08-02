@@ -7,6 +7,12 @@ export type NavSection = {
   key: string;
   label: string;
   tabs: NavTab[];
+  /**
+   * How the section's children are presented:
+   * "tabs"    — a tab strip across the top of the page (HRIS, Service Desk)
+   * "submenu" — sublinks nested under the section in the left pane (Workflow)
+   */
+  children?: "tabs" | "submenu";
   /** When set, only these roles see the section. Unset = every signed-in user. */
   roles?: Role[];
 };
@@ -48,6 +54,7 @@ export const NAV: NavSection[] = [
       { slug: "service-type-2", label: "Service Type2" },
       { slug: "service-forms", label: "Service Forms" },
     ],
+    children: "submenu",
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {

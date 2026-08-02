@@ -88,8 +88,8 @@ export default function AppShell({
                 <span className="navtext">{s.label}</span>
               </Link>
 
-              {/* Sub-items of the open section, nested in the rail. */}
-              {s.key === activeSection && s.tabs.length > 1 && (
+              {/* Sublinks in the rail — only for sections that use a submenu. */}
+              {s.key === activeSection && s.children === "submenu" && s.tabs.length > 1 && (
                 <div className="subnav navtext">
                   {s.tabs.map((t) => (
                     <Link
@@ -126,6 +126,22 @@ export default function AppShell({
           <form action={signOut}><button className="signout" type="submit">Sign out</button></form>
           <span className="top-avatar">{initial}</span>
         </header>
+
+        {section && section.children !== "submenu" && section.tabs.length > 1 && (
+          <div className="tabs" role="tablist">
+            {section.tabs.map((t) => (
+              <Link
+                key={t.slug}
+                href={`/${section.key}/${t.slug}`}
+                role="tab"
+                aria-selected={t.slug === activeTab}
+                className={t.slug === activeTab ? "tab active" : "tab"}
+              >
+                {t.label}
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="content">{children}</div>
       </div>
