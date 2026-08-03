@@ -25,7 +25,7 @@ export default function LoginPage() {
           <div className="visual__grad" />
           <div className="visual__caption">
             <p className="visual__eyebrow"><span className="live" />Mission control</p>
-            <h2>Launch your <span className="grad">workspace.</span></h2>
+            <h2>Launch your workspace.</h2>
             <p className="tagline">Business Made Easy</p>
           </div>
         </section>

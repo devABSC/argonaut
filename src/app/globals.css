@@ -69,7 +69,7 @@ button{font-family:inherit}
   z-index:-1;pointer-events:none}
 .login-page .visual__eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:9px;margin-bottom:14px}
 .login-page .visual__eyebrow .live{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 1.8s infinite}
-.login-page .visual__caption h2{color:#fff;font-family:var(--font);font-weight:700;font-size:clamp(1.9rem,2.6vw,2.7rem);line-height:1.08;letter-spacing:-.01em}
+.login-page .visual__caption h2{color:#FF2D2D;font-family:var(--font);font-weight:700;font-size:clamp(1.9rem,2.6vw,2.7rem);line-height:1.08;letter-spacing:-.01em}
 .login-page .visual__caption h2 .grad{background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
 .login-page .visual__caption p{color:rgba(233,237,246,.88);font-size:1rem;margin-top:12px;max-width:44ch}
 .login-page .visual__caption p.tagline{font-family:var(--font);font-weight:600;color:#fff;
