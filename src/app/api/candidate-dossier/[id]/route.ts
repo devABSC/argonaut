@@ -1,5 +1,13 @@
 import { NextRequest } from "next/server";
-import PDFDocument from "pdfkit";
+
+// PDF generation needs Node, not the edge runtime.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// The standalone build carries its font metrics inside the bundle. The plain
+// import reads .afm files from disk at runtime, which the serverless bundler
+// does not trace — it works locally and 500s in production.
+import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import { prisma } from "@/lib/prisma";
 import { requireAccess } from "@/lib/guard";
 import { fmtCost } from "@/lib/cost";
