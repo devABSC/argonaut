@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { logHistory } from "@/lib/log";
+import { checkStrength } from "@/lib/password-strength";
+import { isReused, rememberPassword } from "@/lib/password-history";
 
 export type ResetState = { error?: string; notice?: string; stage?: "request" | "verify" };
 
@@ -86,7 +88,8 @@ export async function confirmReset(_prev: ResetState, formData: FormData): Promi
   const confirm = String(formData.get("confirm") ?? "");
 
   if (!/^\d{6}$/.test(code)) return { error: "The code is six digits.", stage: "verify" };
-  if (password.length < 8) return { error: "Password must be at least 8 characters.", stage: "verify" };
+  const weak = checkStrength(password);
+  if (weak) return { error: weak, stage: "verify" };
   if (password !== confirm) return { error: "The two passwords do not match.", stage: "verify" };
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -112,10 +115,11 @@ export async function confirmReset(_prev: ResetState, formData: FormData): Promi
     return bad;
   }
 
-  // Refuse the password they are already using — expiry must mean a real change.
-  if (await bcrypt.compare(password, user.passwordHash)) {
-    return { error: "Choose a password you have not used here before.", stage: "verify" };
+  // Expiry must mean a real change, so anything used before is refused.
+  if (await isReused(user.id, password, user.passwordHash)) {
+    return { error: "You have used that password before. Choose a new one.", stage: "verify" };
   }
+  await rememberPassword(user.id, user.passwordHash);
 
   await prisma.$transaction([
     prisma.user.update({

@@ -120,6 +120,7 @@ button{font-family:inherit}
 .login-page .btn:hover{background-position:100% 50%;box-shadow:0 16px 44px -8px rgba(139,59,255,.7)}
 .login-page .btn:active{transform:translateY(1px)}
 .login-page .btn:disabled{opacity:.6;cursor:default}
+.login-page .hintline{margin-top:6px;font-size:.76rem;color:var(--faint);line-height:1.4}
 .login-page .err{margin-top:14px;color:#FF8FA3;font-size:.85rem;text-align:center}
 .login-page .notice{margin-top:14px;color:var(--cyan);font-size:.85rem;text-align:center;line-height:1.45}
 .login-page .toggle{margin-top:22px;text-align:center;color:var(--muted);font-size:.86rem}

@@ -53,14 +53,15 @@ model User {
   projects Project[]
 
   // Service desk
-  workflowSteps  WorkflowStepApprover[] @relation("StepActorOf")
-  menuGrants     MenuGrant[]            @relation("MenuGrants")
-  passwordResets PasswordReset[]        @relation("PasswordResets")
-  employee       Employee?              @relation("EmployeeAccount")
-  ownedClients   Client[]               @relation("ClientOwner")
-  ownedDeals     Deal[]                 @relation("DealOwner")
-  requests       ServiceRequest[]       @relation("RequestedBy")
-  approvalsGiven RequestApproval[]      @relation("ApprovalsGiven")
+  workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
+  menuGrants      MenuGrant[]            @relation("MenuGrants")
+  passwordResets  PasswordReset[]        @relation("PasswordResets")
+  passwordHistory PasswordHistory[]      @relation("PasswordHistory")
+  employee        Employee?              @relation("EmployeeAccount")
+  ownedClients    Client[]               @relation("ClientOwner")
+  ownedDeals      Deal[]                 @relation("DealOwner")
+  requests        ServiceRequest[]       @relation("RequestedBy")
+  approvalsGiven  RequestApproval[]      @relation("ApprovalsGiven")
 }
 
 model Session {
@@ -664,4 +665,16 @@ model PasswordReset {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+/// Hashes of passwords already used on an account, so an old one cannot be
+/// brought back. Only hashes are kept — never the passwords themselves.
+model PasswordHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("PasswordHistory", fields: [userId], references: [id], onDelete: Cascade)
+  hash      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

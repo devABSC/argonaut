@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { signIn, signUp, type AuthState } from "../actions/auth";
 import { requestReset, confirmReset, type ResetState } from "../actions/password";
+import { RULES_TEXT } from "@/lib/password-strength";
 
 const empty: AuthState = {};
 const emptyReset: ResetState = { stage: "request" };
@@ -107,6 +108,7 @@ export default function LoginPage() {
               <div className="field">
                 <label htmlFor="password">Password</label>
                 <input className="input" id="password" name="password" type="password" placeholder="••••••••••" autoComplete={isSignup ? "new-password" : "current-password"} required />
+                {isSignup && <p className="hintline">{RULES_TEXT}</p>}
               </div>
 
               {!isSignup && (

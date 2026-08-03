@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { AccountStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword, createSession, destroySession } from "@/lib/auth";
+import { checkStrength } from "@/lib/password-strength";
 
 export type AuthState = { error?: string; notice?: string };
 
@@ -38,7 +39,8 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   const password = String(formData.get("password") ?? "");
   if (!email.includes("@")) return { error: "Enter a valid email." };
   if (!name) return { error: "Enter your name." };
-  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  const weak = checkStrength(password);
+  if (weak) return { error: weak };
 
   if (await prisma.user.findUnique({ where: { email } })) {
     return { error: "That email already has an account — sign in instead." };

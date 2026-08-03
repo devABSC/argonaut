@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireUser, hashPassword } from "@/lib/auth";
 import { logHistory } from "@/lib/log";
+import { checkStrength } from "@/lib/password-strength";
+import { isReused, rememberPassword } from "@/lib/password-history";
 
 export type ChangeState = { error?: string };
 
@@ -19,17 +21,19 @@ export async function changeOwnPassword(_prev: ChangeState, formData: FormData):
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
-  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  const weak = checkStrength(password);
+  if (weak) return { error: weak };
   if (password !== confirm) return { error: "The two passwords do not match." };
 
   const row = await prisma.user.findUnique({ where: { id: me.id }, select: { passwordHash: true } });
   if (!row || !(await bcrypt.compare(current, row.passwordHash))) {
     return { error: "Your current password is not right." };
   }
-  if (await bcrypt.compare(password, row.passwordHash)) {
-    return { error: "Choose a password you have not used here before." };
+  if (await isReused(me.id, password, row.passwordHash)) {
+    return { error: "You have used that password before. Choose a new one." };
   }
 
+  await rememberPassword(me.id, row.passwordHash);
   await prisma.user.update({
     where: { id: me.id },
     data: {

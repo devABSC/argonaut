@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { changeOwnPassword, type ChangeState } from "../actions/changepw";
 import { signOut } from "../actions/auth";
+import { RULES_TEXT } from "@/lib/password-strength";
 
 const empty: ChangeState = {};
 
@@ -18,7 +19,8 @@ export default function ChangePasswordForm({ forced, name }: { forced: boolean; 
         </div>
         <div className="field">
           <label htmlFor="password">New password</label>
-          <input className="input" id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
+          <input className="input" id="password" name="password" type="password" required minLength={12} autoComplete="new-password" />
+          <p className="hintline">{RULES_TEXT}</p>
         </div>
         <div className="field">
           <label htmlFor="confirm">Confirm new password</label>
