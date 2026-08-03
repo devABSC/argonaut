@@ -22,6 +22,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M6.2 9.4h.01M17.8 14.6h.01" />
     </svg>
   ),
+  admin: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M12 3l7.5 3.2v5c0 4.4-3 8.1-7.5 9.6-4.5-1.5-7.5-5.2-7.5-9.6v-5z" />
+      <path d="M9.2 12.1l2 2 3.6-3.8" />
+    </svg>
+  ),
   inventory: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <path d="M3.2 7.4L12 3l8.8 4.4v9.2L12 21l-8.8-4.4z" />

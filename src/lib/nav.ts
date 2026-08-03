@@ -202,6 +202,18 @@ export const NAV: NavSection[] = [
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
+    // The statutory agencies, each with its own filings and remittances.
+    key: "admin",
+    label: "ADMIN",
+    tabs: [
+      { slug: "sss", label: "SSS", title: "Social Security System" },
+      { slug: "pagibig", label: "Pagibig", title: "Home Development Mutual Fund" },
+      { slug: "philhealth", label: "Philhealth", title: "Philippine Health Insurance Corporation" },
+    ],
+    children: "submenu",
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+  {
     key: "settings",
     label: "Settings",
     tabs: [
