@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { IconDownload } from "../icons";
 
 const STATUS_PILL: Record<string, string> = {
   DRAFT: "s-PENDING",
@@ -71,6 +72,14 @@ export default async function CashAdvanceList() {
         <span className="tree-meta">
           ₱{peso.format(total(approved))} approved · ₱{peso.format(total(open))} awaiting
         </span>
+        <a
+          className="save icon"
+          href="/api/finance/cash-advance"
+          title="Download as CSV"
+          aria-label="Download as CSV"
+        >
+          <IconDownload />
+        </a>
       </div>
       <p>
         Every cash advance raised through Service Desk. Status is the ticket&rsquo;s

@@ -126,7 +126,10 @@ export const NAV: NavSection[] = [
   {
     key: "project",
     label: "PROJECT",
-    tabs: [{ slug: "projects", label: "Projects" }],
+    tabs: [
+      { slug: "projects", label: "Projects" },
+      { slug: "tasks", label: "Tasks" },
+    ],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {

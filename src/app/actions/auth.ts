@@ -51,6 +51,15 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   // as a pending Employee until an HR Supervisor or Super User approves.
   const isFirstUser = (await prisma.user.count()) === 0;
 
+  // Everyone belongs to the default company unless moved later. Taken from the
+  // Company register rather than hard-coded, so registering a new company and
+  // ordering it first is enough to change where new accounts land.
+  const defaultCompany = await prisma.company.findFirst({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { code: true },
+  });
+
   const user = await prisma.user.create({
     data: {
       email,
@@ -59,11 +68,14 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
       role: { connect: { key: isFirstUser ? "SUPER_USER" : "EMPLOYEE" } },
       status: isFirstUser ? "ACTIVE" : "PENDING",
       approvedAt: isFirstUser ? new Date() : null,
+      company: defaultCompany?.code ?? null,
     },
   });
 
   if (!isFirstUser) {
-    return { notice: "Registration received — an HR Supervisor will review it shortly." };
+    // Deliberately vague about who approves — the applicant does not need to
+    // know the internal role structure.
+    return { notice: "Registration received — a System Administrator will review it shortly." };
   }
 
   await createSession(user.id);

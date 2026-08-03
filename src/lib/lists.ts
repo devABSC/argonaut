@@ -32,6 +32,7 @@ export const EMP_TYPE = [
  */
 export const EMPLOYMENT_STATUS = [
   "Active",
+  "Inactive",
   "Resigned",
   "Terminated",
   "On Leave",

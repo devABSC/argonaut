@@ -52,3 +52,10 @@ export const IconX = () => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
+
+export const IconDownload = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M12 3.5v11M7.5 10.5l4.5 4.5 4.5-4.5" />
+    <path d="M4.5 19.5h15" />
+  </svg>
+);
