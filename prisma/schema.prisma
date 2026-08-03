@@ -773,10 +773,33 @@ model Bir2307 {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  lines Bir2307Line[]
+
   /// One certificate per payee per quarter.
   @@unique([supplierName, year, quarter])
   @@index([supplierId])
   @@index([year])
+}
+
+/// One row of Part III on a 2307 — a nature of income payment, its ATC, what
+/// was paid and what was withheld. A certificate has as many as it needs.
+model Bir2307Line {
+  id     String  @id @default(cuid())
+  certId String
+  cert   Bir2307 @relation(fields: [certId], references: [id], onDelete: Cascade)
+
+  /// Nature of Income Payment.
+  nature String
+  /// Alphanumeric Tax Code, as the BIR publishes it.
+  atc    String?
+
+  amount      Decimal @default(0) @db.Decimal(14, 2)
+  taxWithheld Decimal @default(0) @db.Decimal(14, 2)
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([certId])
 }
 
 /// One line of the Chart of Accounts — what a cost is booked against.

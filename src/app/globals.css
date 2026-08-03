@@ -926,6 +926,30 @@ button{font-family:inherit}
    value right, so the two columns read across at a glance. */
 .app .infoboxes{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .app .yearlinks{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+
+/* Part III — the printed form's own grid: four columns and a total at the
+   foot, rules rather than boxes so it reads as one table. */
+.app .partiii{grid-column:1/-1;margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.app .p3head,.app .p3row{display:grid;
+  grid-template-columns:minmax(0,2.2fr) 110px 150px 150px 34px;gap:8px;align-items:center}
+.app .p3head{padding:8px 0 6px;border-bottom:1px solid var(--line)}
+.app .p3head span{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint)}
+.app .p3head .amt,.app .p3row .amt{text-align:right}
+.app .p3row{padding:5px 0;border-bottom:1px solid var(--line-2)}
+.app .p3row input{width:100%;font-family:var(--body);font-size:.86rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.app .p3row input:focus{outline:none;border-color:var(--cyan)}
+.app .p3row.total{border-bottom:0;border-top:1px solid var(--line);padding-top:9px;font-weight:700}
+.app .p3row.total>span:first-child{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.app .p3row.total .amt{font-variant-numeric:tabular-nums;font-size:.95rem}
+@media (max-width:820px){
+  .app .p3head{display:none}
+  .app .p3row{grid-template-columns:1fr 1fr;gap:6px;padding:9px 0}
+  .app .p3row input:first-child{grid-column:1/-1}
+  .app .p3row.total{grid-template-columns:1fr 1fr}
+}
 .app .infobox{margin:0}
 .app .infoform{display:grid;gap:8px;margin-top:12px}
 .app .inforow{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;align-items:center}

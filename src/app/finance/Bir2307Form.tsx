@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { IconPlus } from "../icons";
-import { QUARTERS, quarterLabel } from "@/lib/quarters";
+import PartThree from "./PartThree";
+import { QUARTERS, quarterLabel, quarterRange } from "@/lib/quarters";
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 /**
  * A 2307 for one supplier over one period.
@@ -35,22 +38,54 @@ export default function Bir2307Form({
   const mine = suppliers.filter((s) => !s.companyId || s.companyId === buyer);
   const sup = mine.find((s) => s.id === picked);
   const thisYear = new Date().getUTCFullYear();
+  const [year, setYear] = useState(thisYear);
+  const [quarter, setQuarter] = useState(1);
+
+  // The quarter sets the dates; touching a date leaves it where it was put.
+  const span = quarterRange(year, quarter);
+  const [from, setFrom] = useState(iso(span.from));
+  const [to, setTo] = useState(iso(span.to));
+  const [span0, setSpan0] = useState(`${year}-${quarter}`);
+  if (span0 !== `${year}-${quarter}`) {
+    setSpan0(`${year}-${quarter}`);
+    setFrom(iso(span.from));
+    setTo(iso(span.to));
+  }
 
   return (
     <form action={action} className="coaform" key={`${buyer}:${picked}`}>
       <label className="statfield">
         <span>Year</span>
-        <input name="year" type="number" min="2000" max="2100" required defaultValue={thisYear} />
+        <input name="year" type="number" min="2000" max="2100" required value={year}
+          onChange={(e) => setYear(Number(e.target.value))} />
       </label>
 
       <label className="statfield">
         <span>Quarter</span>
-        <select name="quarter" defaultValue="1" required>
+        <select name="quarter" required value={quarter}
+          onChange={(e) => setQuarter(Number(e.target.value))}>
           {QUARTERS.map((q) => (
             <option key={q} value={q}>Q{q} — {quarterLabel(q)}</option>
           ))}
         </select>
       </label>
+
+      {/* The period the certificate covers. It follows the quarter picked
+          above, and stays editable — a certificate is sometimes raised for
+          part of one. */}
+      <div className="fieldpair">
+        <label className="statfield">
+          <span>Period from</span>
+          <input name="periodFrom" type="date" required
+            value={from} onChange={(e) => setFrom(e.target.value)} />
+        </label>
+
+        <label className="statfield">
+          <span>Period to</span>
+          <input name="periodTo" type="date" required
+            value={to} onChange={(e) => setTo(e.target.value)} />
+        </label>
+      </div>
 
       <label className="statfield">
         <span>Buyer / Withholding Agent</span>
@@ -79,6 +114,8 @@ export default function Bir2307Form({
         <div><dt>Payee TIN</dt><dd>{sup?.tin || "—"}</dd></div>
         <div><dt>Registered Address</dt><dd>{sup?.address || "—"}</dd></div>
       </dl>
+
+      <PartThree />
 
       <div className="statacts">
         <button className="btn-primary" type="submit"

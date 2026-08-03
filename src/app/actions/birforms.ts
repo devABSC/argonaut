@@ -64,6 +64,12 @@ export async function addBirForm(formData: FormData) {
   done(PATH, `Form ${code} added.`);
 }
 
+/** Money as typed on a certificate row. Blank and rubbish both mean nothing. */
+function money(v: string): number {
+  const n = Number(String(v).replace(/[₱,\s]/g, "").trim());
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+}
+
 function date(f: FormData, k: string): Date | null {
   const v = String(f.get(k) ?? "").trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
@@ -212,10 +218,32 @@ export async function addBir2307(formData: FormData) {
   });
   if (clash) done(P2307, `Not added — ${supplierName} already has a Q${quarter} ${year} certificate.`);
 
-  const { from, to } = quarterRange(year, quarter);
+  // The period as entered; the quarter fills it when it was left alone.
+  const span = quarterRange(year, quarter);
+  const periodFrom = date(formData, "periodFrom") ?? span.from;
+  const periodTo = date(formData, "periodTo") ?? span.to;
+  if (periodTo < periodFrom) done(P2307, "Not added — the period ends before it starts.");
+
+  // Part III arrives as one field per column, paired up by position.
+  const natures = formData.getAll("ln_nature").map(String);
+  const atcs = formData.getAll("ln_atc").map(String);
+  const amounts = formData.getAll("ln_amount").map(String);
+  const taxes = formData.getAll("ln_tax").map(String);
+  const lines = natures
+    .map((nature, i) => ({
+      nature: nature.trim(),
+      atc: (atcs[i] ?? "").trim() || null,
+      amount: money(amounts[i] ?? ""),
+      taxWithheld: money(taxes[i] ?? ""),
+      sortOrder: i,
+    }))
+    // A blank row is someone who pressed add and changed their mind.
+    .filter((l) => l.nature || l.amount > 0 || l.taxWithheld > 0);
+
   await prisma.bir2307.create({
     data: {
-      year, quarter, periodFrom: from, periodTo: to,
+      year, quarter, periodFrom, periodTo,
+      lines: lines.length ? { create: lines } : undefined,
       companyId, companyName: company?.name ?? null, companyTin: company?.tin ?? null,
       supplierId, supplierName, supplierTin, address, zipCode,
       encodedById: me.id, encodedByName: me.name,
