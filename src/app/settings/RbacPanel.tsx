@@ -312,6 +312,7 @@ export default async function RbacPanel({
         </form>
       </div>
 
+      <MenuNames />
     </>
   );
 }
