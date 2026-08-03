@@ -93,6 +93,7 @@ export const NAV: NavSection[] = [
       { slug: "coa", label: "COA", title: "Chart of Accounts", parent: "config" },
       { slug: "ageing", label: "Ageing", parent: "receivable" },
       { slug: "bir-forms", label: "Forms", parent: "bir" },
+      { slug: "bir-2307", label: "2307", title: "Certificate of Creditable Tax Withheld at Source", parent: "bir" },
     ],
     children: "submenu",
     topTabs: [
@@ -234,4 +235,5 @@ export const FINANCE_RECEIVABLE_TABS: NavTab[] = [
 /** BIR's own strip. */
 export const FINANCE_BIR_TABS: NavTab[] = [
   { slug: "bir-forms", label: "Forms" },
+  { slug: "bir-2307", label: "2307", title: "Certificate of Creditable Tax Withheld at Source" },
 ];

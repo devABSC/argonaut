@@ -6,6 +6,7 @@ import CashAdvanceList from "../CashAdvanceList";
 import SoaPanel from "../SoaPanel";
 import BillsPanel from "../BillsPanel";
 import CoaPanel from "../CoaPanel";
+import BirFormsPanel from "../BirFormsPanel";
 
 export default async function FinanceTab({
   params,
@@ -66,14 +67,17 @@ export default async function FinanceTab({
       ) : active.slug === "soa" ? (
         <SoaPanel bou={bou} emp={emp} soaRef={ref} editLine={editLine} receipt={receipt}
           viewer={{ id: user.id, role: user.role, email: user.email }} />
-      ) : inBir ? (
+      ) : active.slug === "bir-2307" ? (
         <div className="panel">
-          <h2>BIR Forms</h2>
+          <h2>2307 — Certificate of Creditable Tax Withheld at Source</h2>
           <p>
-            The returns and certificates filed with the BIR. Not built yet —
-            say which forms you file (2316, 1601-C, 2307…) and it can be.
+            Issued to a payee for tax withheld that they may credit against
+            their own liability. Not built yet — say what a 2307 should be
+            raised from and it can be.
           </p>
         </div>
+      ) : inBir ? (
+        <BirFormsPanel />
       ) : inReceivable ? (
         <div className="panel">
           <h2>Ageing</h2>

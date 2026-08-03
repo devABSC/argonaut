@@ -55,6 +55,7 @@ model User {
   soasCreated    Soa[]           @relation("SoaAuthor")
   receiptReviews SoaLine[]       @relation("ReceiptReviewer")
   billsEncoded   Bill[]          @relation("BillEncoder")
+  birForms       BirForm[]       @relation("BirFormUploader")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -694,6 +695,30 @@ enum DealStage {
   NEGOTIATION
   WON
   LOST
+}
+
+/// A BIR form the company files, with the blank kept alongside it. The file
+/// lives in the database rather than the repo: these are the business's own
+/// documents, not part of the source.
+model BirForm {
+  id          String @id @default(cuid())
+  /// Form number as the BIR names it, e.g. 2307.
+  code        String @unique
+  /// What the form is for.
+  description String
+
+  fileName String?
+  fileMime String?
+  fileSize Int?
+  fileData Bytes?
+
+  uploadedById   String?
+  uploadedBy     User?   @relation("BirFormUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedByName String?
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// One line of the Chart of Accounts — what a cost is booked against.
