@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { visibleNav, findSection, canViewSection } from "@/lib/nav";
+import { requireAccess } from "@/lib/guard";
 import { ROLE_LABEL } from "@/lib/rbac";
 import AppShell, { type TopTab } from "../../AppShell";
 import CatalogPanel from "../CatalogPanel";
@@ -21,13 +20,7 @@ export default async function WorkflowTab({
   const { tab } = await params;
   const { view, t, preview, form, sub } = await searchParams;
 
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  if (!canViewSection(user.role, "workflow")) notFound();
-
-  const section = findSection("workflow");
-  const active = section?.tabs.find((x) => x.slug === tab);
-  if (!section || !active) notFound();
+  const { user, nav, section, tab: active } = await requireAccess("workflow", tab);
 
   const tree = view === "tree";
   const formsTab = t === "types" ? "types" : "standard";
@@ -48,7 +41,7 @@ export default async function WorkflowTab({
   return (
     <AppShell
       user={{ name: user.name, roleLabel: ROLE_LABEL[user.role] }}
-      nav={visibleNav(user.role)}
+      nav={nav}
       activeSection="workflow"
       activeTab={active.slug}
       topTabs={topTabs}

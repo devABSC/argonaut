@@ -289,6 +289,36 @@ button{font-family:inherit}
 .app .utable a.save.icon{text-decoration:none}
 .app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
 
+/* RBAC matrix */
+.app .utable.matrix th.rolecol{text-align:center;white-space:nowrap}
+.app .utable.matrix th.rolecol span{display:block}
+.app .utable.matrix .bulk{margin-top:4px;display:flex;gap:4px;justify-content:center}
+.app .utable.matrix .bulk button{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--s3);border:1px solid var(--line);border-radius:5px;padding:2px 6px;cursor:pointer}
+.app .utable.matrix .bulk button:hover{color:var(--cyan);border-color:rgba(56,232,255,.45)}
+.app .utable.matrix td.cell{text-align:center;width:96px}
+.app .utable.matrix tr.modrow td{background:var(--s3)}
+.app .utable.matrix .modname{font-weight:700;font-size:.92rem}
+.app .utable.matrix .subname{padding-left:30px;color:var(--muted);position:relative}
+.app .utable.matrix .subname::before{content:"";position:absolute;left:16px;top:50%;width:8px;height:1px;background:var(--line)}
+.app .tick{display:inline-grid;place-items:center;cursor:pointer}
+.app .tick input{position:absolute;opacity:0;width:0;height:0}
+.app .tick span{display:block;width:20px;height:20px;border:1px solid var(--line);border-radius:6px;background:var(--s3);transition:background .15s,border-color .15s}
+.app .tick input:checked+span{background:linear-gradient(135deg,var(--cyan),var(--blue));border-color:transparent;box-shadow:0 0 0 3px rgba(56,232,255,.14)}
+.app .tick input:checked+span::after{content:"";display:block;width:5px;height:9px;margin:3px auto 0;border:solid var(--on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.app .tick input:focus-visible+span{border-color:var(--cyan)}
+
+.app .previewbar{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.app .prevcard{flex:1;min-width:180px;padding:10px 13px;border:1px solid var(--line);border-radius:11px;background:var(--s2)}
+.app .prevrole{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.app .prevmenus{display:block;margin-top:5px;font-size:.85rem;color:var(--cyan)}
+
+.app .grantgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.app .grantcard{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--s2)}
+.app .grantcard b{display:block;font-size:.92rem;margin-bottom:8px}
+.app .tickrow{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:.86rem;color:var(--muted);cursor:pointer}
+.app .tickrow input{accent-color:var(--cyan);width:15px;height:15px}
+.app .btn-primary svg{vertical-align:-3px;margin-right:8px}
+
 /* Ticket detail — route trail */
 .app .trail{list-style:none;margin-top:20px;position:relative}
 .app .trailrow{position:relative;display:flex;gap:14px;padding:0 0 4px 0}

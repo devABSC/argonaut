@@ -67,12 +67,12 @@ ok("rank: employee does not outrank supervisor", !outranks(A("EMPLOYEE"), T("SUP
 /* --- navigation visibility --- */
 const keys = (role: any) => visibleNav(role).map((s) => s.key);
 
-assert.deepEqual(keys("EMPLOYEE"), ["service-desk", "hris"], "employee sees only service desk + hris");
-assert.deepEqual(keys("SUPERVISOR"), ["service-desk", "hris"], "supervisor sees only service desk + hris");
+assert.deepEqual(keys("EMPLOYEE"), ["service-desk"], "employee sees only service desk — HRIS is not for everyone");
+assert.deepEqual(keys("SUPERVISOR"), ["service-desk"], "supervisor sees only service desk");
 assert.deepEqual(
   keys("HR_SUPERVISOR"),
   ["service-desk", "hris", "settings"],
-  "hr supervisor gets settings (registration approvals live there) but not finance/workflow",
+  "hr supervisor gets HRIS and settings, but not finance/workflow",
 );
 assert.deepEqual(
   keys("ADMINISTRATOR"),
@@ -91,6 +91,7 @@ ok("plain supervisor cannot open settings", !canViewSection("SUPERVISOR", "setti
 ok("hr supervisor can open settings", canViewSection("HR_SUPERVISOR", "settings"));
 
 ok("employee cannot open workflow config", !canViewSection("EMPLOYEE", "workflow"));
+ok("employee cannot open HRIS", !canViewSection("EMPLOYEE", "hris"));
 ok("employee cannot open finance", !canViewSection("EMPLOYEE", "finance"));
 ok("hr supervisor cannot open workflow config", !canViewSection("HR_SUPERVISOR", "workflow"));
 ok("admin can open workflow config", canViewSection("ADMINISTRATOR", "workflow"));

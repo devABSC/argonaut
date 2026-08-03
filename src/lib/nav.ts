@@ -33,8 +33,10 @@ export const NAV: NavSection[] = [
     ],
   },
   {
+    // Not open to everyone — HR data is granted, not assumed.
     key: "hris",
     label: "HRIS",
+    roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
     tabs: [
       { slug: "personal-info", label: "Personal Info" },
       { slug: "contract", label: "Contract" },
@@ -70,7 +72,10 @@ export const NAV: NavSection[] = [
   {
     key: "settings",
     label: "Settings",
-    tabs: [{ slug: "users", label: "Users" }],
+    tabs: [
+      { slug: "users", label: "Users" },
+      { slug: "rbac", label: "RBAC" },
+    ],
     // HR Supervisor is included because registration approvals live here.
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },

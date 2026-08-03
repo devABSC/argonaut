@@ -49,6 +49,7 @@ model User {
 
   // Service desk
   workflowSteps  WorkflowStepApprover[] @relation("StepActorOf")
+  menuGrants     MenuGrant[]            @relation("MenuGrants")
   requests       ServiceRequest[]       @relation("RequestedBy")
   approvalsGiven RequestApproval[]      @relation("ApprovalsGiven")
 }
@@ -271,4 +272,21 @@ model Task {
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
+}
+
+/// An explicit allow/deny for one navigation node, granted either to a role or
+/// to a single user. Absence of a row means "fall back to the code default".
+/// User grants beat role grants; role grants beat the default.
+model MenuGrant {
+  id      String  @id @default(cuid())
+  /// "workflow" for a module, "workflow:routes" for a submenu.
+  nodeKey String
+  role    Role?
+  userId  String?
+  user    User?   @relation("MenuGrants", fields: [userId], references: [id], onDelete: Cascade)
+  allowed Boolean @default(true)
+
+  @@unique([nodeKey, role])
+  @@unique([nodeKey, userId])
+  @@index([userId])
 }

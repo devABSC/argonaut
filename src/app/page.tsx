@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { visibleNav, sectionHref } from "@/lib/nav";
+import { landingPath } from "@/lib/guard";
 
 export default async function Home() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  // No standalone dashboard — land on the first section this role can open.
-  redirect(sectionHref(visibleNav(user.role)[0]));
+  // Land on the first page this user is actually permitted to open.
+  const path = await landingPath(user);
+  if (!path) redirect("/no-access");
+  redirect(path);
 }

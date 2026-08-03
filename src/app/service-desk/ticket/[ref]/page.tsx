@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { visibleNav } from "@/lib/nav";
+import { navFor, effectiveAccess } from "@/lib/access";
 import { ROLE_LABEL, canViewAllProjects, supervises } from "@/lib/rbac";
 import { getStandardForm } from "@/lib/forms";
 import AppShell from "../../../AppShell";
@@ -60,7 +60,7 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
   return (
     <AppShell
       user={{ name: user.name, roleLabel: ROLE_LABEL[user.role] }}
-      nav={visibleNav(user.role)}
+      nav={navFor(await effectiveAccess(user))}
       activeSection="service-desk"
       activeTab="my-requests"
     >

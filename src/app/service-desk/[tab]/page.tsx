@@ -1,6 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { visibleNav, findSection, canViewSection } from "@/lib/nav";
+import { requireAccess } from "@/lib/guard";
 import { ROLE_LABEL } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import AppShell from "../../AppShell";
@@ -17,13 +16,7 @@ export default async function ServiceDeskTab({
   const { tab } = await params;
   const { sub, new: created } = await searchParams;
 
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-  if (!canViewSection(user.role, "service-desk")) notFound();
-
-  const section = findSection("service-desk");
-  const active = section?.tabs.find((t) => t.slug === tab);
-  if (!section || !active) notFound();
+  const { user, nav, section, tab: active } = await requireAccess("service-desk", tab);
 
   const mine =
     active.slug === "my-requests"
@@ -62,7 +55,7 @@ export default async function ServiceDeskTab({
   return (
     <AppShell
       user={{ name: user.name, roleLabel: ROLE_LABEL[user.role] }}
-      nav={visibleNav(user.role)}
+      nav={nav}
       activeSection="service-desk"
       activeTab={active.slug}
     >

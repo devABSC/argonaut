@@ -1,7 +1,5 @@
-import { redirect, notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { visibleNav, findSection, canViewSection } from "@/lib/nav";
 import { ROLE_LABEL } from "@/lib/rbac";
+import { requireAccess } from "@/lib/guard";
 import AppShell from "./AppShell";
 
 /**
@@ -15,20 +13,12 @@ export default async function SectionPage({
   sectionKey: string;
   tab: string;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
-  // Role gate happens server-side; hiding the nav item alone is not access control.
-  if (!canViewSection(user.role, sectionKey)) notFound();
-
-  const section = findSection(sectionKey);
-  const active = section?.tabs.find((t) => t.slug === tab);
-  if (!section || !active) notFound();
+  const { user, nav, section, tab: active } = await requireAccess(sectionKey, tab);
 
   return (
     <AppShell
       user={{ name: user.name, roleLabel: ROLE_LABEL[user.role] }}
-      nav={visibleNav(user.role)}
+      nav={nav}
       activeSection={section.key}
       activeTab={active.slug}
     >
