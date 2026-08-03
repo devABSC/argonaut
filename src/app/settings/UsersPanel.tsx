@@ -29,7 +29,8 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   const users = await prisma.user.findMany({
     orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
-      id: true, name: true, email: true, role: true, status: true,
+      id: true, name: true, email: true, status: true,
+      role: { select: { key: true } },
       managerId: true, company: true, createdAt: true, updatedAt: true,
       manager: { select: { name: true } },
       updatedBy: { select: { name: true } },
@@ -42,7 +43,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   const roleChoices = assignableRoles(me);
   // Anyone at supervisor level or above can be a reporting line.
   const managers = users.filter(
-    (u) => u.status === "ACTIVE" && u.role !== "EMPLOYEE",
+    (u) => u.status === "ACTIVE" && u.role.key !== "EMPLOYEE",
   );
 
   // Company codes come from the HRIS records, plus anything already assigned.
@@ -113,7 +114,8 @@ export default async function UsersPanel({ me }: { me: Actor }) {
             </thead>
             <tbody>
               {users.map((u) => {
-                const editable = canEdit && canManageUser(me, u);
+                const uKey = u.role.key as keyof typeof ROLE_LABEL;
+                const editable = canEdit && canManageUser(me, { id: u.id, role: uKey });
                 return (
                   <tr key={u.id}>
                     <td>
@@ -132,8 +134,8 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                             <option value="">— no company —</option>
                             {companies.map((c) => <option key={c} value={c}>{c}</option>)}
                           </select>
-                          <select name="role" defaultValue={u.role}>
-                            {(roleChoices.includes(u.role) ? roleChoices : [u.role, ...roleChoices])
+                          <select name="role" defaultValue={uKey}>
+                            {(roleChoices.includes(uKey) ? roleChoices : [uKey, ...roleChoices])
                               .map((r) => (
                                 <option key={r} value={r}>{ROLE_LABEL[r]}</option>
                               ))}
@@ -153,7 +155,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                     ) : (
                       <>
                         <td className="muted">{u.company ?? "—"}</td>
-                        <td><span className={`pill r-${u.role}`}>{ROLE_LABEL[u.role]}</span></td>
+                        <td><span className={`pill r-${uKey}`}>{ROLE_LABEL[uKey]}</span></td>
                         <td className="muted">{u.manager?.name ?? "—"}</td>
                         <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
                       </>

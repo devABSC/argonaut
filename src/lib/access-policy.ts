@@ -1,5 +1,5 @@
 // Pure access policy: no database, so it can be unit-tested directly.
-import type { Role } from "@prisma/client";
+import type { RoleKey } from "./roles.ts";
 import { NAV, type NavSection } from "./nav.ts";
 
 /**
@@ -41,7 +41,7 @@ export function allNodes(): AccessNode[] {
 }
 
 /** What the code grants a role when nobody has configured anything. */
-export function defaultAllows(role: Role, nodeKey: string): boolean {
+export function defaultAllows(role: RoleKey, nodeKey: string): boolean {
   const [sectionKey] = nodeKey.split(":");
   const section = NAV.find((s) => s.key === sectionKey);
   if (!section) return false;

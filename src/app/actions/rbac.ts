@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Role } from "@prisma/client";
+import { ROLE_KEYS, type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
 
 const PATH = "/settings/rbac";
-const ROLES: Role[] = ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR", "SUPERVISOR", "EMPLOYEE"];
+const ROLES: RoleKey[] = [...ROLE_KEYS];
 
 /** Only the owner reassigns access — an admin cannot widen their own reach. */
 async function requireOwner() {
@@ -34,14 +34,20 @@ export async function saveRoleMatrix(formData: FormData) {
     }
   }
 
-  const existing = await prisma.menuGrant.findMany({ where: { role: { not: null } } });
+  const roleRows = await prisma.role.findMany({ select: { id: true, key: true } });
+  const idByKey = new Map(roleRows.map((r) => [r.key, r.id]));
+
+  const existing = await prisma.menuGrant.findMany({
+    where: { roleId: { not: null } },
+    include: { role: { select: { key: true } } },
+  });
 
   const staleIds: string[] = [];
   const changed: { id: string; allowed: boolean }[] = [];
   const seen = new Set<string>();
 
   for (const row of existing) {
-    const k = `${row.role}|${row.nodeKey}`;
+    const k = `${row.role?.key}|${row.nodeKey}`;
     seen.add(k);
     const want = desired.get(k);
     if (want === undefined) staleIds.push(row.id);
@@ -49,10 +55,10 @@ export async function saveRoleMatrix(formData: FormData) {
   }
 
   const fresh = [...desired.entries()]
-    .filter(([k]) => !seen.has(k))
+    .filter(([k]) => !seen.has(k) && idByKey.has(k.split("|")[0]))
     .map(([k, allowed]) => {
       const [role, ...rest] = k.split("|");
-      return { role: role as Role, nodeKey: rest.join("|"), allowed };
+      return { roleId: idByKey.get(role)!, nodeKey: rest.join("|"), allowed };
     });
 
   // Three statements rather than one per cell: the pooler allows a single
@@ -69,11 +75,14 @@ export async function saveRoleMatrix(formData: FormData) {
 export async function saveUserOverrides(userId: string, formData: FormData) {
   await requireOwner();
 
-  const target = await prisma.user.findUnique({ where: { id: userId } });
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: { select: { key: true } } },
+  });
   if (!target) throw new Error("NOT_FOUND");
 
   // Baseline is what the role already grants, without this user's overrides.
-  const roleLevel = await effectiveAccess({ id: "__none__", role: target.role });
+  const roleLevel = await effectiveAccess({ id: "__none__", role: target.role.key as RoleKey });
 
   const desired = new Map<string, boolean>();
   for (const n of allNodes()) {

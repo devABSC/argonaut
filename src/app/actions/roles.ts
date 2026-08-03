@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Role } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 
@@ -18,12 +18,12 @@ export async function saveRole(formData: FormData) {
 
   const key = String(formData.get("key") ?? "");
   if (!key) return;
-  const existing = await prisma.roleProfile.findUnique({ where: { key } });
+  const existing = await prisma.role.findUnique({ where: { key } });
   if (!existing) return;
 
   const rank = Number(formData.get("rank") ?? existing.rank);
 
-  await prisma.roleProfile.update({
+  await prisma.role.update({
     where: { key },
     data: {
       label: String(formData.get("label") ?? "").trim() || existing.label,
@@ -43,20 +43,20 @@ export async function saveRole(formData: FormData) {
 export async function deleteRole(key: string) {
   await requireOwner();
 
-  const profile = await prisma.roleProfile.findUnique({ where: { key } });
+  const profile = await prisma.role.findUnique({ where: { key } });
   if (!profile) return;
 
-  const holders = await prisma.user.count({ where: { role: key as Role } });
+  const holders = await prisma.user.count({ where: { role: { key } } });
   if (holders > 0) throw new Error(`ROLE_IN_USE:${holders}`);
 
   if (profile.isSystem) {
     // Retire rather than remove: the enum member still exists in the schema.
-    await prisma.roleProfile.update({ where: { key }, data: { isActive: false } });
+    await prisma.role.update({ where: { key }, data: { isActive: false } });
   } else {
-    await prisma.roleProfile.delete({ where: { key } });
+    await prisma.role.delete({ where: { key } });
   }
 
   // Drop its access-matrix rows; they mean nothing without the role.
-  await prisma.menuGrant.deleteMany({ where: { role: key as Role } });
+  await prisma.menuGrant.deleteMany({ where: { role: { key } } });
   revalidatePath(PATH, "layout");
 }

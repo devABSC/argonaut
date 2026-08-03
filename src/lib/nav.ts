@@ -1,6 +1,6 @@
 // Argonaut — main navigation. The single place the nav structure is declared;
 // AppShell renders it and the route pages validate against it.
-import type { Role } from "@prisma/client";
+import type { RoleKey } from "./roles.ts";
 
 export type NavTab = { slug: string; label: string; /** Reachable route, but not listed in the left-pane submenu. */ hideInSubmenu?: boolean };
 export type NavSection = {
@@ -19,7 +19,7 @@ export type NavSection = {
    */
   topTabs?: NavTab[];
   /** When set, only these roles see the section. Unset = every signed-in user. */
-  roles?: Role[];
+  roles?: RoleKey[];
 };
 
 export const NAV: NavSection[] = [
@@ -103,7 +103,7 @@ export const NAV: NavSection[] = [
   },
 ];
 
-export function visibleNav(role: Role): NavSection[] {
+export function visibleNav(role: RoleKey): NavSection[] {
   return NAV.filter((s) => !s.roles || s.roles.includes(role));
 }
 
@@ -116,7 +116,7 @@ export function findSection(key: string): NavSection | undefined {
 }
 
 /** Whether `role` may open this section at all. */
-export function canViewSection(role: Role, key: string): boolean {
+export function canViewSection(role: RoleKey, key: string): boolean {
   const s = findSection(key);
   return !!s && (!s.roles || s.roles.includes(role));
 }

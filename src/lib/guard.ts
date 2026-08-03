@@ -28,7 +28,7 @@ export async function requireAccess(sectionKey: string, tabSlug?: string) {
 }
 
 /** First page the user is actually allowed to see, for the root redirect. */
-export async function landingPath(user: { id: string; role: import("@prisma/client").Role }) {
+export async function landingPath(user: { id: string; role: import("./roles").RoleKey }) {
   const nav = navFor(await effectiveAccess(user));
   if (nav.length === 0) return null;
   return `/${nav[0].key}/${nav[0].tabs[0].slug}`;

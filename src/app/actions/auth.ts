@@ -54,7 +54,7 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
       email,
       name,
       passwordHash: await hashPassword(password),
-      role: isFirstUser ? "SUPER_USER" : "EMPLOYEE",
+      role: { connect: { key: isFirstUser ? "SUPER_USER" : "EMPLOYEE" } },
       status: isFirstUser ? "ACTIVE" : "PENDING",
       approvedAt: isFirstUser ? new Date() : null,
     },

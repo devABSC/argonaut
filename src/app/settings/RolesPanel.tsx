@@ -1,4 +1,3 @@
-import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { saveRole, deleteRole } from "../actions/roles";
 import { IconSave, IconTrash } from "../icons";
@@ -9,10 +8,11 @@ import { IconSave, IconTrash } from "../icons";
  * or any built-in role — is retired rather than removed.
  */
 export default async function RolesPanel() {
-  const profiles = await prisma.roleProfile.findMany({ orderBy: { rank: "desc" } });
+  const profiles = await prisma.role.findMany({ orderBy: { rank: "desc" } });
 
-  const counts = await prisma.user.groupBy({ by: ["role"], _count: true });
-  const holders = new Map(counts.map((c) => [c.role as string, c._count]));
+  const counts = await prisma.user.groupBy({ by: ["roleId"], _count: true });
+  const byId = new Map(counts.map((c) => [c.roleId, c._count]));
+  const holders = new Map(profiles.map((r) => [r.key, byId.get(r.id) ?? 0]));
 
   return (
     <div className="panel">

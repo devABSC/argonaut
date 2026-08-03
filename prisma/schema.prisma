@@ -8,14 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_USER
-  ADMINISTRATOR
-  HR_SUPERVISOR
-  SUPERVISOR
-  EMPLOYEE
-}
-
 /// Account lifecycle. Self-registration creates PENDING; an HR approver or
 /// Super User moves it to ACTIVE. Only ACTIVE accounts can hold a session.
 enum AccountStatus {
@@ -30,7 +22,8 @@ model User {
   email        String        @unique
   name         String
   passwordHash String // bcrypt
-  role         Role          @default(EMPLOYEE)
+  roleId       String
+  role         Role          @relation(fields: [roleId], references: [id])
   status       AccountStatus @default(PENDING)
   /// Which company this account belongs to; matches Employee.company codes.
   company      String?
@@ -292,12 +285,13 @@ model MenuGrant {
   id      String  @id @default(cuid())
   /// "workflow" for a module, "workflow:routes" for a submenu.
   nodeKey String
-  role    Role?
+  roleId  String?
+  role    Role?   @relation(fields: [roleId], references: [id], onDelete: Cascade)
   userId  String?
   user    User?   @relation("MenuGrants", fields: [userId], references: [id], onDelete: Cascade)
   allowed Boolean @default(true)
 
-  @@unique([nodeKey, role])
+  @@unique([nodeKey, roleId])
   @@unique([nodeKey, userId])
   @@index([userId])
 }
@@ -509,9 +503,10 @@ model Notification {
  * this table carries what the owner can safely change: the name shown, a
  * description, ordering, and whether it may still be assigned.
  */
-model RoleProfile {
-  /// Matches a Role enum member, e.g. "HR_SUPERVISOR".
-  key         String  @id
+model Role {
+  id          String  @id @default(cuid())
+  /// Stable machine key the permission checks compare against.
+  key         String  @unique
   label       String
   description String?
   /// Higher outranks lower; mirrors the ranking used by the permission checks.
@@ -520,6 +515,9 @@ model RoleProfile {
   isActive    Boolean @default(true)
   /// Built in: cannot be deleted, only renamed or deactivated.
   isSystem    Boolean @default(true)
+
+  users  User[]
+  grants MenuGrant[]
 
   updatedAt DateTime @default(now()) @updatedAt
 }

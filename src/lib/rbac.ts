@@ -1,28 +1,12 @@
 // Argonaut — role-based access control. Single source of truth for "who can do what".
 // Server actions and page queries both consult this; never re-derive rules inline.
-import { Role } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
+import { type RoleKey, RANK } from "./roles.ts";
 
-export const ROLE_LABEL: Record<Role, string> = {
-  SUPER_USER: "Super User",
-  ADMINISTRATOR: "Administrator",
-  HR_SUPERVISOR: "HR Supervisor",
-  SUPERVISOR: "Supervisor",
-  EMPLOYEE: "Employee",
-};
+export { ROLE_LABEL, type RoleKey } from "./roles.ts";
 
-// Higher rank outranks lower. Used for "can act on" checks, not for granting
-// permissions implicitly — each capability below is spelled out.
-const RANK: Record<Role, number> = {
-  SUPER_USER: 5,
-  ADMINISTRATOR: 4,
-  HR_SUPERVISOR: 3,
-  SUPERVISOR: 2,
-  EMPLOYEE: 1,
-};
-
-export type Actor = { id: string; role: Role };
-type Target = { id: string; role: Role };
+export type Actor = { id: string; role: RoleKey };
+type Target = { id: string; role: RoleKey };
 
 export function outranks(actor: Actor, target: Target): boolean {
   return RANK[actor.role] > RANK[target.role];
@@ -46,15 +30,15 @@ export function canManageUser(actor: Actor, target: Target): boolean {
 }
 
 /** Can grant this specific role. Only a Super User can mint Admins or Super Users. */
-export function canAssignRole(actor: Actor, role: Role): boolean {
+export function canAssignRole(actor: Actor, role: RoleKey): boolean {
   if (actor.role === "SUPER_USER") return true;
   if (actor.role === "ADMINISTRATOR") return RANK[role] < RANK.ADMINISTRATOR;
   return false;
 }
 
 /** Roles this actor is allowed to pick from in the UI. */
-export function assignableRoles(actor: Actor): Role[] {
-  return (Object.keys(RANK) as Role[])
+export function assignableRoles(actor: Actor): RoleKey[] {
+  return (Object.keys(RANK) as RoleKey[])
     .filter((r) => canAssignRole(actor, r))
     .sort((a, b) => RANK[b] - RANK[a]);
 }

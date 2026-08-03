@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import type { User } from "@prisma/client";
+import type { RoleKey } from "./roles";
 
 const SESSION_COOKIE = "argonaut_session";
 const SESSION_DAYS = 30;
@@ -42,19 +43,27 @@ export async function destroySession(): Promise<void> {
   jar.delete(SESSION_COOKIE);
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+/** The signed-in user, with `role` flattened to its stable key. */
+export type SessionUser = Omit<User, "role"> & { role: RoleKey; roleId: string };
+
+export async function getCurrentUser(): Promise<SessionUser | null> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const session = await prisma.session.findUnique({ where: { token }, include: { user: true } });
+  const session = await prisma.session.findUnique({
+    where: { token },
+    include: { user: { include: { role: { select: { key: true } } } } },
+  });
   if (!session || session.expiresAt < new Date()) return null;
   // Re-checked on every request, so a suspension or rejection takes effect
   // immediately rather than waiting for the 30-day cookie to lapse.
   if (session.user.status !== "ACTIVE") return null;
-  return session.user;
+
+  const { role, ...rest } = session.user;
+  return { ...rest, role: role.key as RoleKey };
 }
 
-export async function requireUser(): Promise<User> {
+export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("UNAUTHENTICATED");
   return user;

@@ -1,4 +1,4 @@
-import type { Role } from "@prisma/client";
+import { ROLE_KEYS, type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { accessTree, allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
 import { ROLE_LABEL } from "@/lib/rbac";
@@ -7,14 +7,17 @@ import { IconTrash } from "../icons";
 import RbacMatrix, { type MatrixGroup } from "./RbacMatrix";
 import UserPicker from "./UserPicker";
 
-const ROLES: Role[] = ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR", "SUPERVISOR", "EMPLOYEE"];
+const ROLES: RoleKey[] = [...ROLE_KEYS];
 
 export default async function RbacPanel({ userId }: { userId?: string }) {
   const tree = accessTree();
   const nodes = allNodes();
 
-  const roleGrants = await prisma.menuGrant.findMany({ where: { role: { not: null } } });
-  const byRole = new Map(roleGrants.map((g) => [`${g.role}|${g.nodeKey}`, g.allowed]));
+  const roleGrants = await prisma.menuGrant.findMany({
+    where: { roleId: { not: null } },
+    include: { role: { select: { key: true } } },
+  });
+  const byRole = new Map(roleGrants.map((g) => [`${g.role?.key}|${g.nodeKey}`, g.allowed]));
 
   const initial: Record<string, boolean> = {};
   for (const role of ROLES) {
@@ -38,11 +41,11 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
   const users = await prisma.user.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: { select: { key: true } } },
   });
 
   const target = userId ? users.find((u) => u.id === userId) : undefined;
-  const targetAccess = target ? await effectiveAccess(target) : null;
+  const targetAccess = target ? await effectiveAccess({ id: target.id, role: target.role.key as RoleKey }) : null;
   const overrideCount = target
     ? await prisma.menuGrant.count({ where: { userId: target.id } })
     : 0;
@@ -78,7 +81,7 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
           allows. Use this for exceptions rather than bending a whole role.
         </p>
         <UserPicker
-          users={users.map((u) => ({ id: u.id, label: `${u.name} — ${u.email} (${ROLE_LABEL[u.role]})` }))}
+          users={users.map((u) => ({ id: u.id, label: `${u.name} — ${u.email} (${ROLE_LABEL[u.role.key as RoleKey]})` }))}
           selected={target?.id ?? ""}
         />
 
@@ -86,7 +89,7 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
           <form action={saveUserOverrides.bind(null, target.id)} style={{ marginTop: 18 }}>
             <div className="cat-head">
               <h2 style={{ fontSize: "1.02rem" }}>{target.name}</h2>
-              <span className={`pill r-${target.role}`}>{ROLE_LABEL[target.role]}</span>
+              <span className={`pill r-${target.role.key}`}>{ROLE_LABEL[target.role.key as RoleKey]}</span>
               {overrideCount > 0
                 ? <span className="pill s-PENDING">{overrideCount} override{overrideCount === 1 ? "" : "s"}</span>
                 : <span className="tree-meta">following role access</span>}
