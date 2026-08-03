@@ -4,6 +4,8 @@ import { findSection, FINANCE_CONFIG_TABS, FINANCE_RECEIVABLE_TABS } from "@/lib
 import AppShell, { type TopTab } from "../../AppShell";
 import CashAdvanceList from "../CashAdvanceList";
 import SoaPanel from "../SoaPanel";
+import BillsPanel from "../BillsPanel";
+import CoaPanel from "../CoaPanel";
 
 export default async function FinanceTab({
   params,
@@ -54,6 +56,10 @@ export default async function FinanceTab({
     >
       {active.slug === "cash-advance" ? (
         <CashAdvanceList />
+      ) : active.slug === "bills" ? (
+        <BillsPanel />
+      ) : active.slug === "coa" ? (
+        <CoaPanel />
       ) : active.slug === "soa" ? (
         <SoaPanel bou={bou} emp={emp} soaRef={ref} editLine={editLine} receipt={receipt}
           viewer={{ id: user.id, role: user.role, email: user.email }} />
@@ -66,13 +72,7 @@ export default async function FinanceTab({
           </p>
         </div>
       ) : inConfig ? (
-        <div className="panel">
-          <h2>Chart of Accounts</h2>
-          <p>
-            The account codes everything in Finance posts against. Not built
-            yet — say what the code structure should look like and it can be.
-          </p>
-        </div>
+        <CoaPanel />
       ) : (
         <div className="panel">
           <h2>{active.label}</h2>

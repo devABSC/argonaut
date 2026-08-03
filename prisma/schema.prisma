@@ -54,6 +54,7 @@ model User {
   milestoneTasks MilestoneTask[] @relation("MilestoneTaskAuthor")
   soasCreated    Soa[]           @relation("SoaAuthor")
   receiptReviews SoaLine[]       @relation("ReceiptReviewer")
+  billsEncoded   Bill[]          @relation("BillEncoder")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -695,6 +696,66 @@ enum DealStage {
   LOST
 }
 
+/// One line of the Chart of Accounts — what a cost is booked against.
+/// Shaped to match QuickBooks Online, so the two charts can be reconciled.
+model CoaAccount {
+  id             String  @id @default(cuid())
+  /// Account No. in QuickBooks terms.
+  code           String  @unique
+  /// Account Name.
+  name           String
+  /// One of QuickBooks Online's account types, and the subtype under it.
+  accountType    String?
+  accountSubType String?
+  description    String?
+
+  /// An account can sit under another, the way QBO nests sub-accounts.
+  parentId String?
+  parent   CoaAccount?  @relation("CoaTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children CoaAccount[] @relation("CoaTree")
+
+  isActive  Boolean @default(true)
+  /// Display order in the pickers; ties fall back to the code.
+  sortOrder Int     @default(0)
+
+  bills Bill[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// A bill from a supplier, booked against a chart-of-accounts line.
+model Bill {
+  id String @id @default(cuid())
+
+  supplierId String
+  supplier   Supplier @relation("SupplierBills", fields: [supplierId], references: [id], onDelete: Restrict)
+
+  coaId String
+  coa   CoaAccount @relation(fields: [coaId], references: [id], onDelete: Restrict)
+
+  /// Whether this bill repeats every period.
+  recurring Boolean @default(false)
+
+  /// Monthly service fee. Only meaningful on telco accounts, so it is optional
+  /// rather than a zero on every other bill.
+  msf Decimal? @db.Decimal(14, 2)
+
+  invoiceAmount Decimal @db.Decimal(14, 2)
+
+  /// Who entered it. Snapshotted by name so the row still reads if the account
+  /// is later removed.
+  encodedById   String
+  encodedBy     User   @relation("BillEncoder", fields: [encodedById], references: [id], onDelete: Cascade)
+  encodedByName String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([supplierId])
+  @@index([coaId])
+}
+
 /// A company we buy from. Kept apart from Client: a supplier is the other
 /// side of the relationship, with its own terms and contacts.
 model Supplier {
@@ -726,6 +787,8 @@ model Supplier {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  bills Bill[] @relation("SupplierBills")
 
   @@index([name])
 }
