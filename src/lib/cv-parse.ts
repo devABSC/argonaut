@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 import { prisma } from "./prisma";
+import { isImage, ocrImage, readPdfText, looksLikeText } from "./ocr";
 
 /**
  * Reads a CV and returns the candidate's details.
@@ -137,6 +138,14 @@ export async function parseCV(
   const client = new Anthropic({ apiKey: key });
   const isPdf = mime === "application/pdf" || fileName.toLowerCase().endsWith(".pdf");
 
+  // An image has to be read before it can be parsed. OCR is free and local,
+  // so it runs first; only its output goes on to be turned into fields.
+  if (isImage(fileName, mime)) {
+    const { text: ocred, confidence } = await ocrImage(bytes);
+    if (!looksLikeText(ocred)) throw new Error(`CV_OCR_POOR:${Math.round(confidence)}`);
+    return parseText(client, `${fileName} (read by OCR, confidence ${Math.round(confidence)}%)`, ocred);
+  }
+
   const content: Anthropic.ContentBlockParam[] = isPdf
     ? [
         {
@@ -181,4 +190,41 @@ async function toText(bytes: Buffer, fileName: string): Promise<string> {
   }
   // .txt, .rtf and anything else legible as plain text.
   return bytes.toString("utf8");
+}
+
+/** Turns already-extracted text into fields. */
+async function parseText(client: Anthropic, label: string, body: string): Promise<ParsedCV> {
+  const res = await client.messages.create({
+    model: "claude-opus-5",
+    max_tokens: 16000,
+    thinking: { type: "adaptive" },
+    output_config: { format: { type: "json_schema", schema: SCHEMA } },
+    messages: [{ role: "user", content: [{ type: "text", text: `${PROMPT}\n\n--- CV: ${label} ---\n${body}` }] }],
+  });
+  if (res.stop_reason === "refusal") throw new Error("CV_REFUSED");
+  const text = res.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text;
+  if (!text) throw new Error("CV_NO_OUTPUT");
+  return JSON.parse(text) as ParsedCV;
+}
+
+/**
+ * Text out of a document, without calling anything paid. Returns null when the
+ * file yields nothing legible — a scanned PDF has no text layer, and rendering
+ * its pages to images for OCR needs a canvas this runtime does not have.
+ */
+export async function extractTextFree(
+  bytes: Buffer,
+  fileName: string,
+  mime?: string | null,
+): Promise<{ text: string; how: string } | null> {
+  if (isImage(fileName, mime)) {
+    const { text, confidence } = await ocrImage(bytes);
+    return looksLikeText(text) ? { text, how: `OCR, ${Math.round(confidence)}% confidence` } : null;
+  }
+  if (mime === "application/pdf" || /\.pdf$/i.test(fileName)) {
+    const text = await readPdfText(bytes).catch(() => "");
+    return looksLikeText(text) ? { text, how: "PDF text layer" } : null;
+  }
+  const text = await toText(bytes, fileName);
+  return looksLikeText(text) ? { text, how: "document text" } : null;
 }

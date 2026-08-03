@@ -4,8 +4,8 @@ import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { IconPlus } from "../icons";
 
-const ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.txt,application/pdf";
-const OK = /\.(pdf|docx?|xlsx?|txt)$/i;
+const ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.webp,application/pdf,image/*";
+const OK = /\.(pdf|docx?|xlsx?|txt|png|jpe?g|webp|bmp|tiff?)$/i;
 
 function Submit({ hasFile }: { hasFile: boolean }) {
   const { pending } = useFormStatus();
@@ -38,7 +38,7 @@ export default function UploadCV({ action }: { action: (fd: FormData) => Promise
   function take(file: File | undefined) {
     if (!file) return;
     if (!OK.test(file.name)) {
-      setRejected(`${file.name} — only PDF, Word, Excel or plain text`);
+      setRejected(`${file.name} — only PDF, Word, Excel, text or an image`);
       setName(null);
       return;
     }
@@ -100,7 +100,7 @@ export default function UploadCV({ action }: { action: (fd: FormData) => Promise
           ) : (
             <>
               <b>Drop a CV here, or click to browse</b>
-              <span className="tree-meta">PDF, Word, Excel or plain text</span>
+              <span className="tree-meta">PDF, Word, Excel, or a photo of a CV</span>
             </>
           )}
         </span>
