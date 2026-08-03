@@ -78,8 +78,9 @@ export const NAV: NavSection[] = [
       { slug: "payable", label: "Payable" },
       { slug: "receivable", label: "Receivable" },
       { slug: "config", label: "Config" },
-      // Reachable, but reached through Config rather than listed beside it.
+      // Reachable, but reached through their parent rather than listed beside it.
       { slug: "coa", label: "COA", title: "Chart of Accounts", hideInSubmenu: true },
+      { slug: "ageing", label: "Ageing", hideInSubmenu: true },
     ],
     children: "submenu",
     topTabs: [
@@ -199,4 +200,9 @@ export function canViewSection(role: RoleKey, key: string): boolean {
 /** The tab strip shown when a Finance sublink is open. Config has its own. */
 export const FINANCE_CONFIG_TABS: NavTab[] = [
   { slug: "coa", label: "COA", title: "Chart of Accounts" },
+];
+
+/** Receivable's own strip — what is owed, and how long it has been owed. */
+export const FINANCE_RECEIVABLE_TABS: NavTab[] = [
+  { slug: "ageing", label: "Ageing" },
 ];
