@@ -6,6 +6,7 @@ import { ROLE_LABEL } from "@/lib/rbac";
 import { saveRoleMatrix, saveUserOverrides, clearUserOverrides, resetToDefaults, saveBouAccess } from "../actions/rbac";
 import { IconTrash } from "../icons";
 import RbacMatrix, { type MatrixGroup } from "./RbacMatrix";
+import MenuNames from "./MenuNames";
 import UserPicker from "./UserPicker";
 
 
@@ -13,6 +14,7 @@ import UserPicker from "./UserPicker";
 const VIEWS = [
   { slug: "role", label: "Access by Role" },
   { slug: "person", label: "Access by Employee" },
+  { slug: "menu", label: "Menu Names" },
 ] as const;
 
 export default async function RbacPanel({
@@ -28,7 +30,10 @@ export default async function RbacPanel({
   // Two very different jobs — a matrix for every role, and exceptions for one
   // person. Stacking them made a long page where the second half was easy to
   // miss, so each gets its own tab.
-  const on = userId || bouId ? "person" : view === "person" ? "person" : "role";
+  const on =
+    userId || bouId ? "person"
+    : view === "person" || view === "menu" ? view
+    : "role";
   const tree = accessTree();
   const nodes = allNodes();
 
@@ -269,13 +274,22 @@ export default async function RbacPanel({
           role="tab"
           aria-selected={v.slug === on}
           className={v.slug === on ? "subtab on" : "subtab"}
-          href={v.slug === "role" ? "/settings/rbac" : "/settings/rbac?view=person"}
+          href={v.slug === "role" ? "/settings/rbac" : `/settings/rbac?view=${v.slug}`}
         >
           {v.label}
         </Link>
       ))}
     </div>
   );
+
+  if (on === "menu") {
+    return (
+      <>
+        {strip}
+        <MenuNames />
+      </>
+    );
+  }
 
   if (on === "person") {
     return (
