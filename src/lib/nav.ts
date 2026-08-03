@@ -86,6 +86,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "overview", label: "Overview" },
       { slug: "service-desk", label: "Service Desk" },
+      { slug: "logs", label: "Log History" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },

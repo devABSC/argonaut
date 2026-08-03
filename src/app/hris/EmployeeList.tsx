@@ -7,9 +7,11 @@ const PAGE = 50;
 
 /** All employees, searchable. The HRIS landing page. */
 export default async function EmployeeList({
-  q = "", bou = "", dept = "", company = "", page = 1, viewer,
+  q = "", bou = "", dept = "", company = "", page = 1, viewer, added, addedName,
 }: {
   q?: string;
+  added?: string;
+  addedName?: string;
   bou?: string;
   dept?: string;
   company?: string;
@@ -107,6 +109,12 @@ export default async function EmployeeList({
           showCompany={isOwner}
         />
       </div>
+
+      {added && (
+        <div className="banner">
+          Employee <b>{addedName || added}</b> added — ID <b>{added}</b>.
+        </div>
+      )}
 
       <AddEmployee bous={bouOptions} companies={companyOptions} />
 

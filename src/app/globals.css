@@ -329,6 +329,7 @@ button{font-family:inherit}
 .app .btn-primary:disabled{opacity:.72;cursor:default}
 .app .btn-primary .spinner{display:inline-block;width:14px;height:14px;margin-right:9px;vertical-align:-2px;border:2px solid rgba(255,255,255,.35);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.app .banner.flash{border-color:rgba(56,232,255,.35);background:rgba(56,232,255,.09);color:var(--cyan)}
 .app .banner b{font-family:var(--mono);font-size:.9em}
 .app .banner{margin-bottom:16px;padding:13px 17px;border-radius:12px;border:1px solid rgba(55,232,160,.35);background:rgba(55,232,160,.1);color:#37E8A0;font-size:.92rem}
 .app .ticket{display:inline-block;font-family:var(--mono);font-size:.8rem;color:var(--cyan);background:rgba(56,232,255,.09);border:1px solid rgba(56,232,255,.22);border-radius:6px;padding:3px 7px;white-space:nowrap}

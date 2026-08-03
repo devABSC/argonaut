@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { done } from "@/lib/flash";
+import { logHistory } from "@/lib/log";
 import type { RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
@@ -13,7 +15,7 @@ function deny(): never {
 
 async function actor() {
   const u = await requireUser();
-  return { id: u.id, role: u.role };
+  return { id: u.id, role: u.role, name: u.name };
 }
 
 export async function approveRegistration(userId: string) {
@@ -28,6 +30,8 @@ export async function approveRegistration(userId: string) {
     data: { status: "ACTIVE", approvedAt: new Date(), approvedById: me.id, updatedById: me.id },
   });
   revalidatePath("/settings/users");
+  await logHistory({ type: "approve", module: "Settings > Users", description: `Approved registration for ${target.name}`, user: me });
+  done("/settings/users", `${target.name} approved — the account is now active.`);
 }
 
 export async function rejectRegistration(userId: string) {
@@ -44,6 +48,8 @@ export async function rejectRegistration(userId: string) {
   // Kill any session the account may already hold.
   await prisma.session.deleteMany({ where: { userId } });
   revalidatePath("/settings/users");
+  await logHistory({ type: "reject", module: "Settings > Users", description: `Rejected registration for ${target.name}`, user: me });
+  done("/settings/users", `${target.name}’s registration was rejected.`);
 }
 
 export async function setUserRole(userId: string, role: RoleKey) {
@@ -100,6 +106,8 @@ export async function updateUserFromForm(formData: FormData) {
   }
 
   revalidatePath("/settings/users");
+  await logHistory({ type: "update", module: "Settings > Users", description: `Updated ${target.name}`, user: me });
+  done("/settings/users", `${target.name} updated.`);
 }
 
 /** Sets who this user reports to. Pass null to clear the reporting line. */

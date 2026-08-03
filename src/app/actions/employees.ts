@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
@@ -53,7 +54,7 @@ export async function createEmployee(formData: FormData) {
   // rowid is the source system's key; new joiners get one past the highest.
   const top = await prisma.employee.findFirst({ orderBy: { rowid: "desc" }, select: { rowid: true } });
 
-  await prisma.employee.create({
+  const created = await prisma.employee.create({
     data: {
       rowid: (top?.rowid ?? 0) + 1,
       individ,
@@ -87,4 +88,9 @@ export async function createEmployee(formData: FormData) {
   });
 
   revalidatePath(PATH);
+  // Carries who was added so the list can say so on arrival.
+  redirect(
+    `${PATH}?added=${encodeURIComponent(created.individ)}` +
+      `&name=${encodeURIComponent(`${created.firstName} ${created.lastName}`)}`,
+  );
 }

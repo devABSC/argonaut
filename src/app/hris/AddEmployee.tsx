@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createEmployee } from "../actions/employees";
 import { IconPlus } from "../icons";
+import SubmitButton from "../SubmitButton";
 
 const EMP_STATUS = ["Term-Based", "Probationary", "Regular", "Project-Based", "Consultant"];
 const EMP_TYPE = ["Rank & File", "Supervisory", "Managerial", "Executive"];
@@ -113,7 +114,7 @@ export default function AddEmployee({
             <textarea name="remarks" rows={3} maxLength={500} placeholder="Up to 500 characters" />
           </label>
 
-          <button className="btn-primary" type="submit">Save employee</button>
+          <SubmitButton label="Save employee" />
         </form>
       )}
     </div>

@@ -9,7 +9,7 @@ export default function SubmitButton({ label = "Submit Ticket" }: { label?: stri
   return (
     <button className="btn-primary" type="submit" disabled={pending}>
       {pending && <span className="spinner" aria-hidden="true" />}
-      {pending ? "Submitting…" : label}
+      {pending ? "Saving…" : label}
     </button>
   );
 }

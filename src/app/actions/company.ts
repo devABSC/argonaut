@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { done } from "@/lib/flash";
+import { logHistory } from "@/lib/log";
 import { canManageUsers } from "@/lib/rbac";
 
 const PATH = "/settings/company";
@@ -10,6 +12,7 @@ const PATH = "/settings/company";
 async function requireAdmin() {
   const u = await requireUser();
   if (!canManageUsers({ id: u.id, role: u.role })) throw new Error("FORBIDDEN");
+  return u;
 }
 
 function readRow(f: FormData) {
@@ -23,7 +26,7 @@ function readRow(f: FormData) {
 }
 
 export async function createCompany(formData: FormData) {
-  await requireAdmin();
+  const me = await requireAdmin();
   const r = readRow(formData);
   if (!r.code || !r.name) return;
 
@@ -32,10 +35,12 @@ export async function createCompany(formData: FormData) {
   }
   await prisma.company.create({ data: r });
   revalidatePath(PATH);
+  await logHistory({ type: "create", module: "Settings > Company", description: `Registered company ${r.name} (${r.code})`, user: me });
+  done(PATH, `Company ${r.name} registered.`);
 }
 
 export async function updateCompany(formData: FormData) {
-  await requireAdmin();
+  const me = await requireAdmin();
   const id = String(formData.get("companyId") ?? "");
   if (!id) return;
 
@@ -48,10 +53,12 @@ export async function updateCompany(formData: FormData) {
     data: { ...r, code: r.code || existing.code, name: r.name || existing.name },
   });
   revalidatePath(PATH);
+  await logHistory({ type: "update", module: "Settings > Company", description: `Saved company ${r.name || existing.name}`, user: me });
+  done(PATH, `Company ${r.name || existing.name} saved.`);
 }
 
 export async function deleteCompany(companyId: string) {
-  await requireAdmin();
+  const me = await requireAdmin();
   const c = await prisma.company.findUnique({ where: { id: companyId } });
   if (!c) return;
 
@@ -64,4 +71,6 @@ export async function deleteCompany(companyId: string) {
 
   await prisma.company.delete({ where: { id: companyId } });
   revalidatePath(PATH);
+  await logHistory({ type: "delete", module: "Settings > Company", description: `Deleted company ${c.name}`, user: me });
+  done(PATH, `Company ${c.name} deleted.`);
 }

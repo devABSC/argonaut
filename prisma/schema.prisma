@@ -571,3 +571,20 @@ model Bou {
   @@index([companyCode])
   @@index([name])
 }
+
+/// Audit trail of notable transactions. createdByName is a snapshot so the
+/// entry survives even if the acting user is later removed.
+model LogHistory {
+  id            String   @id @default(cuid())
+  /// Transaction type: create | update | delete | approve | reject | login…
+  type          String
+  /// Menu or submenu being touched, e.g. "Settings > Users".
+  module        String   @default("")
+  description   String
+  createdById   String?
+  createdByName String   @default("System")
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([module])
+}

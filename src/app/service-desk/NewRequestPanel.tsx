@@ -3,7 +3,7 @@ import { getStandardForm } from "@/lib/forms";
 import { createRequest } from "../actions/requests";
 import RequestPicker from "./RequestPicker";
 import RequestField from "./RequestField";
-import SubmitButton from "./SubmitButton";
+import SubmitButton from "../SubmitButton";
 
 export default async function NewRequestPanel({
   subId,

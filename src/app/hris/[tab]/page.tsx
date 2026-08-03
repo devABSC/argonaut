@@ -9,10 +9,10 @@ export default async function HrisTab({
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ q?: string; page?: string; bou?: string; dept?: string; company?: string; emp?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; bou?: string; dept?: string; company?: string; emp?: string; added?: string; name?: string }>;
 }) {
   const { tab } = await params;
-  const { q, page, bou, dept, company, emp } = await searchParams;
+  const { q, page, bou, dept, company, emp, added, name } = await searchParams;
 
   const { user, nav, section, tab: active } = await requireAccess("hris", tab);
 
@@ -31,6 +31,8 @@ export default async function HrisTab({
           company={company ?? ""}
           page={Math.max(1, Number(page) || 1)}
           viewer={{ role: user.role, company: user.company }}
+          added={added}
+          addedName={name}
         />
       ) : active.slug === "personal-info" ? (
         <PersonalInfoPanel empId={emp} />

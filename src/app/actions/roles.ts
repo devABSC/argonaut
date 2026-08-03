@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { done } from "@/lib/flash";
+import { logHistory } from "@/lib/log";
 
 const PATH = "/settings/roles";
 
@@ -11,10 +13,11 @@ const PATH = "/settings/roles";
 async function requireOwner() {
   const u = await requireUser();
   if (u.role !== "SUPER_USER") throw new Error("FORBIDDEN");
+  return u;
 }
 
 export async function saveRole(formData: FormData) {
-  await requireOwner();
+  const me = await requireOwner();
 
   const key = String(formData.get("key") ?? "");
   if (!key) return;
@@ -33,6 +36,8 @@ export async function saveRole(formData: FormData) {
     },
   });
   revalidatePath(PATH, "layout");
+  await logHistory({ type: "update", module: "Settings > Roles", description: `Saved role ${existing.label}`, user: me });
+  done(PATH, `Role ${existing.label} saved.`);
 }
 
 /**
@@ -41,7 +46,7 @@ export async function saveRole(formData: FormData) {
  * instead of deleted, since the enum they mirror is part of the schema.
  */
 export async function deleteRole(key: string) {
-  await requireOwner();
+  const me = await requireOwner();
 
   const profile = await prisma.role.findUnique({ where: { key } });
   if (!profile) return;
@@ -59,4 +64,6 @@ export async function deleteRole(key: string) {
   // Drop its access-matrix rows; they mean nothing without the role.
   await prisma.menuGrant.deleteMany({ where: { role: { key } } });
   revalidatePath(PATH, "layout");
+  await logHistory({ type: "delete", module: "Settings > Roles", description: `${profile.isSystem ? "Retired" : "Deleted"} role ${profile.label}`, user: me });
+  done(PATH, `Role ${profile.label} ${profile.isSystem ? "retired" : "deleted"}.`);
 }

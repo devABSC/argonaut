@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "./actions/auth";
 import ThemeToggle from "./ThemeToggle";
+import Flash from "./Flash";
 import type { NavSection } from "@/lib/nav";
 
 const ICONS: Record<string, ReactNode> = {
@@ -186,7 +187,11 @@ export default function AppShell({
           </div>
         )}
 
-        <div className="content">{children}</div>
+        <div className="content">
+          {/* Confirmation of the last write, wherever it happened. */}
+          <Suspense fallback={null}><Flash /></Suspense>
+          {children}
+        </div>
       </div>
     </div>
   );
