@@ -6,12 +6,34 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
-import { parseCV } from "@/lib/cv-parse";
+import { parseCV, type ParsedCV } from "@/lib/cv-parse";
 
 const PATH = "/recruitment/candidates";
 const MAX_BYTES = 10 * 1024 * 1024;
 
 const text = (f: FormData, k: string) => String(f.get(k) ?? "").trim() || null;
+
+/**
+ * The parser returns more than the Candidate table holds — assessment findings
+ * live in aiData, and the employment history becomes its own rows. Only these
+ * are columns, so only these are written.
+ */
+function candidateColumns(p: ParsedCV) {
+  return {
+    firstName: p.firstName?.trim() || "Unnamed",
+    lastName: p.lastName?.trim() || "Candidate",
+    middleName: p.middleName ?? null,
+    email: p.email ?? null,
+    mobile: p.mobile ?? null,
+    position: p.position ?? null,
+    summary: p.summary ?? null,
+    skills: p.skills ?? [],
+    yearsExperience: p.yearsExperience ?? null,
+    education: p.education ?? null,
+    currentEmployer: p.currentEmployer ?? null,
+    location: p.location ?? null,
+  };
+}
 
 async function requireRecruiter() {
   const u = await requireUser();
@@ -50,18 +72,7 @@ export async function uploadCV(formData: FormData) {
 
   const candidate = await prisma.candidate.create({
     data: {
-      firstName: parsed?.firstName?.trim() || "Unnamed",
-      lastName: parsed?.lastName?.trim() || "Candidate",
-      middleName: parsed?.middleName ?? null,
-      email: parsed?.email ?? null,
-      mobile: parsed?.mobile ?? null,
-      position: parsed?.position ?? null,
-      summary: parsed?.summary ?? null,
-      skills: parsed?.skills ?? [],
-      yearsExperience: parsed?.yearsExperience ?? null,
-      education: parsed?.education ?? null,
-      currentEmployer: parsed?.currentEmployer ?? null,
-      location: parsed?.location ?? null,
+      ...(parsed ? candidateColumns(parsed) : { firstName: "Unnamed", lastName: "Candidate" }),
       parsedAt: parsed ? new Date() : null,
       aiData: parsed ?? undefined,
       cvData: bytes,
@@ -70,6 +81,9 @@ export async function uploadCV(formData: FormData) {
       cvSize: file.size,
       recruiterId: me.id,
       companyCode: me.company ?? null,
+      experience: parsed?.history?.length
+        ? { create: parsed.history.map((h) => ({ ...h })) }
+        : undefined,
     },
   });
 
@@ -110,16 +124,16 @@ export async function reparseCV(candidateId: string) {
       c!.cvFileName ?? "cv.pdf",
       c!.cvMime ?? "application/pdf",
     );
-    // history is written as its own rows; the rest lands on the candidate.
-    const { history, ...fields } = parsed;
+    // History becomes its own rows and is replaced wholesale; the findings go
+    // to aiData; only real columns are written to the candidate.
     await prisma.$transaction([
       prisma.candidate.update({
         where: { id: candidateId },
-        data: { ...fields, parsedAt: new Date(), aiData: parsed },
+        data: { ...candidateColumns(parsed), parsedAt: new Date(), aiData: parsed },
       }),
       prisma.workExperience.deleteMany({ where: { candidateId } }),
       prisma.workExperience.createMany({
-        data: (history ?? []).map((h) => ({ ...h, candidateId })),
+        data: (parsed.history ?? []).map((h) => ({ ...h, candidateId })),
       }),
     ]);
     revalidatePath(where);
