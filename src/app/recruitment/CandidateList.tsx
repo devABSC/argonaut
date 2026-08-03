@@ -8,6 +8,7 @@ import { STAGES, STAGE_PILL } from "@/lib/candidate-views";
 import { IconTrash } from "../icons";
 import UploadCV from "./UploadCV";
 import CellSelect from "../settings/CellSelect";
+import CandidateFilters from "./CandidateFilters";
 
 const fmt = (d: Date) =>
   d.toLocaleString("en-GB", {
@@ -16,24 +17,72 @@ const fmt = (d: Date) =>
   });
 
 export default async function CandidateList({
-  viewer,
+  viewer, q = "", recruiter = "", bou = "", stage = "",
 }: {
   viewer: { id: string; role: RoleKey };
+  q?: string;
+  recruiter?: string;
+  bou?: string;
+  stage?: string;
 }) {
   const scope = candidateScope(viewer);
-  const [rows, ready] = await Promise.all([
+  const isOwner = viewer.role === "SUPER_USER";
+  const term = q.trim();
+
+  // The recruiter filter is the owner's alone — everyone else already sees
+  // only their own, so it would be a list of one name.
+  const where = {
+    ...scope,
+    ...(term
+      ? {
+          OR: [
+            { firstName: { contains: term, mode: "insensitive" as const } },
+            { lastName: { contains: term, mode: "insensitive" as const } },
+            { email: { contains: term, mode: "insensitive" as const } },
+            { position: { contains: term, mode: "insensitive" as const } },
+            { currentEmployer: { contains: term, mode: "insensitive" as const } },
+            { skills: { has: term } },
+          ],
+        }
+      : {}),
+    ...(isOwner && recruiter
+      ? { recruiterId: recruiter === "none" ? null : recruiter }
+      : {}),
+    ...(bou ? { bouId: bou === "none" ? null : bou } : {}),
+    ...(stage ? { stage } : {}),
+  };
+  const [rows, ready, recruiterCounts, bouCounts, userRows, bouRows, total] = await Promise.all([
     prisma.candidate.findMany({
-      where: scope,
+      where,
       orderBy: { appliedAt: "desc" },
       select: {
         id: true, firstName: true, lastName: true, email: true, mobile: true,
         position: true, stage: true, yearsExperience: true, skills: true,
         appliedAt: true, parsedAt: true, cvFileName: true,
+        bou: { select: { name: true } },
         recruiter: { select: { name: true } },
       },
     }),
     cvParsingConfigured(),
+    // Counts come from the viewer's own scope, so a recruiter never learns how
+    // many candidates anyone else holds.
+    prisma.candidate.groupBy({ by: ["recruiterId"], where: scope, _count: { _all: true } }),
+    prisma.candidate.groupBy({ by: ["bouId"], where: scope, _count: { _all: true } }),
+    prisma.user.findMany({ select: { id: true, name: true } }),
+    prisma.bou.findMany({ select: { id: true, name: true } }),
+    prisma.candidate.count({ where: scope }),
   ]);
+
+  const nameOf = new Map(userRows.map((u) => [u.id, u.name]));
+  const bouNameOf = new Map(bouRows.map((b) => [b.id, b.name]));
+  const recruiters = recruiterCounts
+    .filter((r) => r.recruiterId)
+    .map((r) => ({ id: r.recruiterId!, name: nameOf.get(r.recruiterId!) ?? "—", count: r._count._all }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const bous = bouCounts
+    .filter((b) => b.bouId)
+    .map((b) => ({ id: b.bouId!, name: bouNameOf.get(b.bouId!) ?? "—", count: b._count._all }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const unread = rows.filter((r) => !r.parsedAt).length;
 
@@ -61,7 +110,12 @@ export default async function CandidateList({
 
       <div className="panel" style={{ marginTop: 18 }}>
         <div className="cat-head">
-          <h2>Candidates <span className="count">{rows.length}</span></h2>
+          <h2>
+            Candidates{" "}
+            <span className="count">
+              {rows.length}{rows.length !== total ? ` of ${total}` : ""}
+            </span>
+          </h2>
           <span className="spacer" />
           {unread > 0 && <span className="pill s-PENDING">{unread} unread</span>}
           {viewer.role !== "SUPER_USER" && (
@@ -69,8 +123,22 @@ export default async function CandidateList({
           )}
         </div>
 
+        <CandidateFilters
+          q={q}
+          recruiter={recruiter}
+          bou={bou}
+          stage={stage}
+          recruiters={recruiters}
+          bous={bous}
+          showRecruiter={isOwner}
+        />
+
         {rows.length === 0 ? (
-          <p style={{ marginTop: 16 }}>No candidates yet — upload a CV to start.</p>
+          <p style={{ marginTop: 16 }}>
+            {term || recruiter || bou || stage
+              ? "Nobody matches those filters."
+              : "No candidates yet — upload a CV to start."}
+          </p>
         ) : (
           <div className="tablewrap">
             <table className="utable">
@@ -84,6 +152,8 @@ export default async function CandidateList({
                   <th className="numcol">Yrs</th>
                   <th>Skills</th>
                   <th>Stage</th>
+                  {isOwner && <th>Recruiter</th>}
+                  <th>BOU</th>
                   <th>Applied</th>
                   <th />
                 </tr>
@@ -122,6 +192,8 @@ export default async function CandidateList({
                         />
                       </form>
                     </td>
+                    {isOwner && <td className="muted">{c.recruiter?.name ?? "—"}</td>}
+                    <td className="muted">{c.bou?.name ?? "—"}</td>
                     <td className="muted nowrap">{fmt(c.appliedAt)}</td>
                     <td className="rowacts">
                       <form action={deleteCandidate.bind(null, c.id)}>
