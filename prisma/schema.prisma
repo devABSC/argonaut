@@ -803,6 +803,28 @@ model Bir2307Line {
   @@index([certId])
 }
 
+/// Goods are held and counted; a service is neither.
+enum ItemType {
+  GOODS
+  SERVICE
+}
+
+/// A category items are filed under. Self-nesting, so a subcategory is just a
+/// category with a parent — the same shape benta uses.
+model ItemCategory {
+  id       String         @id @default(cuid())
+  name     String
+  slug     String         @unique
+  parentId String?
+  parent   ItemCategory?  @relation("ItemSubcats", fields: [parentId], references: [id], onDelete: SetNull)
+  children ItemCategory[] @relation("ItemSubcats")
+
+  items InvItem[]
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 /// Which way stock moved.
 enum MovementType {
   /// Goods received in.
@@ -814,12 +836,18 @@ enum MovementType {
 /// Something held in stock. Kept apart from the CRM's Supplier catalogue: this
 /// is what the company has on hand, not what anyone sells.
 model InvItem {
-  id          String  @id @default(cuid())
-  sku         String  @unique
+  id          String   @id @default(cuid())
+  sku         String   @unique
   name        String
   description String?
   /// Unit of measurement — pc, box, ream.
-  unit        String  @default("pc")
+  unit        String   @default("pc")
+  brand       String?
+  /// A service is never counted, so it carries no stock figure worth reading.
+  type        ItemType @default(GOODS)
+
+  categoryId String?
+  category   ItemCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   /// Kept as a running figure so a stock list never has to re-add every
   /// movement; the movements remain the record of how it got there.
@@ -839,6 +867,7 @@ model InvItem {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([supplierId])
+  @@index([categoryId])
 }
 
 /// One movement of stock, in or out. Written in the same transaction as the

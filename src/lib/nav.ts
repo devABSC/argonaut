@@ -121,6 +121,7 @@ export const NAV: NavSection[] = [
     key: "inventory",
     label: "Inventory",
     tabs: [
+      { slug: "item-master", label: "Item Master" },
       { slug: "stock", label: "Stock on Hand" },
       { slug: "receiving", label: "Receiving" },
       { slug: "issuance", label: "Issuance" },
