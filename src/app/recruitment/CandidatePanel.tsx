@@ -2,9 +2,10 @@ import { prisma } from "@/lib/prisma";
 import {
   saveCandidate, reparseCV, addExperience, deleteExperience,
   addReference, markReferenceContacted, deleteReference, saveAiNotes,
-  addPreJoDoc, setPreJoStatus, deletePreJoDoc, runAssessment,
+  addPreJoDoc, setPreJoStatus, deletePreJoDoc, runAssessment, seedVerifyItems,
 } from "../actions/candidates";
 import RunAssessment from "./RunAssessment";
+import CheckList from "./CheckList";
 import type { Assessment } from "@/lib/assess";
 import { IconSave, IconPlus, IconTrash } from "../icons";
 import { PREJO_DOCS, PREJO_STATUS, PREJO_PILL } from "@/lib/candidate-views";
@@ -179,6 +180,14 @@ export default async function CandidatePanel({
 
   if (view === "assessment") {
     const a = c.assessment as Assessment | null;
+    const runs = await prisma.assessmentRun.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, role: true, model: true, inputTokens: true, outputTokens: true,
+        runByName: true, createdAt: true,
+      },
+    });
     const sev: Record<string, string> = { high: "s-REJECTED", medium: "s-PENDING", low: "s-SUSPENDED" };
     const conf: Record<string, string> = {
       strong: "s-ACTIVE", claimed: "s-PENDING", "mentioned only": "s-SUSPENDED",
@@ -205,11 +214,21 @@ export default async function CandidatePanel({
 
           {!c.parsedAt ? (
             <p>Read the CV first — the CV tab has a Read again button.</p>
+          ) : a ? (
+            // Already run: no button, so nobody spends again by reflex.
+            <div className="banner done">
+              <b>AI Analytics Completed</b>
+              <span className="tree-meta">
+                {c.assessedAt ? fmtWhen(c.assessedAt) : ""}
+                {c.assessTokens ? ` · ${c.assessTokens.toLocaleString()} tokens` : ""}
+                {runs.length > 1 ? ` · ${runs.length} runs` : ""}
+              </span>
+            </div>
           ) : (
             <RunAssessment
               action={runAssessment}
               candidateId={c.id}
-              rerun={!!a}
+              rerun={false}
               defaultRole={c.position ?? ""}
             />
           )}
@@ -279,13 +298,81 @@ export default async function CandidatePanel({
             </div>
 
             <div className="panel" style={{ marginTop: 14 }}>
-              <h2>Verify these <span className="count">{a.verifyThese.length}</span></h2>
-              <ul className="findings">{a.verifyThese.map((x) => <li key={x}>{x}</li>)}</ul>
-
-              <p className="secdiv">Interview questions <span className="count">{a.interviewQuestions.length}</span></p>
-              <ol className="findings">{a.interviewQuestions.map((x) => <li key={x}>{x}</li>)}</ol>
+              <div className="cat-head">
+                <h2>Checklist</h2>
+                <span className="spacer" />
+                <form action={seedVerifyItems.bind(null, c.id)}>
+                  <button className="btn-primary" type="submit">
+                    <IconPlus /> Add {a.verifyThese.length + a.interviewQuestions.length} items to work through
+                  </button>
+                </form>
+              </div>
+              <p>
+                Turns the two lists below into rows the recruiter and the hiring
+                manager each answer. Adding again brings in anything new from a
+                later run and leaves existing remarks alone.
+              </p>
             </div>
+
+            <CheckList
+              candidateId={c.id}
+              kind="verify"
+              title="Verify these"
+              itemLabel="Claim to verify"
+              blurb="Factual claims worth checking with the issuer or a previous employer."
+            />
+
+            <CheckList
+              candidateId={c.id}
+              kind="question"
+              title="Interview questions"
+              itemLabel="Question"
+              blurb="Questions that would tell a strong version of this candidate from a weak one."
+            />
           </>
+        )}
+
+        {runs.length > 0 && (
+          <div className="panel" style={{ marginTop: 14 }}>
+            <div className="cat-head">
+              <h2>Run history <span className="count">{runs.length}</span></h2>
+              <span className="spacer" />
+              <span className="tree-meta">
+                {runs.reduce((n, r) => n + (r.inputTokens ?? 0) + (r.outputTokens ?? 0), 0).toLocaleString()} tokens
+                {" "}across all runs
+              </span>
+            </div>
+            <p>
+              Every run is kept. The same CV reads differently against a
+              different role, so the question asked is part of the answer.
+            </p>
+            <div className="tablewrap">
+              <table className="utable stacked">
+                <thead>
+                  <tr>
+                    <th className="numcol">No.</th><th>Run</th><th>Assessed against</th>
+                    <th>Model</th><th className="numcol">In</th><th className="numcol">Out</th><th>By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {runs.map((r, i) => (
+                    <tr key={r.id} className={i === 0 ? "iscurrent" : undefined}>
+                      <td className="numcol" data-label="No.">{runs.length - i}</td>
+                      <td className="muted nowrap" data-label="Run">
+                        {fmtWhen(r.createdAt)}
+                        {i === 0 && <span className="you">latest</span>}
+                      </td>
+                      <td data-label="Assessed against"><b>{r.role}</b></td>
+                      <td className="muted" data-label="Model">{r.model ?? "—"}</td>
+                      <td className="numcol" data-label="In">{r.inputTokens?.toLocaleString() ?? "—"}</td>
+                      <td className="numcol" data-label="Out">{r.outputTokens?.toLocaleString() ?? "—"}</td>
+                      <td className="muted" data-label="By">{r.runByName || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </>
     );

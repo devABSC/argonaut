@@ -81,7 +81,12 @@ Assess only what this document supports. Every claim must trace to something in 
 export async function assessCandidate(
   candidateId: string,
   role: string,
-): Promise<{ assessment: Assessment; tokens: number }> {
+): Promise<{
+  assessment: Assessment;
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+}> {
   const key =
     (await prisma.setting.findUnique({ where: { key: "anthropic_api_key" } }).catch(() => null))?.value ||
     process.env.ANTHROPIC_API_KEY;
@@ -138,6 +143,8 @@ export async function assessCandidate(
 
   return {
     assessment: JSON.parse(text) as Assessment,
-    tokens: (res.usage.input_tokens ?? 0) + (res.usage.output_tokens ?? 0),
+    inputTokens: res.usage.input_tokens ?? 0,
+    outputTokens: res.usage.output_tokens ?? 0,
+    model: res.model,
   };
 }

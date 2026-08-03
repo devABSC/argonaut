@@ -859,3 +859,30 @@ button{font-family:inherit}
 .app .runfill{height:100%;border-radius:999px;
   background:linear-gradient(90deg,var(--cyan),var(--violet));
   transition:width .35s ease}
+
+/* Checklist: one form per row, laid out as a grid */
+.app .checklist{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.app .checkhead,.app .checkrow{display:grid;
+  grid-template-columns:36px minmax(200px,1.5fr) minmax(150px,1fr) minmax(150px,1fr) 130px 72px;
+  gap:10px;align-items:start}
+.app .checkhead{padding:0 10px 2px;font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.app .checkrow{padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--s3)}
+.app .checkrow .citem{display:flex;flex-direction:column;gap:6px;align-items:flex-start;
+  font-size:.86rem;line-height:1.5;color:var(--text)}
+.app .checkrow textarea,.app .checkrow select{width:100%;font-family:var(--body);font-size:.82rem;
+  color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;
+  padding:7px 9px;resize:vertical}
+.app .checkrow textarea:focus,.app .checkrow select:focus{outline:none;border-color:var(--cyan)}
+.app .checkrow .numcol{padding-top:8px;font-family:var(--mono);font-size:.78rem;color:var(--faint)}
+@media (max-width:900px){
+  .app .checkhead{display:none}
+  .app .checkrow{grid-template-columns:1fr 1fr}
+  .app .checkrow .numcol{display:none}
+  .app .checkrow .citem{grid-column:1/-1}
+  .app .checkrow .rowacts{grid-column:1/-1;justify-content:flex-end}
+}
+
+/* Completed state where the run button used to be */
+.app .banner.done{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  border-color:rgba(56,232,255,.34);box-shadow:inset 3px 0 0 var(--cyan)}

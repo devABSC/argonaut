@@ -56,3 +56,14 @@ export const PREJO_PILL: Record<string, string> = {
   Rejected: "s-REJECTED",
   "Not Required": "s-SUSPENDED",
 };
+
+/** Where a "verify this" item stands. */
+export const VERIFY_STATUS = ["Open", "Verified", "Discrepancy", "Cannot Verify", "Not Applicable"] as const;
+
+export const VERIFY_PILL: Record<string, string> = {
+  Open: "s-PENDING",
+  Verified: "s-ACTIVE",
+  Discrepancy: "s-REJECTED",
+  "Cannot Verify": "s-SUSPENDED",
+  "Not Applicable": "s-SUSPENDED",
+};

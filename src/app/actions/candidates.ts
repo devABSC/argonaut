@@ -464,18 +464,32 @@ export async function runAssessment(formData: FormData) {
 
   try {
     const { assessCandidate } = await import("@/lib/assess");
-    const { assessment, tokens } = await assessCandidate(id, role);
+    const { assessment, inputTokens, outputTokens, model } = await assessCandidate(id, role);
+    const tokens = inputTokens + outputTokens;
 
-    const c = await prisma.candidate.update({
-      where: { id },
-      data: { assessment, assessedAt: new Date(), assessTokens: tokens },
-      select: { firstName: true, lastName: true },
-    });
+    // Every run is kept. The candidate carries the latest for the tab to
+    // render; the run row is the record of what was produced, when, against
+    // which role and by whom — an assessment informs a hiring decision, so it
+    // should not be silently replaced by the next one.
+    const [c] = await prisma.$transaction([
+      prisma.candidate.update({
+        where: { id },
+        data: { assessment, assessedAt: new Date(), assessTokens: tokens },
+        select: { firstName: true, lastName: true },
+      }),
+      prisma.assessmentRun.create({
+        data: {
+          candidateId: id, role, result: assessment, model,
+          inputTokens, outputTokens,
+          runById: me.id, runByName: me.name,
+        },
+      }),
+    ]);
 
     revalidatePath(where);
     await logHistory({
       type: "update", module: "Recruitment > Assessment",
-      description: `Ran AI analytics on ${c.firstName} ${c.lastName} (${tokens} tokens)`,
+      description: `Ran AI analytics on ${c.firstName} ${c.lastName} against "${role}" (${tokens} tokens)`,
       user: me,
     });
     done(where, `Assessment ready — ${tokens.toLocaleString()} tokens.`);
@@ -490,4 +504,73 @@ export async function runAssessment(formData: FormData) {
           : `Could not run the assessment (${m}).`,
     );
   }
+}
+
+/* ---------- verify items and interview questions ---------- */
+
+const vAt = (id: string) => `/recruitment/candidate/${id}/assessment`;
+
+/**
+ * Copies the assessment's lists into rows that can be worked through.
+ *
+ * Existing rows are left alone — the remarks against them are the point, and a
+ * re-run must not wipe what two people have already written. Only genuinely
+ * new items are added.
+ */
+export async function seedVerifyItems(candidateId: string) {
+  const me = await requireRecruiter();
+
+  const c = await prisma.candidate.findUnique({
+    where: { id: candidateId },
+    select: { assessment: true },
+  });
+  const a = c?.assessment as { verifyThese?: string[]; interviewQuestions?: string[] } | null;
+  if (!a) done(vAt(candidateId), "Run the assessment first.");
+
+  const wanted = [
+    ...(a!.verifyThese ?? []).map((item) => ({ kind: "verify", item })),
+    ...(a!.interviewQuestions ?? []).map((item) => ({ kind: "question", item })),
+  ];
+
+  const { count } = await prisma.verifyItem.createMany({
+    data: wanted.map((w) => ({ ...w, candidateId })),
+    skipDuplicates: true,
+  });
+
+  revalidatePath(vAt(candidateId));
+  await logHistory({ type: "create", module: "Recruitment > Assessment", description: `Added ${count} items to check`, user: me });
+  done(
+    vAt(candidateId),
+    count ? `${count} item${count === 1 ? "" : "s"} added to work through.` : "Nothing new — every item is already listed.",
+  );
+}
+
+export async function saveVerifyItem(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const id = String(formData.get("itemId") ?? "");
+  if (!id) return;
+  const before = await prisma.verifyItem.findUnique({ where: { id }, select: { candidateId: true } });
+  if (!before) return;
+
+  await prisma.verifyItem.update({
+    where: { id },
+    data: {
+      recruiterRemarks: text(formData, "recruiterRemarks"),
+      managerRemarks: text(formData, "managerRemarks"),
+      status: String(formData.get("status") ?? "Open"),
+    },
+  });
+
+  revalidatePath(vAt(before.candidateId));
+  await logHistory({ type: "update", module: "Recruitment > Assessment", description: "Recorded remarks on an item", user: me });
+  done(vAt(before.candidateId), "Remarks saved.");
+}
+
+export async function deleteVerifyItem(itemId: string) {
+  const me = await requireRecruiter();
+  const r = await prisma.verifyItem.delete({ where: { id: itemId }, select: { candidateId: true } });
+  revalidatePath(vAt(r.candidateId));
+  await logHistory({ type: "delete", module: "Recruitment > Assessment", description: "Removed an item", user: me });
+  done(vAt(r.candidateId), "Item removed.");
 }

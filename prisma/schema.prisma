@@ -59,6 +59,7 @@ model User {
   projectChanges  ProjectChange[]        @relation("ProjectChanges")
   candidates      Candidate[]            @relation("Recruiting")
   preJoVerified   PreJoDoc[]             @relation("PreJoVerifier")
+  assessmentRuns  AssessmentRun[]        @relation("AssessmentRuns")
   passwordResets  PasswordReset[]        @relation("PasswordResets")
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
@@ -844,6 +845,8 @@ model Candidate {
   experience WorkExperience[]
   references CharacterReference[]
   preJoDocs  PreJoDoc[]
+  assessments AssessmentRun[]
+  verifyItems VerifyItem[]
 
   /// Set when the candidate is hired and becomes staff.
   employeeId String?   @unique
@@ -993,6 +996,64 @@ model PreJoDoc {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  @@index([candidateId])
+}
+
+/// Every assessment ever run on a candidate, kept whole.
+///
+/// The candidate carries the latest for quick rendering; this is the record of
+/// what was actually produced, when, against which role and by whom. An
+/// assessment informs a hiring decision, so it should not be silently replaced
+/// by the next run.
+model AssessmentRun {
+  id String @id @default(cuid())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  /// The role it was assessed against — the same CV reads differently for a
+  /// different post, so the question is part of the answer.
+  role   String
+  result Json
+
+  model        String?
+  inputTokens  Int?
+  outputTokens Int?
+
+  runById   String?
+  runBy     User?   @relation("AssessmentRuns", fields: [runById], references: [id], onDelete: SetNull)
+  runByName String  @default("")
+
+  createdAt DateTime @default(now())
+
+  @@index([candidateId, createdAt])
+}
+
+/// One "verify this" item from an assessment, with what the recruiter and the
+/// hiring manager found. Rows rather than a note, so an item cannot be quietly
+/// dropped and each is answered by the person accountable for it.
+model VerifyItem {
+  id String @id @default(cuid())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  /// "verify" — a claim to check; "question" — one to ask at interview.
+  kind String @default("verify")
+
+  /// The claim or question, as the assessment worded it.
+  item String
+
+  recruiterRemarks String?
+  managerRemarks   String?
+
+  /// Open, Verified, Discrepancy, Cannot Verify, Not Applicable.
+  status String @default("Open")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([candidateId, kind, item])
   @@index([candidateId])
 }
 
