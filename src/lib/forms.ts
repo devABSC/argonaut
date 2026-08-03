@@ -6,8 +6,11 @@ import { prisma } from "./prisma";
  */
 export const STANDARD_SLUG = "__standard";
 
+/** How the ticket reached us. A fixed list, not free text. */
+export const CHANNELS = ["Email", "Phone", "Walk In", "Argonaut", "Others"] as const;
+
 export async function getStandardForm() {
-  return (
+  const form =
     (await prisma.formType.findUnique({
       where: { slug: STANDARD_SLUG },
       include: { fields: { orderBy: { sortOrder: "asc" } } },
@@ -15,6 +18,27 @@ export async function getStandardForm() {
     (await prisma.formType.create({
       data: { name: "Standard fields", slug: STANDARD_SLUG },
       include: { fields: true },
-    }))
-  );
+    }));
+
+  // Channel is a choice, and the form is created empty on first use — so seed
+  // it here rather than leaving a free-text box behind. Only created when
+  // absent: an admin who has since edited it keeps their version.
+  if (!form.fields.some((f) => f.key === "channel")) {
+    await prisma.formField.create({
+      data: {
+        formTypeId: form.id,
+        key: "channel",
+        label: "Channel",
+        kind: "SELECT",
+        options: [...CHANNELS],
+        sortOrder: 0,
+      },
+    });
+    return prisma.formType.findUniqueOrThrow({
+      where: { slug: STANDARD_SLUG },
+      include: { fields: { orderBy: { sortOrder: "asc" } } },
+    });
+  }
+
+  return form;
 }
