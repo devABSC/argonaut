@@ -15,7 +15,7 @@ const STATUS = ["Active", "Resigned", "Terminated", "On Leave"];
  */
 export default function AddEmployee({
   bous, companies,
-}: { bous: { id: string; name: string }[]; companies: string[] }) {
+}: { bous: { id: string; name: string }[]; companies: { code: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -44,9 +44,10 @@ export default function AddEmployee({
             </label>
             <label><span>Sub-BOU / Dept</span><input name="subBou" /></label>
             <label><span>Company</span>
-              <select name="company" defaultValue="">
-                <option value="">— none —</option>
-                {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+              {/* First registered company wins — ordered on the Company page. */}
+              <select name="company" defaultValue={companies[0]?.code ?? ""}>
+                {companies.length === 0 && <option value="">— none registered —</option>}
+                {companies.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
               </select>
             </label>
           </div>

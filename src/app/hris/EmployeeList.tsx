@@ -62,9 +62,10 @@ export default async function EmployeeList({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    prisma.employee.findMany({
-      where: { NOT: { company: null } },
-      distinct: ["company"], select: { company: true }, orderBy: { company: "asc" },
+    prisma.company.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { code: true, name: true },
     }),
     prisma.employee.findMany({
       where: { AND: [{ NOT: { subBou: null } }, { NOT: { subBou: "" } }] },
@@ -74,7 +75,8 @@ export default async function EmployeeList({
 
   const bouOptions = bouRows;                       // for the add form
   const bous = bouRows.map((b) => b.name);          // for the filter dropdown
-  const companies = companyRows.map((c) => c.company!).filter(Boolean);
+  const companies = companyRows.map((c) => c.code);
+  const companyOptions = companyRows;  // code + display name, first is the default
   const depts = deptRows.map((d) => d.subBou!).filter(Boolean);
   const qs = (extra: Record<string, string | number>) => {
     const p = new URLSearchParams();
@@ -106,7 +108,7 @@ export default async function EmployeeList({
         />
       </div>
 
-      <AddEmployee bous={bouOptions} companies={companies} />
+      <AddEmployee bous={bouOptions} companies={companyOptions} />
 
       {!isOwner && viewer.company && (
         <p className="pvhelp" style={{ marginTop: 10 }}>
