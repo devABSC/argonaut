@@ -37,3 +37,7 @@ next-env.d.ts
 *.doc
 *.pptx
 *.ppt
+
+# Guides shipped with the app are the exception — everything else of these
+# types stays out of git.
+!public/docs/*.pptx

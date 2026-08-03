@@ -4,7 +4,7 @@ import { projectScope } from "@/lib/project-scope";
 import type { RoleKey } from "@/lib/roles";
 import { createProject, setProjectStatus, deleteProject } from "../actions/projects";
 import { PROJECT_STATUS, PROJECT_PILL } from "@/lib/projects";
-import { IconTrash, IconSave } from "../icons";
+import { IconTrash, IconSave, IconDownload } from "../icons";
 import CellSelect from "../settings/CellSelect";
 import MemberPicker from "./MemberPicker";
 
@@ -63,6 +63,16 @@ export default async function ProjectList({
           <h2>Projects <span className="count">{projects.length}</span></h2>
           <span className="spacer" />
           <span className="tree-meta">{live} open</span>
+          {/* The written guide to this module, downloadable rather than a page
+              to read on screen — it is a deck people take into a briefing. */}
+          <a
+            className="viewtoggle"
+            href="/docs/Argonaut-PROJECT-and-Tasks.pptx"
+            download
+            title="Download the PROJECT & Tasks guide (PowerPoint)"
+          >
+            <IconDownload /> Project UserGuide
+          </a>
         </div>
 
         {projects.length === 0 ? (
