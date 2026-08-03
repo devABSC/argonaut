@@ -303,7 +303,7 @@ export default async function SoaPanel({
               </div>
 
               <div className="tablewrap">
-                <table className="utable">
+                <table className="utable stacked">
                   <thead><tr>
                     <th>Date</th><th>Item Description</th>
                     <th className="amt">Debit / Charges</th>

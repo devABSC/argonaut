@@ -99,11 +99,13 @@ export default async function ProjectList({
                   <tr key={p.id}>
                     <td className="numcol" data-label="No.">{i + 1}</td>
                     <td data-label="Project">
-                      <Link className="ticket" href={`/project/project/${p.id}/project-info`}>
+                      <Link className="ticket wrap" href={`/project/project/${p.id}/project-info`}>
                         {p.name}
                       </Link>
                     </td>
-                    <td className="muted" data-label="Customer">{p.customer ?? "—"}</td>
+                    <td className="muted clip narrow" data-label="Customer" title={p.customer ?? undefined}>
+                      {p.customer ?? "—"}
+                    </td>
                     <td className="muted clip" data-label="Description" title={p.description ?? undefined}>
                       {p.description ?? "—"}
                     </td>

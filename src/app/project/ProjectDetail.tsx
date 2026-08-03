@@ -133,7 +133,7 @@ export default async function ProjectDetail({
             <p style={{ marginTop: 16 }}>No milestones yet.</p>
           ) : (
             <div className="tablewrap">
-              <table className="utable">
+              <table className="utable stacked">
                 <thead><tr>
                   <th className="numcol">No.</th><th>Milestone</th><th>Due</th>
                   <th>Owner</th><th>Status</th><th>Completed</th><th />
@@ -145,7 +145,7 @@ export default async function ProjectDetail({
                     return (
                       <Fragment key={m.id}>
                         <tr className={m.id === current?.id ? "iscurrent" : undefined}>
-                          <td className="numcol">{i + 1}</td>
+                          <td className="numcol" data-label="No.">{i + 1}</td>
                           <td>
                             {m.id === edit ? (
                               // The whole form lives in this one cell — a form
@@ -168,10 +168,10 @@ export default async function ProjectDetail({
                               </>
                             )}
                           </td>
-                          <td className={late ? "nowrap" : "muted nowrap"}>
+                          <td className={late ? "nowrap" : "muted nowrap"} data-label="Due">
                             {day(m.dueDate)}{late && <span className="you">overdue</span>}
                           </td>
-                          <td><Owner o={m.owner} /></td>
+                          <td data-label="Owner"><Owner o={m.owner} /></td>
                           <td>
                             <form action={setMilestoneStatus}>
                               <input type="hidden" name="milestoneId" value={m.id} />
@@ -179,7 +179,7 @@ export default async function ProjectDetail({
                                 options={MILESTONE_STATUS.map((s) => ({ value: s, label: s }))} />
                             </form>
                           </td>
-                          <td className="muted nowrap">{day(m.completedAt)}</td>
+                          <td className="muted nowrap" data-label="Completed">{day(m.completedAt)}</td>
                           <td className="rowacts">
                             {/* Sequential, so the run is reordered by hand.
                                 Disabled at the ends rather than hidden, so the
@@ -314,7 +314,7 @@ export default async function ProjectDetail({
             <p style={{ marginTop: 16 }}>Nothing blocking this project.</p>
           ) : (
             <div className="tablewrap">
-              <table className="utable">
+              <table className="utable stacked">
                 <thead><tr>
                   <th className="numcol">No.</th><th>Roadblock</th><th>Severity</th>
                   <th>Owner</th><th>Status</th><th>Raised</th><th>Resolved</th><th />
@@ -322,14 +322,14 @@ export default async function ProjectDetail({
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={r.id}>
-                      <td className="numcol">{i + 1}</td>
-                      <td>{r.description}</td>
+                      <td className="numcol" data-label="No.">{i + 1}</td>
+                      <td data-label="Detail">{r.description}</td>
                       <td>
                         <span className={`pill ${r.severity === "Critical" || r.severity === "High" ? "s-REJECTED" : "s-PENDING"}`}>
                           {r.severity}
                         </span>
                       </td>
-                      <td><Owner o={r.owner} /></td>
+                      <td data-label="Owner"><Owner o={r.owner} /></td>
                       <td>
                         <form action={setRoadblockStatus}>
                           <input type="hidden" name="roadblockId" value={r.id} />
@@ -406,7 +406,7 @@ export default async function ProjectDetail({
             <p style={{ marginTop: 16 }}>No risks logged.</p>
           ) : (
             <div className="tablewrap">
-              <table className="utable">
+              <table className="utable stacked">
                 <thead><tr>
                   <th className="numcol">No.</th><th>Risk</th><th>Likelihood</th><th>Impact</th>
                   <th>Mitigation</th><th>Owner</th><th>Status</th><th />
@@ -414,12 +414,12 @@ export default async function ProjectDetail({
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={r.id}>
-                      <td className="numcol">{i + 1}</td>
-                      <td>{r.description}</td>
+                      <td className="numcol" data-label="No.">{i + 1}</td>
+                      <td data-label="Detail">{r.description}</td>
                       <td className="muted">{r.likelihood}</td>
                       <td className="muted">{r.impact}</td>
                       <td className="muted">{r.mitigation ?? "—"}</td>
-                      <td><Owner o={r.owner} /></td>
+                      <td data-label="Owner"><Owner o={r.owner} /></td>
                       <td>
                         <form action={setRiskStatus}>
                           <input type="hidden" name="riskId" value={r.id} />

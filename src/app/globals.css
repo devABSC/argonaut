@@ -222,7 +222,9 @@ button{font-family:inherit}
 /* Settings -> Users table */
 .app .panel h2 .count{margin-left:9px;font-family:var(--mono);font-size:.7rem;color:var(--faint);vertical-align:middle}
 .app .tablewrap{margin-top:18px;overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-.app .utable{width:100%;border-collapse:collapse;font-size:.9rem;min-width:720px}
+/* No min-width: a table that cannot shrink forces the whole page to scroll
+   sideways, which is the one thing a table must never do. */
+.app .utable{width:100%;border-collapse:collapse;font-size:.9rem;min-width:0;table-layout:auto}
 .app .utable th{text-align:left;font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:500;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
 .app .utable td{padding:11px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 .app .utable tr:last-child td{border-bottom:0}
@@ -359,6 +361,8 @@ button{font-family:inherit}
 .app .banner b{font-family:var(--mono);font-size:.9em}
 .app .banner{margin-bottom:16px;padding:13px 17px;border-radius:12px;border:1px solid rgba(55,232,160,.35);background:rgba(55,232,160,.1);color:#37E8A0;font-size:.92rem}
 .app .ticket{display:inline-block;font-family:var(--mono);font-size:.8rem;color:var(--cyan);background:rgba(56,232,255,.09);border:1px solid rgba(56,232,255,.22);border-radius:6px;padding:3px 7px;white-space:nowrap}
+/* Names are not references — they wrap rather than stretch the column. */
+.app .utable .ticket.wrap{white-space:normal;overflow-wrap:anywhere;max-width:30ch;line-height:1.35}
 .app a.ticket:hover{background:rgba(56,232,255,.18);border-color:rgba(56,232,255,.5)}
 .app .utable a.save.icon{text-decoration:none}
 .app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
@@ -367,6 +371,7 @@ button{font-family:inherit}
 .app .utable .peoplecell{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .app .utable .peoplecell .skill{white-space:nowrap}
 .app .utable .clip{max-width:26ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app .utable .clip.narrow{max-width:18ch}
 
 .app .frow.crow{grid-template-columns:minmax(120px,.9fr) minmax(150px,1.3fr) minmax(110px,.9fr) minmax(160px,1.5fr) minmax(150px,1.2fr) auto}
 .app .frow.crow.chead{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px}
@@ -444,7 +449,7 @@ button{font-family:inherit}
 .app .empform .secdiv:first-child{margin-top:0}
 
 /* Employee list */
-@media (max-width:720px){
+@media (max-width:1000px){
   .app .empsearch{width:100%}
   .app .empsearch input{flex:1;min-width:0}
   .app .cat-head{gap:10px}

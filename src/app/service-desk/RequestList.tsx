@@ -40,7 +40,7 @@ export default function RequestList({
         <p style={{ marginTop: 16 }}>{emptyText}</p>
       ) : (
         <div className="tablewrap">
-          <table className="utable">
+          <table className="utable stacked">
             <thead>
               <tr>
                 <th className="numcol">No.</th>
