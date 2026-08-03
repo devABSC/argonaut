@@ -37,16 +37,10 @@ export const NAV: NavSection[] = [
     key: "hris",
     label: "HRIS",
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
-    tabs: [
-      { slug: "employees", label: "Employees" },
-      { slug: "personal-info", label: "Personal Info" },
-      { slug: "contract", label: "Contract" },
-      { slug: "vlsl", label: "VLSL" },
-      { slug: "report-to", label: "Report To" },
-      { slug: "statutory", label: "Statutory" },
-      { slug: "201-logs", label: "201 Logs" },
-      { slug: "medical", label: "Medical" },
-    ],
+    // Personal Info, Contract, Report To, Statutory, Medical, NTE-CAR, VLSL and
+    // 201 Logs are per-employee views — they live inside a person's record at
+    // /hris/employee/{id}/{view}, not in this strip.
+    tabs: [{ slug: "employees", label: "Employees" }],
   },
   {
     key: "finance",
@@ -107,7 +101,7 @@ export const NAV: NavSection[] = [
       { slug: "users", label: "Users" },
       { slug: "company", label: "Company" },
       { slug: "bou", label: "BOU" },
-      { slug: "email", label: "Email PW" },
+      { slug: "email", label: "Email" },
       { slug: "roles", label: "Roles" },
       { slug: "rbac", label: "RBAC" },
     ],

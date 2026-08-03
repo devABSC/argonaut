@@ -45,10 +45,6 @@ export default async function PersonalInfoPanel({ empId }: { empId?: string }) {
 
   return (
     <>
-      <div className="viewbar">
-        <Link className="viewtoggle" href="/hris/employees">← Back to employees</Link>
-      </div>
-
       <div className="panel">
         <div className="cat-head">
           <h2>{fullName}</h2>

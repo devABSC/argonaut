@@ -51,11 +51,14 @@ export async function requestReset(_prev: ResetState, formData: FormData): Promi
     await notify({
       to: email,
       kind: "password_reset",
-      subject: `Argonaut password reset code: ${code}`,
+      subject: `Password reset code: ${code}`,
       body: [
         `Hello ${user.name},`,
         ``,
-        `Your password reset code is ${code}.`,
+        `Use the code below to set a new password.`,
+        ``,
+        `[[CODE:${code}]]`,
+        ``,
         `It expires in ${CODE_TTL_MIN} minutes and can be used once.`,
         ``,
         `If you did not ask for this, ignore this email — your password has not changed.`,

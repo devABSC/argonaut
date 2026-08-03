@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { saveBou, createBou, toggleBou, deleteBou } from "../actions/bou";
+import { saveBou, createBou, deleteBou } from "../actions/bou";
+import ActiveToggle from "./ActiveToggle";
 import { IconSave, IconTrash, IconPlus } from "../icons";
 
 /** The BOU register. Only active BOUs are offered anywhere in HRIS. */
@@ -17,7 +18,8 @@ export default async function BouPanel() {
         <span className="count">{active} active of {bous.length}</span>
       </h2>
       <p>
-        Only active BOUs appear in the HRIS filters and on the employee form.
+        Flicking Active saves the row on the spot. Only active BOUs appear in
+        the HRIS filters and on the employee form.
         A BOU with employees cannot be deleted — deactivate it instead, which
         keeps existing records intact while stopping new assignments.
       </p>
@@ -39,10 +41,10 @@ export default async function BouPanel() {
             <span className={b._count.employees > 0 ? "pill s-ACTIVE" : "tree-meta"}>
               {b._count.employees}
             </span>
-            <label className="req">
-              <input type="checkbox" name="isActive" defaultChecked={b.isActive} />
-              {b.isDefault ? "Default" : "Active"}
-            </label>
+            <ActiveToggle
+              defaultChecked={b.isActive}
+              label={b.isDefault ? "Default" : b.isActive ? "Active" : "Inactive"}
+            />
             <span className="rowacts">
               <button className="save icon" type="submit" title="Save" aria-label="Save"><IconSave /></button>
               <button

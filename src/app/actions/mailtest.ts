@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
-import { notify, routeToMailgun } from "@/lib/notify";
+import { notify, routeToMailgun, smtpSettings } from "@/lib/notify";
 import { mailgunConfigured } from "@/lib/mailgun";
 import { logHistory } from "@/lib/log";
 import { done } from "@/lib/flash";
@@ -12,24 +12,23 @@ const PATH = "/marketing/diagnostics";
 
 /** What the engine can currently do, without sending anything. */
 export async function mailStatus() {
-  const smtpPass =
-    (await prisma.setting.findUnique({ where: { key: "smtp_pass" } }).catch(() => null))?.value ||
-    process.env.SMTP_PASS;
+  const smtp = await smtpSettings();
+  const fromSetting = await prisma.setting.findUnique({ where: { key: "mail_from" } }).catch(() => null);
 
   return {
     smtp: {
-      host: process.env.SMTP_HOST ?? null,
-      port: process.env.SMTP_PORT ?? "587",
-      user: process.env.SMTP_USER ? "set" : null,
-      pass: smtpPass ? "set" : null,
-      ready: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && smtpPass),
+      host: smtp.host ?? null,
+      port: String(smtp.port),
+      user: smtp.user ?? null,
+      pass: smtp.pass ? "set" : null,
+      ready: Boolean(smtp.host && smtp.user && smtp.pass),
     },
     mailgun: {
       domain: process.env.MAILGUN_DOMAIN ?? null,
       key: process.env.MAILGUN_API_KEY ? "set" : null,
       ready: await mailgunConfigured(),
     },
-    from: process.env.MAIL_FROM ?? null,
+    from: fromSetting?.value ?? process.env.MAIL_FROM ?? null,
   };
 }
 

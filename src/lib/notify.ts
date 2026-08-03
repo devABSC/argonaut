@@ -2,6 +2,7 @@ import { promises as dnsp } from "dns";
 import nodemailer, { type Transporter } from "nodemailer";
 import { prisma } from "./prisma";
 import { getMailgunConfig, mailgunConfigured, sendViaMailgun } from "./mailgun";
+import { renderStandard } from "./email-template";
 
 /**
  * Two transports, chosen per recipient — the approach benta settled on.
@@ -47,21 +48,40 @@ export async function routeToMailgun(email: string): Promise<boolean> {
   return friendly;
 }
 
-/** The SMTP password is read fresh so it can be rotated without a redeploy. */
-async function smtpPass(): Promise<string | undefined> {
-  const row = await prisma.setting.findUnique({ where: { key: "smtp_pass" } }).catch(() => null);
-  return row?.value || process.env.SMTP_PASS || undefined;
+/**
+ * Settings saved in the UI win over environment variables, so credentials can
+ * be rotated without a redeploy. Read fresh on every send.
+ */
+export async function smtpSettings() {
+  const rows = await prisma.setting
+    .findMany({ where: { key: { in: ["smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_secure"] } } })
+    .catch(() => []);
+  const s = new Map(rows.map((r) => [r.key, r.value]));
+
+  const port = Number(s.get("smtp_port") || process.env.SMTP_PORT || 587);
+  const secureRaw = s.get("smtp_secure") ?? process.env.SMTP_SECURE;
+
+  return {
+    host: s.get("smtp_host") || process.env.SMTP_HOST || undefined,
+    user: s.get("smtp_user") || process.env.SMTP_USER || undefined,
+    pass: s.get("smtp_pass") || process.env.SMTP_PASS || undefined,
+    port,
+    secure: secureRaw ? secureRaw === "true" : port === 465,
+  };
 }
 
 async function getTransport(): Promise<Transporter | null> {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = await smtpPass();
+  const { host, user, pass, port, secure } = await smtpSettings();
   if (!host || !user || !pass) return null;
 
-  const port = Number(process.env.SMTP_PORT ?? 587);
-  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465;
-  return nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+  return nodemailer.createTransport({
+    host, port, secure,
+    auth: { user, pass },
+    // Fail fast rather than hanging a request for a minute.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
+  });
 }
 
 export interface NotifyInput {
@@ -71,6 +91,11 @@ export interface NotifyInput {
   kind: string;
   requestId?: string;
   fromName?: string;
+  /**
+   * Which email template dresses the message. Standard NoReply unless a
+   * caller names another; pass null only for mail that must go out bare.
+   */
+  template?: string | null;
 }
 
 /**
@@ -78,12 +103,17 @@ export interface NotifyInput {
  * problem must not roll back the action that triggered it.
  */
 export async function notify(input: NotifyInput): Promise<void> {
+  const { text, html } =
+    input.template === null
+      ? { text: input.body, html: undefined as string | undefined }
+      : await renderStandard(input.subject, input.body, input.template);
+
   const note = await prisma.notification.create({
     data: {
       channel: "email",
       to: input.to,
       subject: input.subject,
-      body: input.body,
+      body: text,
       kind: input.kind,
       requestId: input.requestId ?? null,
     },
@@ -94,7 +124,7 @@ export async function notify(input: NotifyInput): Promise<void> {
 
     if (preferMailgun) {
       const { id } = await sendViaMailgun({
-        to: input.to, subject: input.subject, text: input.body, fromName: input.fromName,
+        to: input.to, subject: input.subject, text, html, fromName: input.fromName,
       });
       await prisma.notification.update({
         where: { id: note.id },
@@ -114,12 +144,20 @@ export async function notify(input: NotifyInput): Promise<void> {
       return;
     }
 
-    const from = process.env.MAIL_FROM ?? (await getMailgunConfig()).from ?? "Argonaut <no-reply@localhost>";
+    const fromSetting = await prisma.setting.findUnique({ where: { key: "mail_from" } }).catch(() => null);
+    const { user: smtpUser } = await smtpSettings();
+    const from =
+      fromSetting?.value ||
+      process.env.MAIL_FROM ||
+      (await getMailgunConfig()).from ||
+      smtpUser ||
+      "Argonaut <no-reply@localhost>";
     await tx.sendMail({
       from: input.fromName ? `${input.fromName} <${from.replace(/^.*</, "").replace(/>$/, "")}>` : from,
       to: input.to,
       subject: input.subject,
-      text: input.body,
+      text,
+      html,
     });
     await prisma.notification.update({
       where: { id: note.id },

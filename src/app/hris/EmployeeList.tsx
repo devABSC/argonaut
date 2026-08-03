@@ -159,7 +159,7 @@ export default async function EmployeeList({
                       {e.middleName && <span className="muted"> {e.middleName}</span>}
                     </td>
                     <td className="muted" data-label="ID">
-                      <Link className="ticket" href={`/hris/personal-info?emp=${e.id}`}>{e.individ}</Link>
+                      <Link className="ticket" href={`/hris/employee/${e.id}/personal-info`}>{e.individ}</Link>
                     </td>
                     <td data-label="Job Title">{e.jobTitle ?? "—"}</td>
                     <td className="muted" data-label="BOU">{e.bou?.name ?? "—"}</td>
