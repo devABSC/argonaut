@@ -2,15 +2,22 @@
 
 import { useActionState, useState } from "react";
 import { signIn, signUp, type AuthState } from "../actions/auth";
+import { requestReset, confirmReset, type ResetState } from "../actions/password";
 
 const empty: AuthState = {};
+const emptyReset: ResetState = { stage: "request" };
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [inState, inAction, inPending] = useActionState(signIn, empty);
   const [upState, upAction, upPending] = useActionState(signUp, empty);
+  const [reqState, reqAction, reqPending] = useActionState(requestReset, emptyReset);
+  const [cfmState, cfmAction, cfmPending] = useActionState(confirmReset, emptyReset);
 
   const isSignup = mode === "signup";
+  const isForgot = mode === "forgot";
+  // Once a code has been issued we move to the verify step and stay there.
+  const verifying = reqState.stage === "verify" || cfmState.stage === "verify";
   const action = isSignup ? upAction : inAction;
   const state = isSignup ? upState : inState;
   const pending = isSignup ? upPending : inPending;
@@ -36,8 +43,56 @@ export default function LoginPage() {
 
           <div className="card">
             <p className="eyebrow"><span className="live" />Encrypted Connection</p>
-            <h1>{isSignup ? "Create account" : "Sign in"}</h1>
+            <h1>{isForgot ? (verifying ? "Enter your code" : "Reset password") : isSignup ? "Create account" : "Sign in"}</h1>
 
+            {isForgot ? (
+              verifying ? (
+                <form action={cfmAction}>
+                  <div className="field">
+                    <label htmlFor="r-email">Email</label>
+                    <input className="input" id="r-email" name="email" type="email" required autoComplete="email" />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="r-code">6-digit code</label>
+                    <input
+                      className="input" id="r-code" name="code" inputMode="numeric" pattern="\\d{6}"
+                      maxLength={6} placeholder="000000" required autoComplete="one-time-code"
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="r-pass">New password</label>
+                    <input className="input" id="r-pass" name="password" type="password" required autoComplete="new-password" />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="r-confirm">Confirm password</label>
+                    <input className="input" id="r-confirm" name="confirm" type="password" required autoComplete="new-password" />
+                  </div>
+
+                  {cfmState.error && <p className="err">{cfmState.error}</p>}
+                  {(cfmState.notice || reqState.notice) && (
+                    <p className="notice">{cfmState.notice || reqState.notice}</p>
+                  )}
+
+                  <button className="btn" type="submit" disabled={cfmPending}>
+                    {cfmPending ? "Please wait…" : "Change password →"}
+                  </button>
+                </form>
+              ) : (
+                <form action={reqAction}>
+                  <div className="field">
+                    <label htmlFor="f-email">Email</label>
+                    <input className="input" id="f-email" name="email" type="email" placeholder="you@domain.com" required autoComplete="email" />
+                  </div>
+
+                  {reqState.error && <p className="err">{reqState.error}</p>}
+                  {reqState.notice && <p className="notice">{reqState.notice}</p>}
+
+                  <button className="btn" type="submit" disabled={reqPending}>
+                    {reqPending ? "Please wait…" : "Email me a code →"}
+                  </button>
+                </form>
+              )
+            ) : (
             <form action={action}>
               {isSignup && (
                 <div className="field">
@@ -67,12 +122,29 @@ export default function LoginPage() {
                 {pending ? "Please wait…" : isSignup ? "Create account →" : "Enter workspace →"}
               </button>
             </form>
+            )}
 
             <p className="toggle">
-              {isSignup ? "Already aboard? " : "No account yet? "}
-              <button type="button" className="link" onClick={() => setMode(isSignup ? "signin" : "signup")}>
-                {isSignup ? "Sign in" : "Create one"}
-              </button>
+              {isForgot ? (
+                <button type="button" className="link" onClick={() => setMode("signin")}>
+                  Back to sign in
+                </button>
+              ) : (
+                <>
+                  {isSignup ? "Already aboard? " : "No account yet? "}
+                  <button type="button" className="link" onClick={() => setMode(isSignup ? "signin" : "signup")}>
+                    {isSignup ? "Sign in" : "Create one"}
+                  </button>
+                  {!isSignup && (
+                    <>
+                      {" · "}
+                      <button type="button" className="link" onClick={() => setMode("forgot")}>
+                        Forgot password?
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </p>
           </div>
         </section>

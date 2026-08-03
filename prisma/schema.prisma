@@ -51,6 +51,7 @@ model User {
   // Service desk
   workflowSteps  WorkflowStepApprover[] @relation("StepActorOf")
   menuGrants     MenuGrant[]            @relation("MenuGrants")
+  passwordResets PasswordReset[]        @relation("PasswordResets")
   employee       Employee?              @relation("EmployeeAccount")
   ownedClients   Client[]               @relation("ClientOwner")
   ownedDeals     Deal[]                 @relation("DealOwner")
@@ -642,4 +643,21 @@ model Suppression {
   email     String   @id
   reason    String?
   createdAt DateTime @default(now())
+}
+
+/// A one-time code emailed before a password may be reset. The code itself is
+/// never stored — only a bcrypt hash — so a database leak cannot be replayed.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation("PasswordResets", fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  /// Wrong guesses. The code dies after a handful.
+  attempts  Int       @default(0)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
