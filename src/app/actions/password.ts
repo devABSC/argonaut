@@ -112,8 +112,20 @@ export async function confirmReset(_prev: ResetState, formData: FormData): Promi
     return bad;
   }
 
+  // Refuse the password they are already using — expiry must mean a real change.
+  if (await bcrypt.compare(password, user.passwordHash)) {
+    return { error: "Choose a password you have not used here before.", stage: "verify" };
+  }
+
   await prisma.$transaction([
-    prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(password) } }),
+    prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await hashPassword(password),
+        mustChangePassword: false,
+        passwordChangedAt: new Date(),
+      },
+    }),
     prisma.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
     // Anyone holding a session signed in under the old password.
     prisma.session.deleteMany({ where: { userId: user.id } }),

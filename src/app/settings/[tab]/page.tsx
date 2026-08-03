@@ -7,6 +7,7 @@ import RbacPanel from "../RbacPanel";
 import CompanyPanel from "../CompanyPanel";
 import RolesPanel from "../RolesPanel";
 import BouPanel from "../BouPanel";
+import EmailPanel from "../EmailPanel";
 
 export default async function SettingsTab({
   params,
@@ -31,6 +32,7 @@ export default async function SettingsTab({
       {active.slug === "company" && <CompanyPanel />}
       {active.slug === "roles" && <RolesPanel />}
       {active.slug === "bou" && <BouPanel />}
+      {active.slug === "email" && <EmailPanel />}
       {active.slug === "rbac" && <RbacPanel userId={u} />}
     </AppShell>
   );

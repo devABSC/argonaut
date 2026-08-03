@@ -405,6 +405,8 @@ button{font-family:inherit}
 .app .empform input,.app .empform select,.app .empform textarea{width:100%;font-family:var(--body);font-size:.88rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
 .app .empform input:focus,.app .empform select:focus,.app .empform textarea:focus{outline:none;border-color:var(--cyan)}
 .app .empform textarea{resize:vertical}
+.app .setflag{font-style:normal;color:#37E8A0;font-size:.9em}
+.app .setflag.env{color:var(--faint)}
 .app .empform .full{margin-top:14px}
 .app .empform .checkrow{display:flex;gap:20px;margin-top:14px}
 .app .empform .secdiv{margin-top:18px}

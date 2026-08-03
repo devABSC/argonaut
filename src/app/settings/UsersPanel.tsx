@@ -8,7 +8,8 @@ import {
   type Actor,
 } from "@/lib/rbac";
 import { approveRegistration, rejectRegistration, updateUserFromForm } from "../actions/users";
-import { IconSave, IconCheck, IconX } from "../icons";
+import { requirePasswordChange } from "../actions/changepw";
+import { IconSave, IconCheck, IconX, IconEdit } from "../icons";
 
 /** Manila time — the server runs UTC. */
 const fmtWhen = (d: Date) =>
@@ -158,6 +159,12 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                           <button className="save icon" type="submit" title="Save" aria-label="Save">
                             <IconSave />
                           </button>
+                          <button
+                            className="reject icon" type="submit"
+                            title="Require a password change at next sign-in"
+                            aria-label="Require password change"
+                            formAction={requirePasswordChange.bind(null, u.id)}
+                          ><IconEdit /></button>
                         </form>
                       </td>
                     ) : (

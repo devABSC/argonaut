@@ -5,6 +5,8 @@ import { prisma } from "./prisma";
 import type { User } from "@prisma/client";
 import type { RoleKey } from "./roles";
 
+export { PASSWORD_MAX_AGE_DAYS, passwordExpired, needsPasswordChange } from "./password-policy";
+
 const SESSION_COOKIE = "argonaut_session";
 const SESSION_DAYS = 30;
 
@@ -45,6 +47,7 @@ export async function destroySession(): Promise<void> {
 
 /** The signed-in user, with `role` flattened to its stable key. */
 export type SessionUser = Omit<User, "role"> & { role: RoleKey; roleId: string };
+
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const jar = await cookies();

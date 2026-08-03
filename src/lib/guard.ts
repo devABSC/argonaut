@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { getCurrentUser } from "./auth";
+import { getCurrentUser, needsPasswordChange } from "./auth";
 import { findSection } from "./nav";
 import { effectiveAccess, canOpenModule, canOpenTab, navFor } from "./access";
 
@@ -13,6 +13,10 @@ import { effectiveAccess, canOpenModule, canOpenTab, navFor } from "./access";
 export async function requireAccess(sectionKey: string, tabSlug?: string) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  // Checked here rather than in the UI, so it cannot be walked around by
+  // typing a URL.
+  if (needsPasswordChange(user)) redirect("/change-password");
 
   const grants = await effectiveAccess(user);
   if (!canOpenModule(grants, sectionKey)) notFound();

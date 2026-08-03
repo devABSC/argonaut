@@ -107,6 +107,7 @@ export const NAV: NavSection[] = [
       { slug: "users", label: "Users" },
       { slug: "company", label: "Company" },
       { slug: "bou", label: "BOU" },
+      { slug: "email", label: "Email PW" },
       { slug: "roles", label: "Roles" },
       { slug: "rbac", label: "RBAC" },
     ],

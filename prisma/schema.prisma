@@ -18,16 +18,20 @@ enum AccountStatus {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  name         String
-  passwordHash String // bcrypt
-  roleId       String
-  role         Role          @relation(fields: [roleId], references: [id])
-  status       AccountStatus @default(PENDING)
+  id                 String        @id @default(cuid())
+  email              String        @unique
+  name               String
+  passwordHash       String // bcrypt
+  roleId             String
+  role               Role          @relation(fields: [roleId], references: [id])
+  status             AccountStatus @default(PENDING)
   /// Which company this account belongs to; matches Employee.company codes.
-  company      String?
-  createdAt    DateTime      @default(now())
+  company            String?
+  /// Set on accounts whose password was not chosen by the person using them.
+  /// They are held at the change-password screen until they pick their own.
+  mustChangePassword Boolean       @default(false)
+  passwordChangedAt  DateTime?
+  createdAt          DateTime      @default(now())
 
   /// Audit of the last change made to this account from Settings -> Users.
   updatedAt   DateTime @default(now()) @updatedAt
