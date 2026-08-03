@@ -222,6 +222,7 @@ button{font-family:inherit}
 .app .utable td{padding:11px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 .app .utable tr:last-child td{border-bottom:0}
 .app .utable tr:hover td{background:var(--s2)}
+.app .utable .nowrap{white-space:nowrap}
 .app .utable .muted{color:var(--muted)}
 .app .utable .you{margin-left:8px;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(56,232,255,.35);border-radius:5px;padding:2px 5px}
 .app .utable select{font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 9px;max-width:190px}

@@ -71,17 +71,17 @@ assert.deepEqual(keys("EMPLOYEE"), ["service-desk"], "employee sees only service
 assert.deepEqual(keys("SUPERVISOR"), ["service-desk"], "supervisor sees only service desk");
 assert.deepEqual(
   keys("HR_SUPERVISOR"),
-  ["service-desk", "hris", "settings"],
+  ["service-desk", "hris", "reports-analytics", "settings"],
   "hr supervisor gets HRIS and settings, but not finance/workflow",
 );
 assert.deepEqual(
   keys("ADMINISTRATOR"),
-  ["service-desk", "hris", "finance", "workflow", "settings"],
+  ["service-desk", "hris", "finance", "workflow", "reports-analytics", "settings"],
   "administrator sees finance + workflow config + settings",
 );
 assert.deepEqual(
   keys("SUPER_USER"),
-  ["service-desk", "hris", "finance", "workflow", "settings"],
+  ["service-desk", "hris", "finance", "workflow", "reports-analytics", "settings"],
   "super user sees everything",
 );
 n += 5;

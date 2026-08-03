@@ -30,6 +30,14 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M6.3 8.4v7.2M9.6 5.9h5.1a3 3 0 013 3v6.7" />
     </svg>
   ),
+  "reports-analytics": (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M3.5 20.5h17" />
+      <rect x="5" y="11" width="3.4" height="7" rx="1" />
+      <rect x="10.3" y="6.5" width="3.4" height="11.5" rx="1" />
+      <rect x="15.6" y="9" width="3.4" height="9" rx="1" />
+    </svg>
+  ),
   settings: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <circle cx="12" cy="12" r="3" />

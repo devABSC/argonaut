@@ -70,6 +70,15 @@ export const NAV: NavSection[] = [
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
+    key: "reports-analytics",
+    label: "Reports-Analytics",
+    tabs: [
+      { slug: "overview", label: "Overview" },
+      { slug: "service-desk", label: "Service Desk" },
+    ],
+    roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
+  },
+  {
     key: "settings",
     label: "Settings",
     tabs: [

@@ -14,6 +14,9 @@ ok("hr supervisor MAY open HRIS", defaultAllows("HR_SUPERVISOR", "hris"));
 ok("employee may NOT open Workflow", !defaultAllows("EMPLOYEE", "workflow"));
 ok("employee may NOT open Settings", !defaultAllows("EMPLOYEE", "settings"));
 ok("unknown node denied", !defaultAllows("SUPER_USER", "does-not-exist"));
+ok("employee may NOT open Reports-Analytics", !defaultAllows("EMPLOYEE", "reports-analytics"));
+ok("admin MAY open Reports-Analytics", defaultAllows("ADMINISTRATOR", "reports-analytics"));
+ok("reports module is in the tree", allNodes().some((x) => x.key === "reports-analytics:overview"));
 
 /* --- submenu keys inherit their module's default --- */
 ok("submenu key resolves via its module", defaultAllows("EMPLOYEE", "service-desk:new-request"));

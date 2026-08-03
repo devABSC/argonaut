@@ -10,6 +10,14 @@ import {
 import { approveRegistration, rejectRegistration, updateUserFromForm } from "../actions/users";
 import { IconSave, IconCheck, IconX } from "../icons";
 
+/** Manila time — the server runs UTC. */
+const fmtWhen = (d: Date) =>
+  d.toLocaleString("en-GB", {
+    timeZone: "Asia/Manila",
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: true,
+  });
+
 const STATUS_LABEL: Record<string, string> = {
   ACTIVE: "Active",
   PENDING: "Pending approval",
@@ -22,8 +30,9 @@ export default async function UsersPanel({ me }: { me: Actor }) {
     orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
       id: true, name: true, email: true, role: true, status: true,
-      managerId: true, createdAt: true,
+      managerId: true, createdAt: true, updatedAt: true,
       manager: { select: { name: true } },
+      updatedBy: { select: { name: true } },
     },
   });
 
@@ -84,6 +93,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
             <thead>
               <tr>
                 <th>Name</th><th>Email</th><th>Role</th><th>Reports to</th><th>Status</th>
+                <th>Last updated</th><th>Updated by</th>
                 {canEdit && <th />}
               </tr>
             </thead>
@@ -129,6 +139,8 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                         <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
                       </>
                     )}
+                    <td className="muted nowrap">{fmtWhen(u.updatedAt)}</td>
+                    <td className="muted">{u.updatedBy?.name ?? "—"}</td>
                     {canEdit && !editable && <td />}
                   </tr>
                 );

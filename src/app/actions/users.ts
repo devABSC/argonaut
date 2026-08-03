@@ -25,7 +25,7 @@ export async function approveRegistration(userId: string) {
 
   await prisma.user.update({
     where: { id: userId },
-    data: { status: "ACTIVE", approvedAt: new Date(), approvedById: me.id },
+    data: { status: "ACTIVE", approvedAt: new Date(), approvedById: me.id, updatedById: me.id },
   });
   revalidatePath("/settings/users");
 }
@@ -39,7 +39,7 @@ export async function rejectRegistration(userId: string) {
 
   await prisma.user.update({
     where: { id: userId },
-    data: { status: "REJECTED", approvedById: me.id },
+    data: { status: "REJECTED", approvedById: me.id, updatedById: me.id },
   });
   // Kill any session the account may already hold.
   await prisma.session.deleteMany({ where: { userId } });
@@ -59,7 +59,7 @@ export async function setUserRole(userId: string, role: Role) {
     if (supers <= 1) throw new Error("LAST_SUPER_USER");
   }
 
-  await prisma.user.update({ where: { id: userId }, data: { role } });
+  await prisma.user.update({ where: { id: userId }, data: { role, updatedById: me.id } });
   revalidatePath("/settings/users");
 }
 
@@ -92,6 +92,6 @@ export async function setUserManager(userId: string, managerId: string | null) {
   if (!canManageUser(me, target)) deny();
   if (managerId === userId) throw new Error("SELF_MANAGER");
 
-  await prisma.user.update({ where: { id: userId }, data: { managerId } });
+  await prisma.user.update({ where: { id: userId }, data: { managerId, updatedById: me.id } });
   revalidatePath("/settings/users");
 }

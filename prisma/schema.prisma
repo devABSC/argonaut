@@ -34,6 +34,12 @@ model User {
   status       AccountStatus @default(PENDING)
   createdAt    DateTime      @default(now())
 
+  /// Audit of the last change made to this account from Settings -> Users.
+  updatedAt   DateTime @default(now()) @updatedAt
+  updatedById String?
+  updatedBy   User?    @relation("UserEdits", fields: [updatedById], references: [id], onDelete: SetNull)
+  edits       User[]   @relation("UserEdits")
+
   approvedAt   DateTime?
   approvedById String?
   approvedBy   User?     @relation("Approvals", fields: [approvedById], references: [id], onDelete: SetNull)
