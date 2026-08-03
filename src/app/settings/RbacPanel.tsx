@@ -7,6 +7,7 @@ import { saveRoleMatrix, saveUserOverrides, clearUserOverrides, resetToDefaults,
 import { IconTrash } from "../icons";
 import RbacMatrix, { type MatrixGroup } from "./RbacMatrix";
 import UserPicker from "./UserPicker";
+import MenuNames from "./MenuNames";
 
 
 

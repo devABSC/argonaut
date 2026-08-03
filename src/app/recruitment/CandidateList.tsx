@@ -141,7 +141,7 @@ export default async function CandidateList({
           </p>
         ) : (
           <div className="tablewrap">
-            <table className="utable">
+            <table className="utable stacked">
               <thead>
                 <tr>
                   <th className="numcol">No.</th>
@@ -161,8 +161,8 @@ export default async function CandidateList({
               <tbody>
                 {rows.map((c, i) => (
                   <tr key={c.id}>
-                    <td className="numcol">{i + 1}</td>
-                    <td>
+                    <td className="numcol" data-label="No.">{i + 1}</td>
+                    <td data-label="Name">
                       {/* The name is what a recruiter recognises; the id was
                           only ever a stand-in for it. */}
                       <Link className="ticket" href={`/recruitment/candidate/${c.id}/personal-info`}>
@@ -170,11 +170,11 @@ export default async function CandidateList({
                       </Link>
                       {!c.parsedAt && <span className="you">unread</span>}
                     </td>
-                    <td>{c.position ?? "—"}</td>
-                    <td className="muted">{c.email ?? "—"}</td>
-                    <td className="muted nowrap">{c.mobile ?? "—"}</td>
-                    <td className="numcol">{c.yearsExperience ?? "—"}</td>
-                    <td className="muted">
+                    <td data-label="Position">{c.position ?? "—"}</td>
+                    <td className="muted" data-label="Email">{c.email ?? "—"}</td>
+                    <td className="muted nowrap" data-label="Mobile">{c.mobile ?? "—"}</td>
+                    <td className="numcol" data-label="Yrs">{c.yearsExperience ?? "—"}</td>
+                    <td className="muted" data-label="Skills">
                       {c.skills.length ? (
                         <span title={c.skills.join(", ")}>
                           {c.skills.slice(0, 3).join(", ")}
@@ -182,7 +182,7 @@ export default async function CandidateList({
                         </span>
                       ) : "—"}
                     </td>
-                    <td>
+                    <td data-label="Stage">
                       <form action={setCandidateStage}>
                         <input type="hidden" name="candidateId" value={c.id} />
                         <CellSelect
@@ -192,9 +192,9 @@ export default async function CandidateList({
                         />
                       </form>
                     </td>
-                    {isOwner && <td className="muted">{c.recruiter?.name ?? "—"}</td>}
-                    <td className="muted">{c.bou?.name ?? "—"}</td>
-                    <td className="muted nowrap">{fmt(c.appliedAt)}</td>
+                    {isOwner && <td className="muted" data-label="Recruiter">{c.recruiter?.name ?? "—"}</td>}
+                    <td className="muted" data-label="BOU">{c.bou?.name ?? "—"}</td>
+                    <td className="muted nowrap" data-label="Applied">{fmt(c.appliedAt)}</td>
                     <td className="rowacts">
                       <form action={deleteCandidate.bind(null, c.id)}>
                         <button className="reject icon" type="submit" title="Delete" aria-label="Delete">

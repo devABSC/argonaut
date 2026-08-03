@@ -90,7 +90,7 @@ export default async function CashAdvanceList() {
         <p style={{ marginTop: 16 }}>No cash advance has been requested yet.</p>
       ) : (
         <div className="tablewrap">
-          <table className="utable">
+          <table className="utable stacked">
             <thead>
               <tr>
                 <th className="numcol">No.</th>
@@ -108,17 +108,17 @@ export default async function CashAdvanceList() {
                 const purpose = textOf(r.details, "purpose") ?? r.subject;
                 return (
                   <tr key={r.id}>
-                    <td className="numcol">{i + 1}</td>
-                    <td className="muted nowrap">{fmtDate(r.submittedAt ?? r.createdAt)}</td>
-                    <td><b>{r.requester.name}</b></td>
-                    <td>{purpose}</td>
-                    <td className="amtcol">{amt == null ? "—" : `₱${peso.format(amt)}`}</td>
-                    <td>
+                    <td className="numcol" data-label="No.">{i + 1}</td>
+                    <td className="muted nowrap" data-label="Date requested">{fmtDate(r.submittedAt ?? r.createdAt)}</td>
+                    <td data-label="Requested by"><b>{r.requester.name}</b></td>
+                    <td data-label="Purpose">{purpose}</td>
+                    <td className="amtcol" data-label="Amount">{amt == null ? "—" : `₱${peso.format(amt)}`}</td>
+                    <td data-label="Status">
                       <span className={`pill ${STATUS_PILL[r.status] ?? "s-PENDING"}`}>
                         {STATUS_LABEL[r.status] ?? r.status}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Ticket">
                       <Link className="ticket" href={`/service-desk/ticket/${encodeURIComponent(r.reference)}`}>
                         {r.reference}
                       </Link>

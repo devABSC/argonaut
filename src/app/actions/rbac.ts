@@ -172,3 +172,39 @@ export async function saveBouAccess(userId: string, formData: FormData) {
       : `${target.name} is unscoped — every BOU their pages allow.`,
   );
 }
+
+/**
+ * Renames a menu. The nav structure stays in code; only the words change, so a
+ * spelling fix can never break a route.
+ *
+ * Clearing the field puts the name back to what the code says, rather than
+ * leaving an empty menu.
+ */
+export async function renameMenu(formData: FormData) {
+  const me = await requireOwner();
+
+  const nodeKey = String(formData.get("nodeKey") ?? "").trim();
+  if (!nodeKey) return;
+
+  const label = String(formData.get("label") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const fallback = String(formData.get("fallback") ?? "").trim();
+
+  if (!label || label === fallback) {
+    await prisma.menuLabel.deleteMany({ where: { nodeKey } });
+    revalidatePath("/", "layout");
+    await logHistory({ type: "update", module: "Settings > RBAC", description: `Reset the name of ${nodeKey}`, user: me });
+    done("/settings/rbac", `${fallback} put back to its original name.`);
+  }
+
+  await prisma.menuLabel.upsert({
+    where: { nodeKey },
+    update: { label, title: title || null, updatedById: me.id },
+    create: { nodeKey, label, title: title || null, updatedById: me.id },
+  });
+
+  // Every page renders the nav, so the whole layout has to be revalidated.
+  revalidatePath("/", "layout");
+  await logHistory({ type: "update", module: "Settings > RBAC", description: `Renamed ${nodeKey} to ${label}`, user: me });
+  done("/settings/rbac", `Renamed to ${label}.`);
+}

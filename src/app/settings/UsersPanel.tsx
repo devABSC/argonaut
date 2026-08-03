@@ -116,7 +116,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
         </p>
 
         <div className="tablewrap">
-          <table className="utable">
+          <table className="utable stacked">
             <thead>
               <tr>
                 {isOwner && <th className="rownum">#</th>}<th>Name</th><th>Email</th><th>Company</th><th>Role</th><th>Reports to</th><th>Status</th>
@@ -130,17 +130,17 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                 const editable = canEdit && canManageUser(me, { id: u.id, role: uKey });
                 return (
                   <tr key={u.id}>
-                    {isOwner && <td className="rownum">{i + 1}</td>}
-                    <td>
+                    {isOwner && <td className="rownum" data-label="#">{i + 1}</td>}
+                    <td data-label="Name">
                       <b>{u.name}</b>
                       {u.id === me.id && <span className="you">you</span>}
                     </td>
-                    <td className="muted">{u.email}</td>
+                    <td className="muted" data-label="Email">{u.email}</td>
 
 {/* One field per cell, each in its own form, so the columns
                         stay aligned with their headings. Linking inputs to a
                         form by id drops their values under server actions. */}
-                    <td>
+                    <td data-label="Company">
                       {editable ? (
                         <form action={updateUserFromForm}>
                           <input type="hidden" name="userId" value={u.id} />
@@ -156,7 +156,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                       )}
                     </td>
 
-                    <td>
+                    <td data-label="Role">
                       {editable ? (
                         <form action={updateUserFromForm}>
                           <input type="hidden" name="userId" value={u.id} />
@@ -172,7 +172,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                       )}
                     </td>
 
-                    <td>
+                    <td data-label="Reports to">
                       {editable ? (
                         <form action={updateUserFromForm}>
                           <input type="hidden" name="userId" value={u.id} />
@@ -189,10 +189,10 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                       )}
                     </td>
 
-                    <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
+                    <td data-label="Status"><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
 
-                    <td className="muted nowrap">{fmtWhen(u.updatedAt)}</td>
-                    <td className="muted">{u.updatedBy?.name ?? "—"}</td>
+                    <td className="muted nowrap" data-label="Last updated">{fmtWhen(u.updatedAt)}</td>
+                    <td className="muted" data-label="Updated by">{u.updatedBy?.name ?? "—"}</td>
                     {canEdit && (
                       <td className="rowacts">
                         {editable && (

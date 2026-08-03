@@ -69,7 +69,7 @@ export default async function ProjectList({
           <p style={{ marginTop: 16 }}>No projects yet — add one below.</p>
         ) : (
           <div className="tablewrap">
-            <table className="utable">
+            <table className="utable stacked">
               <thead>
                 <tr>
                   <th className="numcol">No.</th>
@@ -87,17 +87,17 @@ export default async function ProjectList({
               <tbody>
                 {projects.map((p, i) => (
                   <tr key={p.id}>
-                    <td className="numcol">{i + 1}</td>
-                    <td>
+                    <td className="numcol" data-label="No.">{i + 1}</td>
+                    <td data-label="Project">
                       <Link className="ticket" href={`/project/project/${p.id}/project-info`}>
                         {p.name}
                       </Link>
                     </td>
-                    <td className="muted">{p.customer ?? "—"}</td>
-                    <td className="muted">{p.description ?? "—"}</td>
-                    <td className="muted nowrap">{fmtDate(p.launchedAt)}</td>
-                    <td className="muted nowrap">{fmtDate(p.closedAt)}</td>
-                    <td>
+                    <td className="muted" data-label="Customer">{p.customer ?? "—"}</td>
+                    <td className="muted" data-label="Description">{p.description ?? "—"}</td>
+                    <td className="muted nowrap" data-label="Launched">{fmtDate(p.launchedAt)}</td>
+                    <td className="muted nowrap" data-label="Closed">{fmtDate(p.closedAt)}</td>
+                    <td data-label="Members">
                       {p.members.length === 0 ? (
                         <span className="muted">nobody assigned</span>
                       ) : (
@@ -118,7 +118,7 @@ export default async function ProjectList({
                         </span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <form action={setProjectStatus}>
                         <input type="hidden" name="projectId" value={p.id} />
                         <CellSelect
@@ -128,7 +128,7 @@ export default async function ProjectList({
                         />
                       </form>
                     </td>
-                    <td className="muted">{p.user.name}</td>
+                    <td className="muted" data-label="Owner">{p.user.name}</td>
                     <td className="rowacts">
                       <form action={deleteProject.bind(null, p.id)}>
                         <button className="reject icon" type="submit" title="Delete" aria-label="Delete">

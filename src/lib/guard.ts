@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { getCurrentUser, needsPasswordChange } from "./auth";
 import { findSection } from "./nav";
 import { effectiveAccess, canOpenModule, canOpenTab, navFor } from "./access";
+import { withLabels } from "./menu-labels";
 
 /**
  * The gate every page goes through: signed in, allowed this module, allowed
@@ -28,7 +29,13 @@ export async function requireAccess(sectionKey: string, tabSlug?: string) {
   if (!tab) notFound();
   if (!canOpenTab(grants, sectionKey, tab.slug)) notFound();
 
-  return { user, grants, section, tab, nav: navFor(grants) };
+  // The nav is renamed at the edge, so every page shows the same words without
+  // each one having to remember to ask.
+  const nav = await withLabels(navFor(grants));
+  const named = nav.find((n) => n.key === sectionKey) ?? section;
+  const namedTab = named.tabs.find((t) => t.slug === tab.slug) ?? tab;
+
+  return { user, grants, section: named, tab: namedTab, nav };
 }
 
 /** First page the user is actually allowed to see, for the root redirect. */

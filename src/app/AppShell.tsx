@@ -102,6 +102,13 @@ const ICONS: Record<string, ReactNode> = {
 
 export type TopTab = { href: string; label: string; on: boolean; title?: string };
 
+/**
+ * Below this the nav is a drawer, above it a fixed column. Must match the
+ * breakpoint in globals.css — if the two drift, the button toggles the rail on
+ * a width where the CSS is showing a drawer, and nothing appears to happen.
+ */
+const DRAWER = "(max-width:1024px)";
+
 export default function AppShell({
   user,
   nav,
@@ -144,7 +151,7 @@ export default function AppShell({
       : []);
 
   function toggle() {
-    if (typeof window !== "undefined" && window.matchMedia("(max-width:900px)").matches) setOpen((v) => !v);
+    if (typeof window !== "undefined" && window.matchMedia(DRAWER).matches) setOpen((v) => !v);
     else setRail((v) => !v);
   }
 

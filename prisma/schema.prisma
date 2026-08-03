@@ -61,6 +61,7 @@ model User {
   preJoVerified   PreJoDoc[]             @relation("PreJoVerifier")
   assessmentRuns  AssessmentRun[]        @relation("AssessmentRuns")
   invitesSent     CandidateInvite[]      @relation("InvitesSent")
+  menuRenames     MenuLabel[]            @relation("MenuRenames")
   passwordResets  PasswordReset[]        @relation("PasswordResets")
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
@@ -1113,6 +1114,24 @@ model CandidateInvite {
   createdAt DateTime @default(now())
 
   @@index([candidateId])
+}
+
+/// A renamed menu. The nav is declared in code; this overrides what it is
+/// called, so spelling and case can be fixed without a deploy.
+///
+/// Keyed the same way access is — "hris" for a module, "hris:employees" for a
+/// page — so the two always talk about the same thing.
+model MenuLabel {
+  id String @id @default(cuid())
+
+  nodeKey String  @unique
+  label   String
+  /// Spelt-out name shown on hover, for abbreviations like COA.
+  title   String?
+
+  updatedById String?
+  updatedBy   User?   @relation("MenuRenames", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model City {
