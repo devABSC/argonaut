@@ -45,7 +45,10 @@ export async function saveProjectInfo(formData: FormData) {
 
   const before = await prisma.project.findUnique({
     where: { id },
-    select: { name: true, description: true, customer: true, status: true, launchedAt: true, closedAt: true },
+    select: {
+      name: true, description: true, customer: true, status: true,
+      launchedAt: true, closedAt: true, managerId: true, oicManagerId: true,
+    },
   });
   if (!before) return;
 
@@ -56,10 +59,13 @@ export async function saveProjectInfo(formData: FormData) {
     status: String(formData.get("status") ?? "Planning"),
     launchedAt,
     closedAt,
+    managerId: text(formData, "managerId"),
+    oicManagerId: text(formData, "oicManagerId"),
   };
   const changes = diff(before, after, {
     name: "Project name", description: "Description", customer: "Customer", status: "Status",
     launchedAt: "Date launched", closedAt: "Date closed",
+    managerId: "Project Manager", oicManagerId: "OIC Project Manager",
   });
 
   // Trail and update in one transaction — a saved change must never exist

@@ -93,9 +93,18 @@ model Project {
   status   String @default("Planning")
   progress Int    @default(0) // 0–100
 
-  /// Who owns it.
+  /// Who owns it in the system — the account that created it.
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Who runs it, and who covers when they cannot. Employees rather than
+  /// accounts: the manager of a project is a person in the org chart, whether
+  /// or not they ever sign in.
+  managerId String?
+  manager   Employee? @relation("ProjectManager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  oicManagerId String?
+  oicManager   Employee? @relation("ProjectOic", fields: [oicManagerId], references: [id], onDelete: SetNull)
 
   members    ProjectMember[]
   milestones Milestone[]
@@ -513,7 +522,9 @@ model Employee {
   candidate Candidate? @relation("HiredFrom")
 
   /// Work assigned to this person under PROJECT.
-  projects       ProjectMember[] @relation("ProjectMemberships")
+  projects        ProjectMember[] @relation("ProjectMemberships")
+  managesProjects Project[]       @relation("ProjectManager")
+  oicProjects     Project[]       @relation("ProjectOic")
   milestonesOwned Milestone[]    @relation("MilestoneOwner")
   roadblocksOwned Roadblock[]    @relation("RoadblockOwner")
   risksOwned      Risk[]         @relation("RiskOwner")

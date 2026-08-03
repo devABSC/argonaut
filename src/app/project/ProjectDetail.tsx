@@ -11,6 +11,7 @@ import {
 } from "../actions/project-detail";
 import { IconSave, IconTrash, IconPlus } from "../icons";
 import CellSelect from "../settings/CellSelect";
+import LeadPicker from "./LeadPicker";
 
 const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "—");
 const dayInput = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
@@ -354,10 +355,29 @@ export default async function ProjectDetail({
         orderBy: { holder: "asc" },
         include: { employee: { select: { firstName: true, lastName: true, jobTitle: true } } },
       },
+      manager: { select: { firstName: true, lastName: true, jobTitle: true } },
+      oicManager: { select: { firstName: true, lastName: true, jobTitle: true } },
       _count: { select: { milestones: true, roadblocks: true, risks: true } },
     },
   });
   if (!p) return <div className="panel"><p>That project no longer exists.</p></div>;
+
+  // Only active staff can hold a role, and only BOUs with someone in them are
+  // worth offering.
+  const staffRows = await prisma.employee.findMany({
+    where: { status: 0 },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    select: { id: true, firstName: true, lastName: true, jobTitle: true, bouId: true },
+  });
+  const staff = staffRows.map((e) => ({
+    id: e.id, name: `${e.lastName}, ${e.firstName}`, jobTitle: e.jobTitle, bouId: e.bouId,
+  }));
+  const bouCounts = new Map<string, number>();
+  for (const e of staffRows) if (e.bouId) bouCounts.set(e.bouId, (bouCounts.get(e.bouId) ?? 0) + 1);
+  const bous = (await prisma.bou.findMany({ where: { isActive: true }, select: { id: true, name: true } }))
+    .filter((b) => bouCounts.has(b.id))
+    .map((b) => ({ id: b.id, name: b.name, count: bouCounts.get(b.id)! }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <>
@@ -380,6 +400,23 @@ export default async function ProjectDetail({
               placeholder="Who the work is for" /></label>
           <label className="statfield full"><span>Project description</span>
             <textarea name="description" rows={3} defaultValue={p.description ?? ""} /></label>
+
+          <LeadPicker
+            label="Project Manager"
+            name="managerId"
+            staff={staff}
+            bous={bous}
+            selected={p.managerId ?? ""}
+          />
+          <LeadPicker
+            label="OIC Project Manager"
+            name="oicManagerId"
+            staff={staff}
+            bous={bous}
+            selected={p.oicManagerId ?? ""}
+            hint="covers when the manager cannot"
+          />
+
           <div className="statacts">
             <button className="btn-primary" type="submit"><IconSave /> Save project</button>
           </div>
@@ -388,6 +425,14 @@ export default async function ProjectDetail({
         <p className="secdiv">At a glance</p>
         <dl className="tmeta wide">
           <div><dt>Owner</dt><dd>{p.user.name}</dd></div>
+          <div>
+            <dt>Project Manager</dt>
+            <dd>{p.manager ? `${p.manager.firstName} ${p.manager.lastName}` : "—"}</dd>
+          </div>
+          <div>
+            <dt>OIC Project Manager</dt>
+            <dd>{p.oicManager ? `${p.oicManager.firstName} ${p.oicManager.lastName}` : "—"}</dd>
+          </div>
           <div><dt>Members</dt><dd>{p.members.length}</dd></div>
           <div><dt>Milestones</dt><dd>{p._count.milestones}</dd></div>
           <div><dt>Roadblocks</dt><dd>{p._count.roadblocks}</dd></div>
