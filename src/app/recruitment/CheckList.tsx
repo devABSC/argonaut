@@ -44,10 +44,11 @@ export default async function CheckList({
       </div>
       <p>{blurb}</p>
 
-      <div className="checklist">
+      <div className={`checklist${kind === "question" ? " withanswer" : ""}`}>
         <div className="checkhead">
           <span className="numcol">No.</span>
           <span>{itemLabel}</span>
+          {kind === "question" && <span>Candidate&rsquo;s answer</span>}
           <span>Recruiter Remarks</span>
           <span>Hiring Manager Remarks</span>
           <span>Status</span>
@@ -64,6 +65,16 @@ export default async function CheckList({
               {r.item}
               <span className={`pill ${VERIFY_PILL[r.status] ?? "s-PENDING"}`}>{r.status}</span>
             </span>
+
+            {kind === "question" && (
+              // Read-only here: these are the candidate's words, and a remark
+              // about them belongs in the recruiter's own column.
+              <span className="canswer">
+                {r.candidateAnswer
+                  ? r.candidateAnswer
+                  : <em className="tree-meta">not answered yet</em>}
+              </span>
+            )}
 
             <textarea name="recruiterRemarks" rows={2} defaultValue={r.recruiterRemarks ?? ""}
                       placeholder="What you found" />

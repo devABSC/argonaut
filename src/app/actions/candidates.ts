@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
@@ -573,4 +574,61 @@ export async function deleteVerifyItem(itemId: string) {
   revalidatePath(vAt(r.candidateId));
   await logHistory({ type: "delete", module: "Recruitment > Assessment", description: "Removed an item", user: me });
   done(vAt(r.candidateId), "Item removed.");
+}
+
+/* ---------- candidate interview link ---------- */
+
+
+const INVITE_DAYS = 14;
+
+/**
+ * Creates the link a candidate answers through.
+ *
+ * One live link at a time: issuing a new one revokes the last, so a link that
+ * has been passed around cannot still be answered after it was replaced.
+ */
+export async function createInvite(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const candidateId = String(formData.get("candidateId") ?? "");
+  if (!candidateId) return;
+  const where = vAt(candidateId);
+
+  const questions = await prisma.verifyItem.count({ where: { candidateId, kind: "question" } });
+  if (questions === 0) {
+    done(where, "Add the interview questions to the checklist first — there is nothing to ask.");
+  }
+
+  await prisma.$transaction([
+    prisma.candidateInvite.updateMany({
+      where: { candidateId, revokedAt: null, submittedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+    prisma.candidateInvite.create({
+      data: {
+        candidateId,
+        // 32 bytes of randomness — the token is the only thing guarding the page.
+        token: randomBytes(32).toString("base64url"),
+        message: text(formData, "message"),
+        expiresAt: new Date(Date.now() + INVITE_DAYS * 86_400_000),
+        createdById: me.id,
+      },
+    }),
+  ]);
+
+  revalidatePath(where);
+  await logHistory({ type: "create", module: "Recruitment > Interview link", description: "Issued an interview link", user: me });
+  done(where, `Link created — valid for ${INVITE_DAYS} days. Copy it and send it to the candidate.`);
+}
+
+export async function revokeInvite(inviteId: string) {
+  const me = await requireRecruiter();
+  const i = await prisma.candidateInvite.update({
+    where: { id: inviteId },
+    data: { revokedAt: new Date() },
+    select: { candidateId: true },
+  });
+  revalidatePath(vAt(i.candidateId));
+  await logHistory({ type: "update", module: "Recruitment > Interview link", description: "Revoked an interview link", user: me });
+  done(vAt(i.candidateId), "Link revoked — it will no longer open.");
 }

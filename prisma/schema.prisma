@@ -60,6 +60,7 @@ model User {
   candidates      Candidate[]            @relation("Recruiting")
   preJoVerified   PreJoDoc[]             @relation("PreJoVerifier")
   assessmentRuns  AssessmentRun[]        @relation("AssessmentRuns")
+  invitesSent     CandidateInvite[]      @relation("InvitesSent")
   passwordResets  PasswordReset[]        @relation("PasswordResets")
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
@@ -853,6 +854,7 @@ model Candidate {
   preJoDocs  PreJoDoc[]
   assessments AssessmentRun[]
   verifyItems VerifyItem[]
+  invites     CandidateInvite[]
 
   /// Set when the candidate is hired and becomes staff.
   employeeId String?   @unique
@@ -1053,6 +1055,12 @@ model VerifyItem {
   recruiterRemarks String?
   managerRemarks   String?
 
+  /// The candidate's own answer, given through the invite link. Kept apart
+  /// from the two internal remark fields — it is their words, not a note about
+  /// them, and it must never be editable from the recruiter side.
+  candidateAnswer String?
+  answeredAt      DateTime?
+
   /// Open, Verified, Discrepancy, Cannot Verify, Not Applicable.
   status String @default("Open")
 
@@ -1060,6 +1068,38 @@ model VerifyItem {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([candidateId, kind, item])
+  @@index([candidateId])
+}
+
+/// A link sent to a candidate so they can answer the interview questions in
+/// their own words.
+///
+/// The token is the only credential, so it is long and random and the page it
+/// opens shows the questions and nothing else — never the assessment, the
+/// risks, or anything a recruiter wrote.
+model CandidateInvite {
+  id String @id @default(cuid())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  /// What the URL carries. Unguessable, and not derived from any record id.
+  token String @unique
+
+  /// A note to the candidate, shown above the questions.
+  message String?
+
+  expiresAt   DateTime
+  openedAt    DateTime?
+  submittedAt DateTime?
+  /// Set when a recruiter withdraws the link before it is used.
+  revokedAt   DateTime?
+
+  createdById String?
+  createdBy   User?   @relation("InvitesSent", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
   @@index([candidateId])
 }
 

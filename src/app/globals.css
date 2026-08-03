@@ -886,3 +886,24 @@ button{font-family:inherit}
 /* Completed state where the run button used to be */
 .app .banner.done{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
   border-color:rgba(56,232,255,.34);box-shadow:inset 3px 0 0 var(--cyan)}
+
+/* Candidate interview page — textareas match the sign-in card's fields */
+.login-page .card textarea{width:100%;font-family:var(--body);font-size:.92rem;color:var(--text);
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:10px;
+  padding:10px 12px;resize:vertical}
+.login-page .card textarea:focus{outline:none;border-color:var(--cyan)}
+.login-page .card label{display:block;margin-bottom:6px;font-size:.9rem;color:var(--text);line-height:1.5}
+
+/* Copy-the-link row */
+.app .copylink{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.app .copylink input{flex:1;min-width:260px;font-family:var(--mono);font-size:.78rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+.app .copylink input:focus{outline:none;border-color:var(--cyan)}
+.app .aslink{grid-template-columns:minmax(220px,1fr) auto}
+
+/* Checklist gains a candidate-answer column for questions */
+.app .checklist.withanswer .checkhead,
+.app .checklist.withanswer .checkrow{
+  grid-template-columns:36px minmax(180px,1.4fr) minmax(150px,1.2fr) minmax(130px,1fr) minmax(130px,1fr) 120px 72px}
+.app .checkrow .canswer{font-size:.85rem;line-height:1.5;color:var(--text);
+  padding:7px 9px;border-left:2px solid var(--cyan);background:var(--s4);border-radius:0 8px 8px 0}

@@ -6,6 +6,7 @@ import {
 } from "../actions/candidates";
 import RunAssessment from "./RunAssessment";
 import CheckList from "./CheckList";
+import InvitePanel from "./InvitePanel";
 import type { Assessment } from "@/lib/assess";
 import type { RoleKey } from "@/lib/roles";
 import { fmtCost, costUsd, fmtUsd, fmtPhp, USD_PHP } from "@/lib/cost";
@@ -341,6 +342,8 @@ export default async function CandidatePanel({
               itemLabel="Question"
               blurb="Questions that would tell a strong version of this candidate from a weak one."
             />
+
+            <InvitePanel candidateId={c.id} />
           </>
         )}
 
