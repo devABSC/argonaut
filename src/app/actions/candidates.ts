@@ -317,3 +317,23 @@ export async function deleteReference(referenceId: string) {
   await logHistory({ type: "delete", module: "Recruitment > Char Ref", description: `Removed reference ${r.name}`, user: me });
   done(refAt(r.candidateId), `${r.name} removed.`);
 }
+
+/** A recruiter's notes against the AI findings. */
+export async function saveAiNotes(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const id = String(formData.get("candidateId") ?? "");
+  if (!id) return;
+  const c = await prisma.candidate.findUnique({ where: { id }, select: { firstName: true, lastName: true } });
+  if (!c) return;
+
+  await prisma.candidate.update({ where: { id }, data: { aiNotes: text(formData, "aiNotes") } });
+
+  const where = `/recruitment/candidate/${id}/ai-data`;
+  revalidatePath(where);
+  await logHistory({
+    type: "update", module: "Recruitment > Other AI Data",
+    description: `Noted findings for ${c.firstName} ${c.lastName}`, user: me,
+  });
+  done(where, "Notes saved.");
+}

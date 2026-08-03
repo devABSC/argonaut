@@ -804,6 +804,9 @@ model Candidate {
   /// Everything the reader returned, including anything with no field of its
   /// own. Kept so a useful value is not thrown away before it has a column.
   aiData          Json?
+  /// A recruiter's own notes against the AI findings — kept apart from the
+  /// general notes so a judgement is never mistaken for something the CV said.
+  aiNotes         String?
 
   /// Applied, Screening, Interview, Offer, Hired, Rejected, Withdrawn.
   stage  String  @default("Applied")

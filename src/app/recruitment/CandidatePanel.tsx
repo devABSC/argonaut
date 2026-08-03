@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   saveCandidate, reparseCV, addExperience, deleteExperience,
-  addReference, markReferenceContacted, deleteReference,
+  addReference, markReferenceContacted, deleteReference, saveAiNotes,
 } from "../actions/candidates";
 import { IconSave, IconPlus, IconTrash } from "../icons";
 
@@ -307,6 +307,23 @@ export default async function CandidatePanel({
                 <p>{String(d.compensationNoted)}</p>
               </>
             )}
+
+            <p className="secdiv">Your notes on these findings</p>
+            <form action={saveAiNotes}>
+              <input type="hidden" name="candidateId" value={c.id} />
+              <label className="statfield">
+                <span>Notes</span>
+                <textarea
+                  name="aiNotes"
+                  rows={4}
+                  defaultValue={c.aiNotes ?? ""}
+                  placeholder="What you made of the above — answers given at interview, things confirmed or ruled out."
+                />
+              </label>
+              <div className="statacts">
+                <button className="btn-primary" type="submit"><IconSave /> Save notes</button>
+              </div>
+            </form>
 
             <p className="secdiv">Worth checking at interview</p>
             {anyFlags ? (
