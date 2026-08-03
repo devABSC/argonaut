@@ -927,6 +927,23 @@ button{font-family:inherit}
 .app .infoboxes{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .app .yearlinks{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
 
+/* A written finding, rather than a wall of UI: headings the eye can drop into
+   and prose that can be read straight through. */
+.app .finding{margin-top:14px;max-width:78ch}
+.app .finding h3{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--cyan);margin-top:18px}
+.app .finding h3:first-child{margin-top:0}
+.app .finding p{margin-top:7px;color:var(--muted);font-size:.92rem;line-height:1.6;max-width:none}
+.app .reclist{margin:9px 0 0 18px;display:grid;gap:8px}
+.app .reclist li{color:var(--muted);font-size:.92rem;line-height:1.55}
+.app .reclist li::marker{color:var(--cyan);font-weight:700}
+.app .srclist{margin-top:8px;display:grid;gap:6px;list-style:none}
+.app .srclist li{font-size:.85rem;overflow-wrap:anywhere}
+.app .needlist{margin:12px 0 0 0;display:grid;gap:7px;list-style:none}
+.app .needlist li{font-size:.9rem;padding-left:14px;position:relative}
+.app .needlist li::before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;
+  border-radius:50%;background:var(--violet)}
+
 /* Part III — the printed form's own grid: four columns and a total at the
    foot, rules rather than boxes so it reads as one table. */
 .app .partiii{grid-column:1/-1;margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}

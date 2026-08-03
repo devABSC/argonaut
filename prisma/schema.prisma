@@ -58,6 +58,7 @@ model User {
   birForms       BirForm[]           @relation("BirFormUploader")
   bir2307s       Bir2307[]           @relation("Bir2307Encoder")
   stockMovements InventoryMovement[] @relation("StockMovements")
+  agencyLinks    AgencyLink[]        @relation("AgencyLinkEditor")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -801,6 +802,48 @@ model Bir2307Line {
   createdAt DateTime @default(now())
 
   @@index([certId])
+}
+
+/// How the company connects to one statutory agency.
+///
+/// None of the three publish a third-party API, so "connection" here means the
+/// employer's own portal identity plus the rates used to prepare a remittance
+/// file. Credentials are held so a person does not have to remember them, not
+/// so the system can log in by itself.
+model AgencyLink {
+  id     String @id @default(cuid())
+  /// SSS, PAGIBIG or PHILHEALTH.
+  agency String @unique
+
+  /// The employer number the agency knows us by — PEN, ER number, Pag-IBIG
+  /// employer ID.
+  employerNumber String?
+  branchCode     String?
+  registeredName String?
+  portalUrl      String?
+  portalUsername String?
+  /// Held masked and never shown back in full.
+  portalSecret   String?
+
+  /// Share of the contribution, as a percentage. Left blank until confirmed
+  /// against the agency's current circular — a wrong rate is worse than none.
+  employeeRate Decimal? @db.Decimal(6, 4)
+  employerRate Decimal? @db.Decimal(6, 4)
+
+  /// Which day of the following month the remittance is due.
+  dueDayFrom Int?
+  dueDayTo   Int?
+
+  contactName  String?
+  contactEmail String?
+  notes        String?
+
+  updatedById   String?
+  updatedBy     User?   @relation("AgencyLinkEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedByName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 /// Goods are held and counted; a service is neither.
