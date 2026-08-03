@@ -10,19 +10,24 @@ const dayInput = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
 
 /** Every 2307 raised, newest first. */
 export default async function Bir2307Panel({ isOwner }: { isOwner: boolean }) {
-  const [company, rows, suppliers] = await Promise.all([
-    prisma.company.findFirst({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+  const [companies, rows, suppliers] = await Promise.all([
+    prisma.company.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    }),
     prisma.bir2307.findMany({ orderBy: [{ year: "desc" }, { quarter: "asc" }, { supplierName: "asc" }] }),
     prisma.supplier.findMany({
       orderBy: { name: "asc" },
       select: {
         id: true, name: true, tin: true, address: true,
-        city: true, region: true, country: true, issuanceDate: true,
+        city: true, region: true, country: true, issuanceDate: true, companyId: true,
       },
     }),
   ]);
 
   // The picker hands dates to a date input, which wants yyyy-mm-dd.
+  // Buyer Info shows the first registered company; there is one for now.
+  const company = companies[0] ?? null;
   const supplierRows = suppliers.map((x) => ({
     ...x,
     issuanceDate: x.issuanceDate ? dayInput(x.issuanceDate) : null,
@@ -101,7 +106,7 @@ export default async function Bir2307Panel({ isOwner }: { isOwner: boolean }) {
             <span className="spacer" />
             <span className="tree-meta">{suppliers.length} on the register</span>
           </div>
-          <SupplierInfoForm suppliers={supplierRows} action={saveSupplierInfo} />
+          <SupplierInfoForm suppliers={supplierRows} companies={companies} action={saveSupplierInfo} />
         </div>
       </div>
 
@@ -112,7 +117,7 @@ export default async function Bir2307Panel({ isOwner }: { isOwner: boolean }) {
         <span className="tree-meta">Certificate of Creditable Tax Withheld at Source</span>
       </div>
 
-      <Bir2307Form suppliers={suppliers} action={addBir2307} />
+      <Bir2307Form suppliers={supplierRows} companies={companies} action={addBir2307} />
 
       {rows.length === 0 ? (
         <p style={{ marginTop: 16 }}>None raised yet — add the first one above.</p>

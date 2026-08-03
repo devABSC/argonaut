@@ -12,13 +12,16 @@ import { useState } from "react";
  */
 export default function SupplierInfoForm({
   suppliers,
+  companies,
   action,
 }: {
   suppliers: {
     id: string; name: string; tin: string | null; address: string | null;
     city: string | null; region: string | null; country: string | null;
     issuanceDate: string | null;
+    companyId: string | null;
   }[];
+  companies: { id: string; name: string }[];
   action: (formData: FormData) => void;
 }) {
   const [picked, setPicked] = useState("");
@@ -34,6 +37,15 @@ export default function SupplierInfoForm({
           aria-label="Load an existing supplier">
           <option value="">— new supplier —</option>
           {suppliers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
+      </label>
+
+      {/* A supplier is registered under one of our companies — that is the
+          relation the certificate is raised on. */}
+      <label className="inforow">
+        <span>Buyer</span>
+        <select name="companyId" defaultValue={s?.companyId ?? companies[0]?.id ?? ""} required>
+          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </label>
 

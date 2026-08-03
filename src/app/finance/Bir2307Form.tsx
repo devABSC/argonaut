@@ -11,22 +11,33 @@ import { QUARTERS, quarterLabel } from "@/lib/quarters";
  * quarter rather than two dates — the BIR's own calendar, and it makes a
  * missing quarter obvious in the list.
  *
- * Picking a supplier from the register fills their TIN and registered address;
- * typing over it wins where a particular certificate needs something else.
+ * Both sides are picked from a list: the buyer is one of our registered
+ * companies, the payee one of the suppliers on the register. Their TIN and
+ * address come from those records rather than being retyped, so a certificate
+ * can never disagree with the register it was raised from.
  */
 export default function Bir2307Form({
   suppliers,
+  companies,
   action,
 }: {
-  suppliers: { id: string; name: string; tin: string | null; address: string | null }[];
+  suppliers: {
+    id: string; name: string; tin: string | null; address: string | null;
+    companyId: string | null;
+  }[];
+  companies: { id: string; name: string }[];
   action: (formData: FormData) => void;
 }) {
+  const [buyer, setBuyer] = useState(companies[0]?.id ?? "");
   const [picked, setPicked] = useState("");
-  const sup = suppliers.find((s) => s.id === picked);
+  // A supplier belongs to one company, so changing the buyer changes who can
+  // be named. One left over from the previous buyer is dropped.
+  const mine = suppliers.filter((s) => !s.companyId || s.companyId === buyer);
+  const sup = mine.find((s) => s.id === picked);
   const thisYear = new Date().getUTCFullYear();
 
   return (
-    <form action={action} className="coaform" key={picked || "blank"}>
+    <form action={action} className="coaform" key={`${buyer}:${picked}`}>
       <label className="statfield">
         <span>Year</span>
         <input name="year" type="number" min="2000" max="2100" required defaultValue={thisYear} />
@@ -42,38 +53,39 @@ export default function Bir2307Form({
       </label>
 
       <label className="statfield">
-        <span>Income Recipient / Payee</span>
-        <select name="supplierId" value={picked} onChange={(e) => setPicked(e.target.value)}>
-          <option value="">— type the name below —</option>
-          {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        <span>Buyer / Withholding Agent</span>
+        <select name="companyId" required value={buyer}
+          onChange={(e) => { setBuyer(e.target.value); setPicked(""); }}>
+          {companies.length === 0 && <option value="">No company registered</option>}
+          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </label>
 
+      {/* Both sides come from a list — the details on a certificate are the
+          ones already registered, not retyped per certificate. */}
       <label className="statfield">
-        <span>Payee Name</span>
-        <input name="supplierName" autoComplete="off" placeholder="As it appears on the certificate"
-          defaultValue={sup?.name ?? ""} required={!picked} />
+        <span>Supplier / Payee</span>
+        <select name="supplierId" required value={picked} onChange={(e) => setPicked(e.target.value)}>
+          <option value="" disabled>
+            {mine.length ? "Choose a supplier" : "No suppliers under this buyer yet"}
+          </option>
+          {mine.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
       </label>
 
-      <label className="statfield">
-        <span>Payee TIN</span>
-        <input name="supplierTin" autoComplete="off" placeholder="000-000-000-000"
-          defaultValue={sup?.tin ?? ""} />
-      </label>
-
-      <label className="statfield">
-        <span>ZIP Code</span>
-        <input name="zipCode" autoComplete="off" placeholder="0000" />
-      </label>
-
-      <label className="statfield full">
-        <span>Registered Address</span>
-        <input name="address" autoComplete="off" placeholder="As registered with the BIR"
-          defaultValue={sup?.address ?? ""} />
-      </label>
+      {/* Read straight off the chosen supplier, so what will be printed is
+          visible before the certificate is raised. */}
+      <dl className="infolist picked">
+        <div><dt>Payee TIN</dt><dd>{sup?.tin || "—"}</dd></div>
+        <div><dt>Registered Address</dt><dd>{sup?.address || "—"}</dd></div>
+      </dl>
 
       <div className="statacts">
-        <button className="btn-primary" type="submit"><IconPlus /> Create 2307</button>
+        <button className="btn-primary" type="submit"
+          disabled={!mine.length || !companies.length}
+          title={mine.length ? "Raise this certificate" : "Add a supplier for this buyer first"}>
+          <IconPlus /> Create 2307
+        </button>
       </div>
     </form>
   );

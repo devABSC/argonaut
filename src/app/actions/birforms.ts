@@ -125,6 +125,7 @@ export async function saveSupplierInfo(formData: FormData) {
 
   const data = {
     name,
+    companyId: String(formData.get("companyId") ?? "").trim() || null,
     tin: String(formData.get("tin") ?? "").trim() || null,
     address: String(formData.get("address") ?? "").trim() || null,
     city: String(formData.get("city") ?? "").trim() || null,
@@ -181,12 +182,23 @@ export async function addBir2307(formData: FormData) {
   let address = String(formData.get("address") ?? "").trim() || null;
   const zipCode = String(formData.get("zipCode") ?? "").trim() || null;
 
+  const companyId = String(formData.get("companyId") ?? "").trim() || null;
+  const company = companyId
+    ? await prisma.company.findUnique({ where: { id: companyId }, select: { name: true, tin: true } })
+    : null;
+  if (companyId && !company) done(P2307, "Not added — that company no longer exists.");
+
   if (supplierId) {
     const sup = await prisma.supplier.findUnique({
       where: { id: supplierId },
-      select: { name: true, tin: true, address: true },
+      select: { name: true, tin: true, address: true, companyId: true },
     });
     if (!sup) done(P2307, "Not added — that supplier no longer exists.");
+    // The supplier belongs to one company; a certificate from another cannot
+    // name them.
+    if (companyId && sup!.companyId && sup!.companyId !== companyId) {
+      done(P2307, `Not added — ${sup!.name} is registered under a different company.`);
+    }
     // The register fills what was left blank; anything typed by hand wins.
     supplierName = supplierName || sup!.name;
     supplierTin = supplierTin ?? sup!.tin;
@@ -204,6 +216,7 @@ export async function addBir2307(formData: FormData) {
   await prisma.bir2307.create({
     data: {
       year, quarter, periodFrom: from, periodTo: to,
+      companyId, companyName: company?.name ?? null, companyTin: company?.tin ?? null,
       supplierId, supplierName, supplierTin, address, zipCode,
       encodedById: me.id, encodedByName: me.name,
     },

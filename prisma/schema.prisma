@@ -688,6 +688,9 @@ model Company {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  bir2307s  Bir2307[]  @relation("Company2307")
+  suppliers Supplier[] @relation("CompanySuppliers")
 }
 
 /**
@@ -749,6 +752,13 @@ model Bir2307 {
   /// The supplier as named on the certificate. Linked where they are already
   /// in the system, and kept as text either way so the certificate still reads
   /// if the supplier record changes later.
+  /// Which of our companies withheld the tax, snapshotted by name and TIN so
+  /// the certificate still reads if the company record is later edited.
+  companyId   String?
+  company     Company? @relation("Company2307", fields: [companyId], references: [id], onDelete: SetNull)
+  companyName String?
+  companyTin  String?
+
   supplierId   String?
   supplier     Supplier? @relation("Supplier2307", fields: [supplierId], references: [id], onDelete: SetNull)
   supplierName String
@@ -842,6 +852,12 @@ model Supplier {
   contactEmail String?
   phone        String?
   website      String?
+
+  /// Which of our companies this supplier is registered under. A supplier is
+  /// billed by one company, so a certificate raised by another must not be
+  /// able to pick them.
+  companyId String?
+  company   Company? @relation("CompanySuppliers", fields: [companyId], references: [id], onDelete: SetNull)
 
   address String?
   city    String?
