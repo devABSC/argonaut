@@ -14,10 +14,10 @@ export default async function SettingsTab({
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ u?: string }>;
+  searchParams: Promise<{ u?: string; bou?: string }>;
 }) {
   const { tab } = await params;
-  const { u } = await searchParams;
+  const { u, bou } = await searchParams;
 
   const { user, nav, section, tab: active } = await requireAccess("settings", tab);
 
@@ -33,7 +33,7 @@ export default async function SettingsTab({
       {active.slug === "roles" && <RolesPanel />}
       {active.slug === "bou" && <BouPanel />}
       {active.slug === "email" && <EmailPanel />}
-      {active.slug === "rbac" && <RbacPanel userId={u} />}
+      {active.slug === "rbac" && <RbacPanel userId={u} bouId={bou} />}
     </AppShell>
   );
 }

@@ -132,3 +132,81 @@ export async function saveStatutory(formData: FormData) {
   });
   done(where, "Statutory details saved.");
 }
+
+/** Contact details, saved from the employee's Personal Info page. */
+export async function saveEmployeeContact(formData: FormData) {
+  const me = await requireHrAdmin();
+
+  const empId = String(formData.get("empId") ?? "");
+  if (!empId) return;
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: empId },
+    select: { individ: true, firstName: true, lastName: true },
+  });
+  if (!employee) return;
+
+  await prisma.employee.update({
+    where: { id: empId },
+    data: {
+      mobile: text(formData, "mobile"),
+      landline: text(formData, "landline"),
+      street: text(formData, "street"),
+      city: text(formData, "city"),
+      state: text(formData, "state"),
+      region: text(formData, "region"),
+      country: text(formData, "country"),
+      zipCode: text(formData, "zipCode"),
+    },
+  });
+
+  const where = `/hris/employee/${empId}/personal-info`;
+  revalidatePath(where);
+  await logHistory({
+    type: "update", module: "HRIS > Personal Info",
+    description: `Saved contact details for ${employee.firstName} ${employee.lastName} (${employee.individ})`,
+    user: me,
+  });
+  done(where, "Contact details saved.");
+}
+
+/** Job title, BOU and department, saved from the employee's Personal Info page. */
+export async function saveEmployeeEmployment(formData: FormData) {
+  const me = await requireHrAdmin();
+
+  const empId = String(formData.get("empId") ?? "");
+  if (!empId) return;
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: empId },
+    select: { individ: true, firstName: true, lastName: true },
+  });
+  if (!employee) return;
+
+  const bouId = String(formData.get("bouId") ?? "");
+  // The raw code is kept alongside the link so the source value stays readable
+  // if the BOU row is ever removed.
+  const bou = bouId
+    ? await prisma.bou.findUnique({ where: { id: bouId }, select: { code: true, name: true } })
+    : null;
+  if (bouId && !bou) return;
+
+  await prisma.employee.update({
+    where: { id: empId },
+    data: {
+      jobTitle: text(formData, "jobTitle"),
+      subBou: text(formData, "subBou"),
+      bouId: bouId || null,
+      bouID: bou?.code ?? null,
+    },
+  });
+
+  const where = `/hris/employee/${empId}/personal-info`;
+  revalidatePath(where);
+  await logHistory({
+    type: "update", module: "HRIS > Personal Info",
+    description: `Saved employment details for ${employee.firstName} ${employee.lastName} (${employee.individ}) — BOU ${bou?.name ?? "none"}`,
+    user: me,
+  });
+  done(where, "Employment details saved.");
+}

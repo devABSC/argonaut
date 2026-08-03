@@ -612,6 +612,9 @@ model City {
   name     String  @unique
   province String?
   region   String?
+  /// Primary postal code. Large cities have several; this is the main one.
+  zipCode  String?
+  country  String  @default("Philippines")
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())

@@ -692,3 +692,14 @@ button{font-family:inherit}
 .app .utable .cellsel:hover{border-color:var(--muted)}
 .app .utable .cellsel:focus{outline:none;border-color:var(--cyan)}
 .app .utable td.rowacts{white-space:nowrap;text-align:right}
+
+/* City / Province / Region sit together inside the contact grid */
+.app .statgrid .cityset{display:contents}
+.app .statgrid .cityset label{display:flex;flex-direction:column;gap:6px}
+.app .statgrid .cityset label span{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint)}
+.app .statgrid .cityset input,.app .statgrid .cityset select,.app .statfield select{
+  width:100%;font-family:var(--body);font-size:.9rem;color:var(--text);background:var(--s4);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.app .statgrid .cityset input:focus,.app .statgrid .cityset select:focus,
+.app .statfield select:focus{outline:none;border-color:var(--cyan)}

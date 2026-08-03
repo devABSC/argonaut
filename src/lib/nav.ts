@@ -45,16 +45,17 @@ export const NAV: NavSection[] = [
   {
     key: "finance",
     label: "Finance",
-    // Like Workflow: sublinks in the left pane, with its own strip of tabs
-    // across the content area.
+    // Sublinks in the left pane, plus a strip of tabs that belongs to
+    // Expenses / Cash Adv / Bills only. Expenses is first so clicking Finance
+    // lands on the strip rather than on a page that has none.
     tabs: [
+      { slug: "expenses", label: "Expenses", hideInSubmenu: true },
+      { slug: "cash-advance", label: "Cash Adv", hideInSubmenu: true },
+      { slug: "bills", label: "Bills", hideInSubmenu: true },
       { slug: "bir", label: "BIR" },
       { slug: "payroll", label: "Payroll" },
       { slug: "payable", label: "Payable" },
       { slug: "receivable", label: "Receivable" },
-      { slug: "expenses", label: "Expenses", hideInSubmenu: true },
-      { slug: "cash-advance", label: "Cash Adv", hideInSubmenu: true },
-      { slug: "bills", label: "Bills", hideInSubmenu: true },
     ],
     children: "submenu",
     topTabs: [
@@ -109,6 +110,24 @@ export const NAV: NavSection[] = [
       { slug: "logs", label: "Log History" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
+  },
+  {
+    key: "edoc",
+    label: "eDOC",
+    tabs: [{ slug: "documents", label: "Documents" }],
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+  {
+    key: "project",
+    label: "PROJECT",
+    tabs: [{ slug: "projects", label: "Projects" }],
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+  {
+    key: "car",
+    label: "CAR",
+    tabs: [{ slug: "reports", label: "Reports" }],
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
     key: "settings",

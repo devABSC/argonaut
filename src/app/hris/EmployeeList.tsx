@@ -76,7 +76,7 @@ export default async function EmployeeList({
     prisma.city.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
-      select: { name: true, province: true, region: true },
+      select: { name: true, province: true, region: true, zipCode: true },
     }),
   ]);
 

@@ -8,13 +8,14 @@ export default async function FinanceTab({ params }: { params: Promise<{ tab: st
   const { tab } = await params;
   const { user, nav, section, tab: active } = await requireAccess("finance", tab);
 
-  // The left pane carries BIR / Payroll / Payable / Receivable; this strip is
-  // the same on every one of them, so it comes straight from the nav.
-  const topTabs: TopTab[] = (findSection("finance")?.topTabs ?? []).map((t) => ({
-    href: `/finance/${t.slug}`,
-    label: t.label,
-    on: t.slug === active.slug,
-  }));
+  // The strip belongs to Expenses / Cash Adv / Bills only. BIR, Payroll,
+  // Payable and Receivable are their own pages in the left pane and do not
+  // carry a copy of it.
+  const strip = findSection("finance")?.topTabs ?? [];
+  const onStrip = strip.some((t) => t.slug === active.slug);
+  const topTabs: TopTab[] = onStrip
+    ? strip.map((t) => ({ href: `/finance/${t.slug}`, label: t.label, on: t.slug === active.slug }))
+    : [];
 
   return (
     <AppShell

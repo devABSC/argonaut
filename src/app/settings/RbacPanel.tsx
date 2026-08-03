@@ -9,7 +9,7 @@ import UserPicker from "./UserPicker";
 
 
 
-export default async function RbacPanel({ userId }: { userId?: string }) {
+export default async function RbacPanel({ userId, bouId }: { userId?: string; bouId?: string }) {
   const tree = accessTree();
   const nodes = allNodes();
 
@@ -47,11 +47,39 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
     })),
   }));
 
-  const users = await prisma.user.findMany({
+  const allUsers = await prisma.user.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
     select: { id: true, name: true, email: true, role: { select: { key: true } } },
   });
+
+  // Accounts are matched to their HRIS record by email — Employee.userId is
+  // not populated yet, and the address is the one thing both sides agree on.
+  const staff = await prisma.employee.findMany({
+    where: { emailAdd: { not: null } },
+    select: { emailAdd: true, bouId: true, bou: { select: { id: true, name: true } } },
+  });
+  const byEmail = new Map(
+    staff.filter((e) => e.emailAdd).map((e) => [e.emailAdd!.toLowerCase().trim(), e]),
+  );
+  const recordFor = (email: string) => byEmail.get(email.toLowerCase().trim());
+
+  // Only BOUs that actually contain an account are worth offering.
+  const counts = new Map<string, { id: string; label: string; count: number }>();
+  for (const u of allUsers) {
+    const b = recordFor(u.email)?.bou;
+    if (!b) continue;
+    const row = counts.get(b.id) ?? { id: b.id, label: b.name, count: 0 };
+    row.count += 1;
+    counts.set(b.id, row);
+  }
+  const bous = [...counts.values()].sort((a, b) => a.label.localeCompare(b.label));
+
+  const users = !bouId
+    ? allUsers
+    : bouId === "none"
+      ? allUsers.filter((u) => !recordFor(u.email)?.bou)
+      : allUsers.filter((u) => recordFor(u.email)?.bou?.id === bouId);
 
   const target = userId ? users.find((u) => u.id === userId) : undefined;
   const targetAccess = target ? await effectiveAccess({ id: target.id, role: target.role.key as RoleKey }) : null;
@@ -90,7 +118,14 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
           allows. Use this for exceptions rather than bending a whole role.
         </p>
         <UserPicker
-          users={users.map((u) => ({ id: u.id, label: `${u.name} — ${u.email} (${ROLE_LABEL[u.role.key as RoleKey]})` }))}
+          bous={bous}
+          selectedBou={bouId ?? ""}
+          users={users.map((u) => ({
+            id: u.id,
+            label: `${u.name} — ${ROLE_LABEL[u.role.key as RoleKey]}${
+              recordFor(u.email)?.bou ? ` · ${recordFor(u.email)!.bou!.name}` : ""
+            }`,
+          }))}
           selected={target?.id ?? ""}
         />
 
@@ -99,6 +134,9 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
             <div className="cat-head">
               <h2 style={{ fontSize: "1.02rem" }}>{target.name}</h2>
               <span className={`pill r-${target.role.key}`}>{ROLE_LABEL[target.role.key as RoleKey]}</span>
+              {recordFor(target.email)?.bou && (
+                <span className="tree-meta">{recordFor(target.email)!.bou!.name}</span>
+              )}
               {overrideCount > 0
                 ? <span className="pill s-PENDING">{overrideCount} override{overrideCount === 1 ? "" : "s"}</span>
                 : <span className="tree-meta">following role access</span>}
