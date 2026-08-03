@@ -337,6 +337,11 @@ button{font-family:inherit}
 .app a.ticket:hover{background:rgba(56,232,255,.18);border-color:rgba(56,232,255,.5)}
 .app .utable a.save.icon{text-decoration:none}
 .app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
+/* Names wrapped one letter per line when the column was squeezed. Keep the
+   cell on a single line and let the row grow sideways instead. */
+.app .utable .peoplecell{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.app .utable .peoplecell .skill{white-space:nowrap}
+.app .utable .clip{max-width:26ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .app .frow.crow{grid-template-columns:minmax(120px,.9fr) minmax(150px,1.3fr) minmax(110px,.9fr) minmax(160px,1.5fr) minmax(150px,1.2fr) auto}
 .app .frow.crow.chead{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px}
@@ -604,6 +609,8 @@ button{font-family:inherit}
 .app .top-avatar{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-family:var(--font);font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--on-accent)}
 
 .app .content{padding:34px 28px;max-width:1080px;width:100%}
+/* Reading width suits prose; a ten-column table needs the window. */
+.app .content.wide{max-width:1560px}
 .app .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:8px}
 .app .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#37E8A0;box-shadow:0 0 10px #37E8A0}
 .app h1{font-family:var(--font);font-weight:600;font-size:clamp(2.1rem,4vw,3rem);line-height:1.06;letter-spacing:-.02em;margin-top:14px}

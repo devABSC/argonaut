@@ -13,6 +13,7 @@ export default async function ProjectTab({ params }: { params: Promise<{ tab: st
       nav={nav}
       activeSection={section.key}
       activeTab={active.slug}
+      wide={active.slug === "projects"}
     >
       {active.slug === "projects" ? (
         <ProjectList viewer={{ id: user.id, role: user.role, email: user.email }} />

@@ -94,26 +94,29 @@ export default async function ProjectList({
                       </Link>
                     </td>
                     <td className="muted" data-label="Customer">{p.customer ?? "—"}</td>
-                    <td className="muted" data-label="Description">{p.description ?? "—"}</td>
+                    <td className="muted clip" data-label="Description" title={p.description ?? undefined}>
+                      {p.description ?? "—"}
+                    </td>
                     <td className="muted nowrap" data-label="Launched">{fmtDate(p.launchedAt)}</td>
                     <td className="muted nowrap" data-label="Closed">{fmtDate(p.closedAt)}</td>
                     <td data-label="Members">
                       {p.members.length === 0 ? (
                         <span className="muted">nobody assigned</span>
                       ) : (
+                        // One name on one line, the rest behind a count. The
+                        // full roster is on the project itself; this column
+                        // only says who is on it.
                         <span
+                          className="peoplecell"
                           title={p.members
                             .map((m) => `${m.employee.firstName} ${m.employee.lastName} — ${m.holder}`)
                             .join("\n")}
                         >
-                          {p.members.slice(0, 2).map((m) => (
-                            <span className="skill" key={m.id}>
-                              {m.employee.firstName} {m.employee.lastName}
-                              <span className="tree-meta"> {m.holder}</span>
-                            </span>
-                          ))}
-                          {p.members.length > 2 && (
-                            <span className="tree-meta"> +{p.members.length - 2}</span>
+                          <span className="skill">
+                            {p.members[0].employee.firstName} {p.members[0].employee.lastName}
+                          </span>
+                          {p.members.length > 1 && (
+                            <span className="tree-meta">+{p.members.length - 1}</span>
                           )}
                         </span>
                       )}

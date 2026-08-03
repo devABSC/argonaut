@@ -115,6 +115,7 @@ export default function AppShell({
   activeSection,
   activeTab,
   topTabs,
+  wide,
   children,
 }: {
   user: { name: string; roleLabel: string };
@@ -124,6 +125,8 @@ export default function AppShell({
   /** Tab strip above the content. Supplied by the page, since a single section
    *  can show different strips on different sublinks. */
   topTabs?: TopTab[];
+  /** Lets a table-heavy page use the full window instead of the reading width. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -235,7 +238,7 @@ export default function AppShell({
           </div>
         )}
 
-        <div className="content">
+        <div className={wide ? "content wide" : "content"}>
           {/* Confirmation of the last write, wherever it happened. */}
           <Suspense fallback={null}><Flash /></Suspense>
           {children}
