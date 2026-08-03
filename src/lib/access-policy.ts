@@ -20,9 +20,15 @@ export function tabNodeKey(sectionKey: string, tabSlug: string) {
   return `${sectionKey}:${tabSlug}`;
 }
 
-/** Every grantable node, modules first with their submenus beneath. */
-export function accessTree(): { section: NavSection; nodes: AccessNode[] }[] {
-  return NAV.map((s) => ({
+/**
+ * Every grantable node, modules first with their submenus beneath.
+ *
+ * Takes the nav rather than reading NAV directly so a caller can pass the
+ * renamed nav — RBAC must show a module by the name the user gave it, not the
+ * one in code. Keys stay code-derived either way, so grants survive a rename.
+ */
+export function accessTree(nav: NavSection[] = NAV): { section: NavSection; nodes: AccessNode[] }[] {
+  return nav.map((s) => ({
     section: s,
     nodes: [
       { key: moduleNodeKey(s.key), label: s.label, moduleKey: s.key },

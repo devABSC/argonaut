@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { accessTree, allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
+import { accessTree, defaultAllows, effectiveAccess } from "@/lib/access";
+import { NAV } from "@/lib/nav";
+import { withLabels } from "@/lib/menu-labels";
 import { ROLE_LABEL } from "@/lib/rbac";
 import { saveRoleMatrix, saveUserOverrides, clearUserOverrides, resetToDefaults, saveBouAccess } from "../actions/rbac";
 import { IconTrash } from "../icons";
@@ -34,8 +36,9 @@ export default async function RbacPanel({
     userId || bouId ? "person"
     : view === "person" || view === "menu" ? view
     : "role";
-  const tree = accessTree();
-  const nodes = allNodes();
+  // Renamed labels, so RBAC calls a module what the user called it.
+  const tree = accessTree(await withLabels(NAV));
+  const nodes = tree.flatMap((g) => g.nodes);
 
   // Driven by the Role table, so a role added on the Roles tab appears here.
   const roleRows = await prisma.role.findMany({
