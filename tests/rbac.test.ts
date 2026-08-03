@@ -68,7 +68,7 @@ ok("rank: employee does not outrank supervisor", !outranks(A("EMPLOYEE"), T("SUP
 const keys = (role: any) => visibleNav(role).map((s) => s.key);
 
 assert.deepEqual(keys("EMPLOYEE"), ["service-desk"], "employee sees only service desk — HRIS is not for everyone");
-assert.deepEqual(keys("SUPERVISOR"), ["service-desk"], "supervisor sees only service desk");
+assert.deepEqual(keys("SUPERVISOR"), ["service-desk", "crm"], "supervisor gets CRM but not HRIS");
 assert.deepEqual(
   keys("HR_SUPERVISOR"),
   ["service-desk", "hris", "reports-analytics", "settings"],
@@ -76,12 +76,12 @@ assert.deepEqual(
 );
 assert.deepEqual(
   keys("ADMINISTRATOR"),
-  ["service-desk", "hris", "finance", "workflow", "reports-analytics", "settings"],
+  ["service-desk", "hris", "finance", "workflow", "crm", "reports-analytics", "settings"],
   "administrator sees finance + workflow config + settings",
 );
 assert.deepEqual(
   keys("SUPER_USER"),
-  ["service-desk", "hris", "finance", "workflow", "reports-analytics", "settings"],
+  ["service-desk", "hris", "finance", "workflow", "crm", "reports-analytics", "settings"],
   "super user sees everything",
 );
 n += 5;

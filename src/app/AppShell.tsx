@@ -30,6 +30,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M6.3 8.4v7.2M9.6 5.9h5.1a3 3 0 013 3v6.7" />
     </svg>
   ),
+  crm: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M3.2 19.5c.5-3.1 2.7-5 5.3-5s4.8 1.9 5.3 5" />
+      <circle cx="8.5" cy="8.6" r="3.1" />
+      <path d="M16.2 12.2l1.9 1.9 3.6-3.9" />
+    </svg>
+  ),
   "reports-analytics": (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <path d="M3.5 20.5h17" />

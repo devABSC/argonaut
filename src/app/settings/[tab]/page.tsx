@@ -4,6 +4,7 @@ import { ROLE_LABEL } from "@/lib/rbac";
 import AppShell from "../../AppShell";
 import UsersPanel from "../UsersPanel";
 import RbacPanel from "../RbacPanel";
+import CompanyPanel from "../CompanyPanel";
 
 export default async function SettingsTab({
   params,
@@ -25,6 +26,7 @@ export default async function SettingsTab({
       activeTab={active.slug}
     >
       {active.slug === "users" && <UsersPanel me={{ id: user.id, role: user.role }} />}
+      {active.slug === "company" && <CompanyPanel />}
       {active.slug === "rbac" && <RbacPanel userId={u} />}
     </AppShell>
   );

@@ -72,6 +72,7 @@ export async function updateUserFromForm(formData: FormData) {
   const role = String(formData.get("role") ?? "") as Role;
   const managerRaw = String(formData.get("managerId") ?? "");
   const managerId = managerRaw === "" ? null : managerRaw;
+  const company = String(formData.get("company") ?? "").trim() || null;
 
   const me = await actor();
   const target = await prisma.user.findUnique({ where: { id: userId } });
@@ -80,6 +81,9 @@ export async function updateUserFromForm(formData: FormData) {
 
   if (role && role !== target.role) await setUserRole(userId, role);
   if (managerId !== target.managerId) await setUserManager(userId, managerId);
+  if (company !== target.company) {
+    await prisma.user.update({ where: { id: userId }, data: { company, updatedById: me.id } });
+  }
 
   revalidatePath("/settings/users");
 }

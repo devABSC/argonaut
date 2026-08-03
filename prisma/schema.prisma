@@ -32,6 +32,8 @@ model User {
   passwordHash String // bcrypt
   role         Role          @default(EMPLOYEE)
   status       AccountStatus @default(PENDING)
+  /// Which company this account belongs to; matches Employee.company codes.
+  company      String?
   createdAt    DateTime      @default(now())
 
   /// Audit of the last change made to this account from Settings -> Users.
@@ -57,6 +59,8 @@ model User {
   workflowSteps  WorkflowStepApprover[] @relation("StepActorOf")
   menuGrants     MenuGrant[]            @relation("MenuGrants")
   employee       Employee?              @relation("EmployeeAccount")
+  ownedClients   Client[]               @relation("ClientOwner")
+  ownedDeals     Deal[]                 @relation("DealOwner")
   requests       ServiceRequest[]       @relation("RequestedBy")
   approvalsGiven RequestApproval[]      @relation("ApprovalsGiven")
 }
@@ -364,4 +368,102 @@ model Employee {
 
   @@index([lastName, firstName])
   @@index([company])
+}
+
+/// A company the business operates as. Employees and accounts belong to one.
+model Company {
+  id        String  @id @default(cuid())
+  /// Short code shared with Employee.company, e.g. ATO01-165846.
+  code      String  @unique
+  name      String
+  tin       String?
+  address   String?
+  pocEmail  String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/**
+ * ================================================================ CRM =====
+ * Client -> Contact -> Deal. A client is an organisation we sell to, contacts
+ * are the people there, and deals are the opportunities moving through stages.
+ */
+
+enum DealStage {
+  NEW
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model Client {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  industry String?
+  website  String?
+  phone    String?
+  city     String?
+  country  String?
+  notes    String?
+  isActive Boolean @default(true)
+
+  /// Who owns the relationship.
+  ownerId String?
+  owner   User?   @relation("ClientOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  contacts Contact[]
+  deals    Deal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([name])
+}
+
+model Contact {
+  id        String  @id @default(cuid())
+  clientId  String
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  firstName String
+  lastName  String
+  title     String?
+  email     String?
+  mobile    String?
+  isPrimary Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([clientId])
+}
+
+model Deal {
+  id                String    @id @default(cuid())
+  clientId          String
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title             String
+  amount            Decimal?  @db.Decimal(14, 2)
+  currency          String    @default("PHP")
+  stage             DealStage @default(NEW)
+  /// 0–100, the owner's own read on likelihood.
+  probability       Int?
+  expectedCloseDate DateTime?
+  notes             String?
+
+  ownerId String?
+  owner   User?   @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  /// Position within its stage column, lowest first.
+  sortOrder Int       @default(0)
+  closedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@index([stage])
+  @@index([clientId])
 }

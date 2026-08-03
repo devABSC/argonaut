@@ -30,7 +30,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
     orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
       id: true, name: true, email: true, role: true, status: true,
-      managerId: true, createdAt: true, updatedAt: true,
+      managerId: true, company: true, createdAt: true, updatedAt: true,
       manager: { select: { name: true } },
       updatedBy: { select: { name: true } },
     },
@@ -44,6 +44,20 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   const managers = users.filter(
     (u) => u.status === "ACTIVE" && u.role !== "EMPLOYEE",
   );
+
+  // Company codes come from the HRIS records, plus anything already assigned.
+  const employeeCompanies = await prisma.employee.findMany({
+    where: { company: { not: null } },
+    distinct: ["company"],
+    select: { company: true },
+    orderBy: { company: "asc" },
+  });
+  const companies = [
+    ...new Set([
+      ...employeeCompanies.map((c) => c.company!),
+      ...users.map((u) => u.company).filter((c): c is string => !!c),
+    ]),
+  ].sort();
 
   return (
     <>
@@ -92,7 +106,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
           <table className="utable">
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Role</th><th>Reports to</th><th>Status</th>
+                <th>Name</th><th>Email</th><th>Company</th><th>Role</th><th>Reports to</th><th>Status</th>
                 <th>Last updated</th><th>Updated by</th>
                 {canEdit && <th />}
               </tr>
@@ -111,9 +125,13 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                     {/* All inputs live inside the row's own form — linking them
                         by `form=` id drops the values under server actions. */}
                     {editable ? (
-                      <td colSpan={3}>
+                      <td colSpan={4}>
                         <form action={updateUserFromForm} className="rowform">
                           <input type="hidden" name="userId" value={u.id} />
+                          <select name="company" defaultValue={u.company ?? ""}>
+                            <option value="">— no company —</option>
+                            {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
                           <select name="role" defaultValue={u.role}>
                             {(roleChoices.includes(u.role) ? roleChoices : [u.role, ...roleChoices])
                               .map((r) => (
@@ -134,6 +152,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                       </td>
                     ) : (
                       <>
+                        <td className="muted">{u.company ?? "—"}</td>
                         <td><span className={`pill r-${u.role}`}>{ROLE_LABEL[u.role]}</span></td>
                         <td className="muted">{u.manager?.name ?? "—"}</td>
                         <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>

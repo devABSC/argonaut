@@ -38,6 +38,7 @@ export const NAV: NavSection[] = [
     label: "HRIS",
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
     tabs: [
+      { slug: "employees", label: "Employees" },
       { slug: "personal-info", label: "Personal Info" },
       { slug: "contract", label: "Contract" },
       { slug: "vlsl", label: "VLSL" },
@@ -70,6 +71,16 @@ export const NAV: NavSection[] = [
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
+    key: "crm",
+    label: "CRM",
+    tabs: [
+      { slug: "pipeline", label: "Pipeline" },
+      { slug: "clients", label: "Clients" },
+      { slug: "contacts", label: "Contacts" },
+    ],
+    roles: ["SUPER_USER", "ADMINISTRATOR", "SUPERVISOR"],
+  },
+  {
     key: "reports-analytics",
     label: "Reports-Analytics",
     tabs: [
@@ -83,6 +94,7 @@ export const NAV: NavSection[] = [
     label: "Settings",
     tabs: [
       { slug: "users", label: "Users" },
+      { slug: "company", label: "Company" },
       { slug: "rbac", label: "RBAC" },
     ],
     // HR Supervisor is included because registration approvals live here.
