@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { getStandardForm } from "@/lib/forms";
+import { done } from "@/lib/flash";
 import { noticeTicketRaised, noticeAwaitingApprover } from "@/lib/notices";
 
 const pad = (n: number, w: number) => String(n).padStart(w, "0");
@@ -55,6 +56,13 @@ export async function createRequest(formData: FormData) {
     },
   });
   if (!sub || !sub.isActive) throw new Error("SUBCATEGORY_UNAVAILABLE");
+
+  // A subtype with no route configured has nowhere to send the ticket. Raising
+  // one anyway would leave it sitting with nobody to act on it, so say so
+  // instead — checked at submission, whatever the picker showed.
+  if (sub.steps.length === 0) {
+    done("/service-desk/new-request", "Workflow is not yet available. Pls contact HR");
+  }
 
   const standard = await getStandardForm();
   const fields = [...standard.fields, ...sub.formType.fields];
