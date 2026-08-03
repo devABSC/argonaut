@@ -92,6 +92,7 @@ export const NAV: NavSection[] = [
       // Reachable, but reached through their parent rather than listed beside it.
       { slug: "coa", label: "COA", title: "Chart of Accounts", parent: "config" },
       { slug: "ageing", label: "Ageing", parent: "receivable" },
+      { slug: "bir-forms", label: "Forms", parent: "bir" },
     ],
     children: "submenu",
     topTabs: [
@@ -228,4 +229,9 @@ export const FINANCE_CONFIG_TABS: NavTab[] = [
 /** Receivable's own strip — what is owed, and how long it has been owed. */
 export const FINANCE_RECEIVABLE_TABS: NavTab[] = [
   { slug: "ageing", label: "Ageing" },
+];
+
+/** BIR's own strip. */
+export const FINANCE_BIR_TABS: NavTab[] = [
+  { slug: "bir-forms", label: "Forms" },
 ];

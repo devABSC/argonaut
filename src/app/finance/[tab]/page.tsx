@@ -1,6 +1,6 @@
 import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
-import { findSection, FINANCE_CONFIG_TABS, FINANCE_RECEIVABLE_TABS } from "@/lib/nav";
+import { findSection, FINANCE_CONFIG_TABS, FINANCE_RECEIVABLE_TABS, FINANCE_BIR_TABS } from "@/lib/nav";
 import AppShell, { type TopTab } from "../../AppShell";
 import CashAdvanceList from "../CashAdvanceList";
 import SoaPanel from "../SoaPanel";
@@ -30,9 +30,12 @@ export default async function FinanceTab({
   const inReceivable =
     active.slug === "receivable" || FINANCE_RECEIVABLE_TABS.some((t) => t.slug === active.slug);
 
+  const inBir = active.slug === "bir" || FINANCE_BIR_TABS.some((t) => t.slug === active.slug);
+
   const sub =
     inConfig ? { tabs: FINANCE_CONFIG_TABS, parent: "config" }
     : inReceivable ? { tabs: FINANCE_RECEIVABLE_TABS, parent: "receivable" }
+    : inBir ? { tabs: FINANCE_BIR_TABS, parent: "bir" }
     : null;
 
   const topTabs: TopTab[] = sub
@@ -63,6 +66,14 @@ export default async function FinanceTab({
       ) : active.slug === "soa" ? (
         <SoaPanel bou={bou} emp={emp} soaRef={ref} editLine={editLine} receipt={receipt}
           viewer={{ id: user.id, role: user.role, email: user.email }} />
+      ) : inBir ? (
+        <div className="panel">
+          <h2>BIR Forms</h2>
+          <p>
+            The returns and certificates filed with the BIR. Not built yet —
+            say which forms you file (2316, 1601-C, 2307…) and it can be.
+          </p>
+        </div>
       ) : inReceivable ? (
         <div className="panel">
           <h2>Ageing</h2>
