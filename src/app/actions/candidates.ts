@@ -337,3 +337,89 @@ export async function saveAiNotes(formData: FormData) {
   });
   done(where, "Notes saved.");
 }
+
+/* ---------- pre-job-offer documents ---------- */
+
+const docAt = (id: string) => `/recruitment/candidate/${id}/prejo-docs`;
+
+const day = (f: FormData, k: string) => {
+  const v = String(f.get(k) ?? "").trim();
+  if (!v) return null;
+  const d = new Date(`${v}T00:00:00Z`);
+  return isNaN(+d) ? null : d;
+};
+
+export async function addPreJoDoc(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const candidateId = String(formData.get("candidateId") ?? "");
+  const docType = String(formData.get("docType") ?? "").trim();
+  if (!candidateId) return;
+  if (!docType) done(docAt(candidateId), "Not added — choose a document type.");
+
+  const issuedAt = day(formData, "issuedAt");
+  const expiresAt = day(formData, "expiresAt");
+  if (issuedAt && expiresAt && expiresAt < issuedAt) {
+    done(docAt(candidateId), "Not added — the expiry is before the issue date.");
+  }
+
+  // The file is optional: a document can be logged as expected before it arrives.
+  const file = formData.get("file");
+  const hasFile = file instanceof File && file.size > 0;
+  if (hasFile && file.size > MAX_BYTES) {
+    done(docAt(candidateId), `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 10 MB.`);
+  }
+  const bytes = hasFile ? Buffer.from(await file.arrayBuffer()) : null;
+
+  const status = String(formData.get("status") ?? "").trim() || (hasFile ? "Submitted" : "Pending");
+
+  await prisma.preJoDoc.create({
+    data: {
+      candidateId, docType, status,
+      refNo: text(formData, "refNo"),
+      issuer: text(formData, "issuer"),
+      issuedAt, expiresAt,
+      remarks: text(formData, "remarks"),
+      fileData: bytes,
+      fileName: hasFile ? file.name : null,
+      fileMime: hasFile ? file.type || "application/octet-stream" : null,
+      fileSize: hasFile ? file.size : null,
+    },
+  });
+
+  revalidatePath(docAt(candidateId));
+  await logHistory({ type: "create", module: "Recruitment > PreJO Docs", description: `Logged ${docType} for a candidate`, user: me });
+  done(docAt(candidateId), `${docType} logged.`);
+}
+
+/** Marks a document verified, recording who checked it and when. */
+export async function setPreJoStatus(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const id = String(formData.get("docId") ?? "");
+  const status = String(formData.get("status") ?? "").trim();
+  if (!id || !status) return;
+
+  const verified = status === "Verified";
+  const d = await prisma.preJoDoc.update({
+    where: { id },
+    data: {
+      status,
+      verifiedById: verified ? me.id : null,
+      verifiedAt: verified ? new Date() : null,
+    },
+    select: { candidateId: true, docType: true },
+  });
+
+  revalidatePath(docAt(d.candidateId));
+  await logHistory({ type: "update", module: "Recruitment > PreJO Docs", description: `${d.docType} → ${status}`, user: me });
+  done(docAt(d.candidateId), `${d.docType} → ${status}.`);
+}
+
+export async function deletePreJoDoc(docId: string) {
+  const me = await requireRecruiter();
+  const d = await prisma.preJoDoc.delete({ where: { id: docId }, select: { candidateId: true, docType: true } });
+  revalidatePath(docAt(d.candidateId));
+  await logHistory({ type: "delete", module: "Recruitment > PreJO Docs", description: `Removed ${d.docType}`, user: me });
+  done(docAt(d.candidateId), `${d.docType} removed.`);
+}

@@ -5,6 +5,7 @@ export const CAND_VIEWS = [
   { slug: "work-experience", label: "Work Experience" },
   { slug: "skills", label: "Skills" },
   { slug: "char-ref", label: "Char Ref" },
+  { slug: "prejo-docs", label: "PreJO Docs" },
   { slug: "ai-data", label: "Other AI Data" },
   { slug: "experience", label: "Summary" },
   { slug: "notes", label: "Notes" },
@@ -28,4 +29,29 @@ export const STAGE_PILL: Record<string, string> = {
   Hired: "s-ACTIVE",
   Rejected: "s-REJECTED",
   Withdrawn: "s-SUSPENDED",
+};
+
+/** The pre-employment documents a candidate submits before a job offer. */
+export const PREJO_DOCS = [
+  "NBI Clearance",
+  "Barangay Clearance",
+  "Police Clearance",
+  "Medical / Pre-employment Exam",
+  "Certificate of Employment",
+  "Diploma / TOR",
+  "Birth Certificate (PSA)",
+  "Marriage Certificate (PSA)",
+  "SSS / Philhealth / Pag-IBIG",
+  "TIN",
+  "Other",
+] as const;
+
+export const PREJO_STATUS = ["Pending", "Submitted", "Verified", "Rejected", "Not Required"] as const;
+
+export const PREJO_PILL: Record<string, string> = {
+  Pending: "s-PENDING",
+  Submitted: "s-PENDING",
+  Verified: "s-ACTIVE",
+  Rejected: "s-REJECTED",
+  "Not Required": "s-SUSPENDED",
 };

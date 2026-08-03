@@ -2,8 +2,11 @@ import { prisma } from "@/lib/prisma";
 import {
   saveCandidate, reparseCV, addExperience, deleteExperience,
   addReference, markReferenceContacted, deleteReference, saveAiNotes,
+  addPreJoDoc, setPreJoStatus, deletePreJoDoc,
 } from "../actions/candidates";
 import { IconSave, IconPlus, IconTrash } from "../icons";
+import { PREJO_DOCS, PREJO_STATUS, PREJO_PILL } from "@/lib/candidate-views";
+import CellSelect from "../settings/CellSelect";
 
 const fmtWhen = (d: Date | null) =>
   d
@@ -164,6 +167,108 @@ export default async function CandidatePanel({
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "prejo-docs") {
+    const docs = await prisma.preJoDoc.findMany({
+      where: { candidateId },
+      orderBy: [{ status: "asc" }, { docType: "asc" }],
+      include: { verifiedBy: { select: { name: true } } },
+    });
+    const verified = docs.filter((d) => d.status === "Verified").length;
+    const outstanding = docs.filter((d) => d.status === "Pending").length;
+    const today = new Date();
+    const dayOnly = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "—");
+
+    return (
+      <div className="panel">
+        <div className="cat-head">
+          <h2>PreJO Docs <span className="count">{docs.length}</span></h2>
+          <span className="spacer" />
+          {outstanding > 0 && <span className="pill s-PENDING">{outstanding} outstanding</span>}
+          {docs.length > 0 && <span className="tree-meta">{verified} verified</span>}
+        </div>
+        <p>
+          Documents the candidate submits before a job offer. These are recorded,
+          never looked up — NBI, barangay and police clearances are issued to the
+          person, so they come from the candidate.
+        </p>
+
+        <form action={addPreJoDoc} className="addrow pjrow" encType="multipart/form-data">
+          <input type="hidden" name="candidateId" value={c.id} />
+          <select name="docType" required defaultValue="" title="Document">
+            <option value="" disabled>Document…</option>
+            {PREJO_DOCS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+          <input name="refNo" placeholder="Ref / cert no." autoComplete="off" />
+          <input name="issuer" placeholder="Issued by" autoComplete="off" />
+          <input name="issuedAt" type="date" title="Issued" />
+          <input name="expiresAt" type="date" title="Expires" />
+          <input name="file" type="file" title="Attach a scan (optional)" />
+          <button className="save icon" type="submit" title="Log document" aria-label="Log document">
+            <IconPlus />
+          </button>
+        </form>
+
+        {docs.length === 0 ? (
+          <p style={{ marginTop: 14 }}>Nothing logged yet.</p>
+        ) : (
+          <div className="tablewrap">
+            <table className="utable stacked">
+              <thead>
+                <tr>
+                  <th className="numcol">No.</th><th>Document</th><th>Ref no.</th><th>Issued by</th>
+                  <th>Issued</th><th>Expires</th><th>File</th><th>Status</th><th>Verified by</th><th />
+                </tr>
+              </thead>
+              <tbody>
+                {docs.map((d, i) => {
+                  const expired = d.expiresAt && d.expiresAt < today;
+                  return (
+                    <tr key={d.id}>
+                      <td className="numcol" data-label="No.">{i + 1}</td>
+                      <td data-label="Document"><b>{d.docType}</b></td>
+                      <td className="muted" data-label="Ref no.">{d.refNo ?? "—"}</td>
+                      <td className="muted" data-label="Issued by">{d.issuer ?? "—"}</td>
+                      <td className="muted nowrap" data-label="Issued">{dayOnly(d.issuedAt)}</td>
+                      <td className={expired ? "nowrap" : "muted nowrap"} data-label="Expires">
+                        {dayOnly(d.expiresAt)}{expired && <span className="you">expired</span>}
+                      </td>
+                      <td data-label="File">
+                        {d.fileName ? (
+                          <a className="ticket" href={`/api/prejo-doc/${d.id}`} target="_blank" rel="noreferrer">
+                            open
+                          </a>
+                        ) : <span className="muted">none</span>}
+                      </td>
+                      <td data-label="Status">
+                        <form action={setPreJoStatus}>
+                          <input type="hidden" name="docId" value={d.id} />
+                          <CellSelect
+                            name="status"
+                            defaultValue={d.status}
+                            options={PREJO_STATUS.map((s) => ({ value: s, label: s }))}
+                          />
+                        </form>
+                      </td>
+                      <td className="muted" data-label="Verified by">
+                        {d.verifiedBy ? `${d.verifiedBy.name}` : "—"}
+                        {d.verifiedAt && <span className="tree-meta"> {dayOnly(d.verifiedAt)}</span>}
+                      </td>
+                      <td className="rowacts">
+                        <form action={deletePreJoDoc.bind(null, d.id)}>
+                          <button className="reject icon" type="submit" title="Remove" aria-label="Remove"><IconTrash /></button>
+                        </form>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -58,6 +58,7 @@ model User {
   bouAccess       BouAccess[]            @relation("BouAccess")
   projectChanges  ProjectChange[]        @relation("ProjectChanges")
   candidates      Candidate[]            @relation("Recruiting")
+  preJoVerified   PreJoDoc[]             @relation("PreJoVerifier")
   passwordResets  PasswordReset[]        @relation("PasswordResets")
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
@@ -824,6 +825,7 @@ model Candidate {
 
   experience WorkExperience[]
   references CharacterReference[]
+  preJoDocs  PreJoDoc[]
 
   /// Set when the candidate is hired and becomes staff.
   employeeId String?   @unique
@@ -931,6 +933,44 @@ model CharacterReference {
   /// What the reference said, and when they were reached.
   remarks    String?
   contactedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([candidateId])
+}
+
+/// A pre-employment document the candidate submits before a job offer.
+/// Recorded, never looked up: NBI, barangay and police clearances are issued
+/// to the person, so the candidate hands them over.
+model PreJoDoc {
+  id String @id @default(cuid())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  /// NBI Clearance, Barangay Clearance, Police Clearance, Medical…
+  docType String
+  /// Clearance or certificate number as printed.
+  refNo   String?
+  issuer  String?
+
+  issuedAt  DateTime?
+  expiresAt DateTime?
+
+  /// Pending, Submitted, Verified, Rejected, Not Required.
+  status  String  @default("Pending")
+  remarks String?
+
+  /// The document itself, held in the database like a CV.
+  fileData Bytes?
+  fileName String?
+  fileMime String?
+  fileSize Int?
+
+  verifiedById String?
+  verifiedBy   User?   @relation("PreJoVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

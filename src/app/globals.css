@@ -835,3 +835,7 @@ button{font-family:inherit}
 .app .findings li{font-size:.88rem;color:var(--text);line-height:1.5}
 .app .findings.flag li{color:var(--muted)}
 .app .findings.flag li::marker{color:var(--red,#ff6b6b)}
+
+/* PreJO document add row */
+.app .pjrow{grid-template-columns:minmax(150px,1.3fr) 130px minmax(120px,1fr) 140px 140px minmax(130px,1fr) 36px}
+.app .addrow input[type=file]{font-size:.76rem;padding:5px 8px}
