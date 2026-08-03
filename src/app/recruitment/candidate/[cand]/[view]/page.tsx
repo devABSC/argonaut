@@ -55,7 +55,7 @@ export default async function CandidateView({
         ))}
       </div>
 
-      <CandidatePanel candidateId={cand} view={view} />
+      <CandidatePanel candidateId={cand} view={view} viewer={{ id: user.id, role: user.role }} />
     </AppShell>
   );
 }

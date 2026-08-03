@@ -7,6 +7,8 @@ import {
 import RunAssessment from "./RunAssessment";
 import CheckList from "./CheckList";
 import type { Assessment } from "@/lib/assess";
+import type { RoleKey } from "@/lib/roles";
+import { fmtCost, costUsd, fmtUsd, fmtPhp, USD_PHP } from "@/lib/cost";
 import { IconSave, IconPlus, IconTrash } from "../icons";
 import { PREJO_DOCS, PREJO_STATUS, PREJO_PILL } from "@/lib/candidate-views";
 import CellSelect from "../settings/CellSelect";
@@ -44,10 +46,14 @@ const FIELDS = [
 export default async function CandidatePanel({
   candidateId,
   view,
+  viewer,
 }: {
   candidateId: string;
   view: string;
+  /** What a run cost is the owner's business — see the cost gate below. */
+  viewer: { id: string; role: RoleKey };
 }) {
+  const isOwner = viewer.role === "SUPER_USER";
   const c = await prisma.candidate.findUnique({
     where: { id: candidateId },
     include: { recruiter: { select: { name: true } }, bou: { select: { name: true } } },
@@ -202,14 +208,18 @@ export default async function CandidatePanel({
             {c.assessedAt && (
               <span className="tree-meta">
                 run {fmtWhen(c.assessedAt)}
-                {c.assessTokens ? ` · ${c.assessTokens.toLocaleString()} tokens` : ""}
+                {isOwner && runs[0]
+                  ? ` · ${(c.assessTokens ?? 0).toLocaleString()} tokens · ${fmtCost(runs[0].inputTokens ?? 0, runs[0].outputTokens ?? 0)}`
+                  : ""}
               </span>
             )}
           </div>
           <p>
             Reads the CV against a role and returns what it evidences, what it
-            does not, and what to test at interview. It costs a few cents each
-            time, so it runs only when you ask — not every candidate is worth it.
+            does not, and what to test at interview.
+            {isOwner
+              ? " It costs a few cents each time, so it runs only when you ask — not every candidate is worth it."
+              : " It runs only when you ask, so use it on the candidates that matter."}
           </p>
 
           {!c.parsedAt ? (
@@ -220,7 +230,9 @@ export default async function CandidatePanel({
               <b>AI Analytics Completed</b>
               <span className="tree-meta">
                 {c.assessedAt ? fmtWhen(c.assessedAt) : ""}
-                {c.assessTokens ? ` · ${c.assessTokens.toLocaleString()} tokens` : ""}
+                {isOwner && runs[0]
+                  ? ` · ${(c.assessTokens ?? 0).toLocaleString()} tokens · ${fmtCost(runs[0].inputTokens ?? 0, runs[0].outputTokens ?? 0)}`
+                  : ""}
                 {runs.length > 1 ? ` · ${runs.length} runs` : ""}
               </span>
             </div>
@@ -332,26 +344,34 @@ export default async function CandidatePanel({
           </>
         )}
 
-        {runs.length > 0 && (
+        {isOwner && runs.length > 0 && (
           <div className="panel" style={{ marginTop: 14 }}>
             <div className="cat-head">
               <h2>Run history <span className="count">{runs.length}</span></h2>
               <span className="spacer" />
               <span className="tree-meta">
                 {runs.reduce((n, r) => n + (r.inputTokens ?? 0) + (r.outputTokens ?? 0), 0).toLocaleString()} tokens
-                {" "}across all runs
+                {" · "}
+                {(() => {
+                  const usd = runs.reduce((n, r) => n + costUsd(r.inputTokens ?? 0, r.outputTokens ?? 0), 0);
+                  return `${fmtUsd(usd)} · ${fmtPhp(usd)}`;
+                })()}
+                {" across all runs"}
               </span>
             </div>
             <p>
               Every run is kept. The same CV reads differently against a
               different role, so the question asked is part of the answer.
+              Output tokens cost five times input, so both are shown —
+              converted at ₱{USD_PHP.toFixed(2)} to the dollar.
             </p>
             <div className="tablewrap">
               <table className="utable stacked">
                 <thead>
                   <tr>
                     <th className="numcol">No.</th><th>Run</th><th>Assessed against</th>
-                    <th>Model</th><th className="numcol">In</th><th className="numcol">Out</th><th>By</th>
+                    <th>Model</th><th className="numcol">In</th><th className="numcol">Out</th>
+                    <th className="amtcol">Cost</th><th>By</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -366,6 +386,9 @@ export default async function CandidatePanel({
                       <td className="muted" data-label="Model">{r.model ?? "—"}</td>
                       <td className="numcol" data-label="In">{r.inputTokens?.toLocaleString() ?? "—"}</td>
                       <td className="numcol" data-label="Out">{r.outputTokens?.toLocaleString() ?? "—"}</td>
+                      <td className="amtcol nowrap" data-label="Cost">
+                        {fmtCost(r.inputTokens ?? 0, r.outputTokens ?? 0)}
+                      </td>
                       <td className="muted" data-label="By">{r.runByName || "—"}</td>
                     </tr>
                   ))}
