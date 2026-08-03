@@ -28,7 +28,7 @@ export default async function BirFormsPanel() {
         check theirs is the current version before filing —{" "}
         <a className="ticket" href="https://www.bir.gov.ph/bir-forms"
           target="_blank" rel="noopener noreferrer">
-          bir.gov.ph/bir-forms
+          https://www.bir.gov.ph/bir-forms
         </a>
       </p>
 
@@ -48,7 +48,7 @@ export default async function BirFormsPanel() {
           <table className="utable stacked">
             <thead><tr>
               <th className="numcol">No.</th><th>Form</th><th>Description</th>
-              <th>File</th><th>Uploaded by</th><th />
+              <th>Link</th><th>Uploaded by</th><th />
             </tr></thead>
             <tbody>
               {rows.map((f, i) => (
@@ -56,11 +56,13 @@ export default async function BirFormsPanel() {
                   <td className="numcol" data-label="No.">{i + 1}</td>
                   <td data-label="Form"><b className="ticket">{f.code}</b></td>
                   <td data-label="Description">{f.description}</td>
-                  <td data-label="File">
+                  <td data-label="Link">
                     {f.sourceUrl ? (
-                      <a className="viewtoggle" href={f.sourceUrl} target="_blank" rel="noopener noreferrer"
+                      // The whole address, not a tidied version of it — someone
+                      // reading this needs to be able to copy it.
+                      <a className="viewtoggle urlcell" href={f.sourceUrl} target="_blank" rel="noopener noreferrer"
                         title={f.sourceUrl}>
-                        <IconLink /> {f.sourceUrl.replace(/^https?:\/\//, "")}
+                        <IconLink /> {f.sourceUrl}
                       </a>
                     ) : f.fileData ? (
                       <a className="viewtoggle" href={`/api/bir-form/${f.id}`} download
