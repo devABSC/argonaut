@@ -925,6 +925,7 @@ button{font-family:inherit}
 /* Buyer beside Supplier — the certificate's own two-box shape. Label left,
    value right, so the two columns read across at a glance. */
 .app .infoboxes{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.app .yearlinks{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
 .app .infobox{margin:0}
 .app .infoform{display:grid;gap:8px;margin-top:12px}
 .app .inforow{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;align-items:center}
