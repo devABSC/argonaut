@@ -56,6 +56,7 @@ model User {
   receiptReviews SoaLine[]       @relation("ReceiptReviewer")
   billsEncoded   Bill[]          @relation("BillEncoder")
   birForms       BirForm[]       @relation("BirFormUploader")
+  bir2307s       Bir2307[]       @relation("Bir2307Encoder")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -712,6 +713,10 @@ model BirForm {
   fileSize Int?
   fileData Bytes?
 
+  /// Where the form is published. Used instead of a held copy when the source
+  /// is the thing worth linking to.
+  sourceUrl String?
+
   uploadedById   String?
   uploadedBy     User?   @relation("BirFormUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedByName String?
@@ -719,6 +724,33 @@ model BirForm {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// One 2307 raised for a supplier — the certificate of creditable tax withheld
+/// at source, covering a period.
+model Bir2307 {
+  id String @id @default(cuid())
+
+  periodFrom DateTime
+  periodTo   DateTime
+
+  /// The supplier as named on the certificate. Linked where they are already
+  /// in the system, and kept as text either way so the certificate still reads
+  /// if the supplier record changes later.
+  supplierId   String?
+  supplier     Supplier? @relation("Supplier2307", fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierName String
+  supplierTin  String?
+  address      String?
+
+  encodedById   String
+  encodedBy     User   @relation("Bir2307Encoder", fields: [encodedById], references: [id], onDelete: Cascade)
+  encodedByName String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([supplierId])
 }
 
 /// One line of the Chart of Accounts — what a cost is booked against.
@@ -813,7 +845,8 @@ model Supplier {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  bills Bill[] @relation("SupplierBills")
+  bills    Bill[]    @relation("SupplierBills")
+  bir2307s Bir2307[] @relation("Supplier2307")
 
   @@index([name])
 }

@@ -80,6 +80,13 @@ export const IconPdf = () => (
   </svg>
 );
 
+export const IconLink = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M10.5 13.5a4 4 0 006 .4l2.4-2.4a4 4 0 10-5.7-5.7l-1.4 1.4" />
+    <path d="M13.5 10.5a4 4 0 00-6-.4l-2.4 2.4a4 4 0 105.7 5.7l1.4-1.4" />
+  </svg>
+);
+
 export const IconUpload = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
     <path d="M12 20.5v-11M7.5 13.5L12 9l4.5 4.5" />

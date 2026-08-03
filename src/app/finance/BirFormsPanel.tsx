@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { IconPlus, IconTrash, IconDownload } from "../icons";
+import { IconPlus, IconTrash, IconDownload, IconLink } from "../icons";
 import { addBirForm, deleteBirForm } from "../actions/birforms";
 
 const kb = (n: number | null) => (n == null ? "" : `${Math.round(n / 1024)} KB`);
@@ -21,11 +21,23 @@ export default async function BirFormsPanel() {
         <h2>BIR Forms <span className="count">{rows.length}</span></h2>
       </div>
 
+      {/* The blanks kept here are copies. The Bureau's own page is where the
+          current version always comes from, so it is one click away. */}
+      <p className="birnote">
+        Blank forms are published by the Bureau of Internal Revenue. Always
+        check theirs is the current version before filing —{" "}
+        <a className="ticket" href="https://www.bir.gov.ph/bir-forms"
+          target="_blank" rel="noopener noreferrer">
+          bir.gov.ph/bir-forms
+        </a>
+      </p>
+
       <form action={addBirForm} className="addrow birrow">
         <input name="code" required placeholder="Form no., e.g. 2307" autoComplete="off" aria-label="Form number" />
         <input name="description" required placeholder="What the form is for" autoComplete="off" aria-label="Description" />
         <input type="file" name="file" aria-label="Blank form file"
           accept=".xlsx,.xls,.pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        <input name="sourceUrl" placeholder="or a link" autoComplete="off" aria-label="Link to the form" />
         <button className="save icon" type="submit" title="Add form" aria-label="Add form"><IconPlus /></button>
       </form>
 
@@ -45,7 +57,12 @@ export default async function BirFormsPanel() {
                   <td data-label="Form"><b className="ticket">{f.code}</b></td>
                   <td data-label="Description">{f.description}</td>
                   <td data-label="File">
-                    {f.fileData ? (
+                    {f.sourceUrl ? (
+                      <a className="viewtoggle" href={f.sourceUrl} target="_blank" rel="noopener noreferrer"
+                        title={f.sourceUrl}>
+                        <IconLink /> {f.sourceUrl.replace(/^https?:\/\//, "")}
+                      </a>
+                    ) : f.fileData ? (
                       <a className="viewtoggle" href={`/api/bir-form/${f.id}`} download
                         title={`Download ${f.fileName ?? f.code}`}>
                         <IconDownload /> {f.fileName ?? "Download"}

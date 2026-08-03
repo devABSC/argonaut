@@ -919,7 +919,8 @@ button{font-family:inherit}
 @media (max-width:760px){.app .billbar>*{flex:1 1 140px}.app .billbar .btn-primary{flex:1 1 100%}}
 
 /* Chart of Accounts: a fuller record, so a grid rather than a strip. */
-.app .birrow{grid-template-columns:150px minmax(180px,1.6fr) minmax(180px,1fr) 36px}
+.app .birrow{grid-template-columns:130px minmax(160px,1.5fr) minmax(150px,1fr) minmax(140px,1fr) 36px}
+.app .birnote{margin-top:10px;font-size:.86rem;color:var(--muted);max-width:none}
 .app .birrow input[type=file]{font-size:.8rem;color:var(--muted);border:0;background:transparent;padding:0}
 .app .coaform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
 .app .coaform .full{grid-column:1/-1}

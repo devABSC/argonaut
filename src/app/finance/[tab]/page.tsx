@@ -7,6 +7,7 @@ import SoaPanel from "../SoaPanel";
 import BillsPanel from "../BillsPanel";
 import CoaPanel from "../CoaPanel";
 import BirFormsPanel from "../BirFormsPanel";
+import Bir2307Panel from "../Bir2307Panel";
 
 export default async function FinanceTab({
   params,
@@ -68,14 +69,7 @@ export default async function FinanceTab({
         <SoaPanel bou={bou} emp={emp} soaRef={ref} editLine={editLine} receipt={receipt}
           viewer={{ id: user.id, role: user.role, email: user.email }} />
       ) : active.slug === "bir-2307" ? (
-        <div className="panel">
-          <h2>2307 — Certificate of Creditable Tax Withheld at Source</h2>
-          <p>
-            Issued to a payee for tax withheld that they may credit against
-            their own liability. Not built yet — say what a 2307 should be
-            raised from and it can be.
-          </p>
-        </div>
+        <Bir2307Panel />
       ) : inBir ? (
         <BirFormsPanel />
       ) : inReceivable ? (
