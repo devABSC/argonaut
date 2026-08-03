@@ -12,6 +12,7 @@ const LABEL: Record<string, string> = {
   mailgun_region: "Mailgun region (US/EU)",
   mailgun_api_key: "Mailgun API key",
   mail_from: "From address",
+  anthropic_api_key: "Anthropic API key",
 };
 
 const HINT: Record<string, string> = {
@@ -22,6 +23,7 @@ const HINT: Record<string, string> = {
   mailgun_domain: "mg.znergee.com",
   mailgun_region: "US",
   mail_from: "Argonaut <no-reply@atomitsoln.com>",
+  anthropic_api_key: "sk-ant-…",
 };
 
 /**
@@ -77,6 +79,26 @@ export default async function EmailPanel() {
                   type={f.secret ? "password" : "text"}
                   defaultValue={f.value}
                   placeholder={f.secret && f.isSet ? "•••••• leave blank to keep" : HINT[f.key] ?? ""}
+                  autoComplete="off"
+                />
+              </label>
+            ))}
+          </div>
+
+          <p className="secdiv">Anthropic — reads uploaded CVs in Recruitment</p>
+          <div className="grid3">
+            {fields.filter((f) => f.key === "anthropic_api_key").map((f) => (
+              <label key={f.key}>
+                <span>
+                  {LABEL[f.key]}
+                  {f.isSet && <em className="setflag"> saved</em>}
+                  {f.fromEnv && <em className="setflag env"> from env</em>}
+                </span>
+                <input
+                  name={f.key}
+                  type="password"
+                  defaultValue={f.value}
+                  placeholder={f.isSet ? "•••••• leave blank to keep" : HINT[f.key]}
                   autoComplete="off"
                 />
               </label>
