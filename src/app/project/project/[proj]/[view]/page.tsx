@@ -11,10 +11,13 @@ import ProjectDetail from "../../../ProjectDetail";
 /** One project's record. Access rides on the Projects tab. */
 export default async function ProjectView({
   params,
+  searchParams,
 }: {
   params: Promise<{ proj: string; view: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }) {
   const { proj, view } = await params;
+  const { edit } = await searchParams;
   if (!isProjectView(view)) notFound();
 
   const { user, nav, section } = await requireAccess("project", "projects");
@@ -67,7 +70,7 @@ export default async function ProjectView({
         </div>
       ))}
 
-      <ProjectDetail projectId={proj} view={view} />
+      <ProjectDetail projectId={proj} view={view} edit={edit} />
     </AppShell>
   );
 }

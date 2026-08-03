@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import {
   PROJECT_STATUS, MILESTONE_STATUS, ROADBLOCK_STATUS, RISK_STATUS,
@@ -6,12 +7,12 @@ import {
 } from "@/lib/projects";
 import {
   saveProjectInfo,
-  addMilestone, setMilestoneStatus, deleteMilestone, moveMilestone,
+  addMilestone, setMilestoneStatus, deleteMilestone, moveMilestone, renameMilestone,
   addMilestoneTask, setMilestoneTaskStatus, deleteMilestoneTask,
   addRoadblock, setRoadblockStatus, deleteRoadblock,
   addRisk, setRiskStatus, deleteRisk,
 } from "../actions/project-detail";
-import { IconSave, IconTrash, IconPlus, IconUp, IconDown } from "../icons";
+import { IconSave, IconTrash, IconPlus, IconUp, IconDown, IconEdit } from "../icons";
 import CellSelect from "../settings/CellSelect";
 import LeadPicker from "./LeadPicker";
 
@@ -46,9 +47,12 @@ const Owner = ({ o }: { o: { firstName: string; lastName: string } | null }) =>
 export default async function ProjectDetail({
   projectId,
   view,
+  edit,
 }: {
   projectId: string;
   view: string;
+  /** Id of the milestone being renamed, from ?edit= — one row at a time. */
+  edit?: string;
 }) {
   if (view === "milestone") {
     const [rows, owners] = await Promise.all([
@@ -67,6 +71,7 @@ export default async function ProjectDetail({
 
     // The current milestone: the next one still to be reached, soonest first.
     // Undated ones fall behind dated ones rather than jumping the queue.
+    const base = `/project/project/${projectId}/milestone`;
     const outstanding = rows.filter((r) => r.status !== "Done" && r.status !== "Missed");
     // Sequential, so the current one is simply the first still to be reached.
     const current = outstanding.find((r) => r.status === "In Progress") ?? outstanding[0] ?? null;
@@ -142,8 +147,26 @@ export default async function ProjectDetail({
                         <tr className={m.id === current?.id ? "iscurrent" : undefined}>
                           <td className="numcol">{i + 1}</td>
                           <td>
-                            <b>{m.name}</b>
-                            {m.description && <span className="muted"> — {m.description}</span>}
+                            {m.id === edit ? (
+                              // The whole form lives in this one cell — a form
+                              // cannot span table cells and keep its values.
+                              <form action={renameMilestone} className="renameform">
+                                <input type="hidden" name="milestoneId" value={m.id} />
+                                <input name="name" defaultValue={m.name} required autoFocus
+                                  aria-label="Milestone name" />
+                                <input name="description" defaultValue={m.description ?? ""}
+                                  placeholder="Description (optional)" aria-label="Description" />
+                                <button className="save icon" type="submit" title="Save" aria-label="Save">
+                                  <IconSave />
+                                </button>
+                                <Link className="subtab" href={base}>Cancel</Link>
+                              </form>
+                            ) : (
+                              <>
+                                <b>{m.name}</b>
+                                {m.description && <span className="muted"> — {m.description}</span>}
+                              </>
+                            )}
                           </td>
                           <td className={late ? "nowrap" : "muted nowrap"}>
                             {day(m.dueDate)}{late && <span className="you">overdue</span>}
@@ -169,9 +192,21 @@ export default async function ProjectDetail({
                               <button className="ghost icon" type="submit" disabled={i === ordered.length - 1}
                                 title="Move down" aria-label="Move down"><IconDown /></button>
                             </form>
-                            <form action={deleteMilestone.bind(null, m.id)}>
-                              <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
-                            </form>
+                            <Link className="ghost icon" href={`${base}?edit=${m.id}`}
+                              title="Rename" aria-label="Rename"><IconEdit /></Link>
+                            {/* A milestone carrying tasks cannot be deleted —
+                                removing it would take its tasks with it. */}
+                            {m.tasks.length > 0 ? (
+                              <button className="reject icon" type="button" disabled
+                                title={`Has ${m.tasks.length} task${m.tasks.length === 1 ? "" : "s"} — delete those first`}
+                                aria-label="Delete unavailable while this milestone has tasks">
+                                <IconTrash />
+                              </button>
+                            ) : (
+                              <form action={deleteMilestone.bind(null, m.id)}>
+                                <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
+                              </form>
+                            )}
                           </td>
                         </tr>
 

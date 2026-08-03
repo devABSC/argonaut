@@ -147,10 +147,61 @@ export async function setMilestoneStatus(formData: FormData) {
   done(where, `${m.name} is now ${status}.`);
 }
 
+/** Rename a milestone, and fix its description while we are there. */
+export async function renameMilestone(formData: FormData) {
+  const id = String(formData.get("milestoneId") ?? "");
+  if (!id) return;
+
+  const before = await prisma.milestone.findUnique({
+    where: { id },
+    select: { projectId: true, name: true, description: true },
+  });
+  if (!before) return;
+  const me = await requireProjectMember(before.projectId);
+
+  const where = at(before.projectId, "milestone");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) done(where, "Not saved — a milestone needs a name.");
+
+  const description = text(formData, "description");
+  const changes = diff(before, { name, description }, { name: "Milestone", description: "Description" });
+  if (changes.length === 0) done(where, "Nothing changed.");
+
+  // Trail and update together, so a renamed milestone always carries what it
+  // used to be called.
+  await prisma.$transaction([
+    prisma.milestone.update({ where: { id }, data: { name, description } }),
+    prisma.projectChange.createMany({
+      data: changes.map((c) => ({
+        projectId: before.projectId, entity: "Milestone", entityId: id,
+        entityName: before.name, ...c, actorId: me.userId, actorName: me.name,
+      })),
+    }),
+  ]);
+
+  revalidatePath(where);
+  await logHistory({ type: "update", module: "Project > Milestones", description: `Renamed milestone ${before.name} to ${name}`, user: { id: me.userId, name: me.name } });
+  done(where, `Milestone saved as "${name}".`);
+}
+
 export async function deleteMilestone(id: string) {
-  const owner = await prisma.milestone.findUnique({ where: { id }, select: { projectId: true } });
+  const owner = await prisma.milestone.findUnique({
+    where: { id },
+    select: { projectId: true, name: true, _count: { select: { tasks: true } } },
+  });
   if (!owner) return;
   const me = await requireProjectMember(owner.projectId);
+
+  // The row's delete button is disabled once a milestone has tasks, but the
+  // action is reachable on its own — the tasks are protected here, not in the
+  // markup.
+  if (owner._count.tasks > 0) {
+    done(
+      at(owner.projectId, "milestone"),
+      `"${owner.name}" still has ${owner._count.tasks} task${owner._count.tasks === 1 ? "" : "s"} — close or delete them first.`,
+    );
+  }
+
   const m = await prisma.milestone.delete({ where: { id }, select: { name: true, projectId: true } });
   const where = at(m.projectId, "milestone");
   revalidatePath(where);

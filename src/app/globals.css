@@ -318,6 +318,21 @@ button{font-family:inherit}
 .app button.ghost.icon:hover:not(:disabled){color:var(--cyan);border-color:rgba(56,232,255,.42);background:rgba(56,232,255,.08)}
 .app button.ghost.icon:disabled{opacity:.3;cursor:default}
 .app button.ghost.icon svg{width:15px;height:15px}
+/* The pencil is a link, not a button, but it belongs to the same row of
+   actions and must not look like the odd one out. */
+.app a.ghost.icon{display:inline-grid;place-items:center;width:30px;height:30px;flex:0 0 30px;
+  border-radius:9px;color:var(--muted);background:transparent;border:1px solid var(--line);
+  transition:background .16s,border-color .16s,color .16s}
+.app a.ghost.icon:hover{color:var(--cyan);border-color:rgba(56,232,255,.42);background:rgba(56,232,255,.08)}
+.app a.ghost.icon svg{width:15px;height:15px}
+.app button.reject.icon:disabled{opacity:.28;cursor:not-allowed}
+
+/* Inline milestone rename, inside the name cell */
+.app .renameform{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.app .renameform input{font-family:var(--body);font-size:.86rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 9px;min-width:140px}
+.app .renameform input:focus{outline:none;border-color:var(--cyan)}
+.app .renameform .subtab{padding:6px 10px;font-size:.8rem}
 .app .rowform{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .app .rowform select{font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
 .app .rowform select:focus{outline:none;border-color:var(--cyan)}
