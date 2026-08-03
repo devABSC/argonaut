@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
 import { canSeeProject } from "@/lib/project-scope";
-import { PROJECT_VIEWS, isProjectView, PROJECT_PILL } from "@/lib/projects";
+import { PROJECT_SECTIONS, isProjectView, PROJECT_PILL } from "@/lib/projects";
 import AppShell from "../../../../AppShell";
 import ProjectDetail from "../../../ProjectDetail";
 
@@ -45,19 +45,27 @@ export default async function ProjectView({
         <span className={`pill ${PROJECT_PILL[p.status] ?? "s-PENDING"}`}>{p.status}</span>
       </div>
 
-      <div className="subtabs" role="tablist">
-        {PROJECT_VIEWS.map((v) => (
-          <Link
-            key={v.slug}
-            role="tab"
-            aria-selected={v.slug === view}
-            className={v.slug === view ? "subtab on" : "subtab"}
-            href={`/project/project/${proj}/${v.slug}`}
-          >
-            {v.label}
-          </Link>
-        ))}
-      </div>
+      {/* Two levels: the record's tabs, then what that tab is made of.
+          Milestones, roadblocks and risks all belong to the project's info,
+          so they sit under it rather than beside it. */}
+      {PROJECT_SECTIONS.map((sec) => (
+        <div key={sec.slug} className="subtabs" role="tablist">
+          <span className="subtab on parent">{sec.label}</span>
+          <span className="subtabs-nest">
+            {sec.views.map((v) => (
+              <Link
+                key={v.slug}
+                role="tab"
+                aria-selected={v.slug === view}
+                className={v.slug === view ? "subtab on" : "subtab"}
+                href={`/project/project/${proj}/${v.slug}`}
+              >
+                {v.label}
+              </Link>
+            ))}
+          </span>
+        </div>
+      ))}
 
       <ProjectDetail projectId={proj} view={view} />
     </AppShell>

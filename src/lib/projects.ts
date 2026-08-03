@@ -12,12 +12,21 @@ export const PROJECT_PILL: Record<string, string> = {
   Cancelled: "s-REJECTED",
 };
 
-/** Tabs inside one project's record. */
+/** Every view inside one project's record. Used to validate the URL. */
 export const PROJECT_VIEWS = [
-  { slug: "project-info", label: "Project Info" },
+  { slug: "project-info", label: "Details" },
   { slug: "milestone", label: "Milestone" },
   { slug: "roadblocks", label: "Roadblocks" },
   { slug: "risks", label: "Risks" },
+] as const;
+
+/**
+ * The record's own tabs. Milestones, roadblocks and risks are not siblings of
+ * Project Info — they are what the project info consists of — so they sit a
+ * level down rather than beside it.
+ */
+export const PROJECT_SECTIONS = [
+  { slug: "project-info", label: "Project Info", views: PROJECT_VIEWS },
 ] as const;
 
 export type ProjectView = (typeof PROJECT_VIEWS)[number]["slug"];
