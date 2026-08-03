@@ -1,15 +1,34 @@
+import Link from "next/link";
 import { type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { accessTree, allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
 import { ROLE_LABEL } from "@/lib/rbac";
-import { saveRoleMatrix, saveUserOverrides, clearUserOverrides, resetToDefaults } from "../actions/rbac";
+import { saveRoleMatrix, saveUserOverrides, clearUserOverrides, resetToDefaults, saveBouAccess } from "../actions/rbac";
 import { IconTrash } from "../icons";
 import RbacMatrix, { type MatrixGroup } from "./RbacMatrix";
 import UserPicker from "./UserPicker";
 
 
 
-export default async function RbacPanel({ userId, bouId }: { userId?: string; bouId?: string }) {
+const VIEWS = [
+  { slug: "role", label: "Access by Role" },
+  { slug: "person", label: "Access by Employee" },
+] as const;
+
+export default async function RbacPanel({
+  userId,
+  bouId,
+  view = "role",
+}: {
+  userId?: string;
+  bouId?: string;
+  /** Which half of RBAC is on screen. Picking a person implies their tab. */
+  view?: string;
+}) {
+  // Two very different jobs — a matrix for every role, and exceptions for one
+  // person. Stacking them made a long page where the second half was easy to
+  // miss, so each gets its own tab.
+  const on = userId || bouId ? "person" : view === "person" ? "person" : "role";
   const tree = accessTree();
   const nodes = allNodes();
 
@@ -87,8 +106,158 @@ export default async function RbacPanel({ userId, bouId }: { userId?: string; bo
     ? await prisma.menuGrant.count({ where: { userId: target.id } })
     : 0;
 
+  // Only active BOUs are offered. A retired one is never granted, so it stays
+  // unassigned rather than being carried forward silently.
+  const activeBous = target
+    ? await prisma.bou.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, code: true, _count: { select: { employees: true } } },
+      })
+    : [];
+  const scoped = target
+    ? new Set(
+        (await prisma.bouAccess.findMany({
+          where: { userId: target.id },
+          select: { bouId: true },
+        })).map((r) => r.bouId),
+      )
+    : new Set<string>();
+
+  const personPanel = (
+    <div className="panel">
+      <h2>Access by employee</h2>
+      <p>
+        Overrides for one person, on top of whatever their role already allows.
+        Use this for exceptions rather than bending a whole role — a change here
+        affects one account, a change on the role tab affects everyone holding
+        it.
+      </p>
+      <UserPicker
+        bous={bous}
+        selectedBou={bouId ?? ""}
+        users={users.map((u) => ({
+          id: u.id,
+          label: `${u.name} — ${ROLE_LABEL[u.role.key as RoleKey]}${
+            recordFor(u.email)?.bou ? ` · ${recordFor(u.email)!.bou!.name}` : ""
+          }`,
+        }))}
+        selected={target?.id ?? ""}
+      />
+
+      {target && targetAccess && (
+        <form action={saveUserOverrides.bind(null, target.id)} style={{ marginTop: 18 }}>
+          <div className="cat-head">
+            <h2 style={{ fontSize: "1.02rem" }}>{target.name}</h2>
+            <span className={`pill r-${target.role.key}`}>{ROLE_LABEL[target.role.key as RoleKey]}</span>
+            {recordFor(target.email)?.bou && (
+              <span className="tree-meta">{recordFor(target.email)!.bou!.name}</span>
+            )}
+            {overrideCount > 0
+              ? <span className="pill s-PENDING">{overrideCount} override{overrideCount === 1 ? "" : "s"}</span>
+              : <span className="tree-meta">following role access</span>}
+          </div>
+
+          <div className="grantgrid">
+            {tree.map((g) => (
+              <div className="grantcard" key={g.section.key}>
+                <b>{g.section.label}</b>
+                {g.nodes.map((n) => (
+                  <label className="tickrow" key={n.key}>
+                    <input type="checkbox" name={`u|${n.key}`} defaultChecked={targetAccess.get(n.key) === true} />
+                    <span>{n.tabSlug ? n.label : "— whole module —"}</span>
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <div className="rowacts" style={{ marginTop: 16 }}>
+            <button className="btn-primary" type="submit">Save overrides for {target.name}</button>
+            <button
+              className="reject icon" type="submit" title="Clear overrides" aria-label="Clear overrides"
+              formAction={clearUserOverrides.bind(null, target.id)}
+            >
+              <IconTrash />
+            </button>
+          </div>
+        </form>
+      )}
+
+      {target && (
+        <form action={saveBouAccess.bind(null, target.id)} style={{ marginTop: 22 }}>
+          <p className="secdiv">
+            BOU records {target.name} may see{" "}
+            <span className="count">
+              {scoped.size ? `${scoped.size} of ${activeBous.length}` : "all"}
+            </span>
+          </p>
+          <p>
+            Menu access decides which <em>pages</em> they can open; this decides
+            which <em>records</em> they see once there. Tick nothing and they are
+            unscoped — every BOU their pages allow. Only active BOUs are listed,
+            so a retired one is never granted.
+          </p>
+
+          {activeBous.length === 0 ? (
+            <p style={{ marginTop: 12 }}>No active BOUs to grant.</p>
+          ) : (
+            <div className="grantgrid" style={{ marginTop: 12 }}>
+              {activeBous.map((b) => (
+                <label className="tickrow" key={b.id}>
+                  <input
+                    type="checkbox"
+                    name="bou"
+                    value={b.id}
+                    defaultChecked={scoped.has(b.id)}
+                  />
+                  <span>
+                    <b>{b.name}</b>
+                    <span className="tree-meta"> {b._count.employees} staff</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div className="rowacts" style={{ marginTop: 16 }}>
+            <button className="btn-primary" type="submit">
+              Save BOU access for {target.name}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+
+  const strip = (
+    <div className="subtabs" role="tablist">
+      {VIEWS.map((v) => (
+        <Link
+          key={v.slug}
+          role="tab"
+          aria-selected={v.slug === on}
+          className={v.slug === on ? "subtab on" : "subtab"}
+          href={v.slug === "role" ? "/settings/rbac" : "/settings/rbac?view=person"}
+        >
+          {v.label}
+        </Link>
+      ))}
+    </div>
+  );
+
+  if (on === "person") {
+    return (
+      <>
+        {strip}
+        {personPanel}
+      </>
+    );
+  }
+
   return (
     <>
+      {strip}
       <div className="panel">
         <div className="cat-head">
           <h2>Access by role</h2>
@@ -111,63 +280,6 @@ export default async function RbacPanel({ userId, bouId }: { userId?: string; bo
         </form>
       </div>
 
-      <div className="panel" style={{ marginTop: 18 }}>
-        <h2>Access for one person</h2>
-        <p>
-          Overrides for a single user, on top of whatever their role already
-          allows. Use this for exceptions rather than bending a whole role.
-        </p>
-        <UserPicker
-          bous={bous}
-          selectedBou={bouId ?? ""}
-          users={users.map((u) => ({
-            id: u.id,
-            label: `${u.name} — ${ROLE_LABEL[u.role.key as RoleKey]}${
-              recordFor(u.email)?.bou ? ` · ${recordFor(u.email)!.bou!.name}` : ""
-            }`,
-          }))}
-          selected={target?.id ?? ""}
-        />
-
-        {target && targetAccess && (
-          <form action={saveUserOverrides.bind(null, target.id)} style={{ marginTop: 18 }}>
-            <div className="cat-head">
-              <h2 style={{ fontSize: "1.02rem" }}>{target.name}</h2>
-              <span className={`pill r-${target.role.key}`}>{ROLE_LABEL[target.role.key as RoleKey]}</span>
-              {recordFor(target.email)?.bou && (
-                <span className="tree-meta">{recordFor(target.email)!.bou!.name}</span>
-              )}
-              {overrideCount > 0
-                ? <span className="pill s-PENDING">{overrideCount} override{overrideCount === 1 ? "" : "s"}</span>
-                : <span className="tree-meta">following role access</span>}
-            </div>
-
-            <div className="grantgrid">
-              {tree.map((g) => (
-                <div className="grantcard" key={g.section.key}>
-                  <b>{g.section.label}</b>
-                  {g.nodes.map((n) => (
-                    <label className="tickrow" key={n.key}>
-                      <input type="checkbox" name={`u|${n.key}`} defaultChecked={targetAccess.get(n.key) === true} />
-                      <span>{n.tabSlug ? n.label : "— whole module —"}</span>
-                    </label>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            <div className="rowacts" style={{ marginTop: 16 }}>
-              <button className="btn-primary" type="submit">Save overrides for {target.name}</button>
-              <button
-                className="reject icon" type="submit" title="Clear overrides" aria-label="Clear overrides"
-                formAction={clearUserOverrides.bind(null, target.id)}
-              >
-                <IconTrash />
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
     </>
   );
 }

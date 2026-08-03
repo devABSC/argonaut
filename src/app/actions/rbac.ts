@@ -5,6 +5,8 @@ import { type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
+import { done } from "@/lib/flash";
+import { logHistory } from "@/lib/log";
 
 const PATH = "/settings/rbac";
 
@@ -129,4 +131,44 @@ export async function resetToDefaults() {
   await requireOwner();
   await prisma.menuGrant.deleteMany({});
   revalidatePath(PATH, "layout");
+}
+
+/**
+ * Which BOUs a user may see records for. Only active BOUs are offered, so a
+ * retired one is left unassigned rather than quietly carried forward.
+ * No rows at all means unscoped — they see everything their pages allow.
+ */
+export async function saveBouAccess(userId: string, formData: FormData) {
+  const me = await requireOwner();
+
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  if (!target) return;
+
+  const active = await prisma.bou.findMany({ where: { isActive: true }, select: { id: true } });
+  const allowed = new Set(active.map((b) => b.id));
+  const picked = formData.getAll("bou").map(String).filter((id) => allowed.has(id));
+
+  await prisma.$transaction([
+    // Replace wholesale: unticking is as meaningful as ticking, and a diff
+    // would leave grants for BOUs that have since been retired.
+    prisma.bouAccess.deleteMany({ where: { userId } }),
+    ...(picked.length
+      ? [prisma.bouAccess.createMany({ data: picked.map((bouId) => ({ userId, bouId })) })]
+      : []),
+  ]);
+
+  revalidatePath("/settings/rbac");
+  await logHistory({
+    type: "update", module: "Settings > RBAC",
+    description: picked.length
+      ? `${target.name} scoped to ${picked.length} BOU(s)`
+      : `${target.name} unscoped — all BOUs`,
+    user: me,
+  });
+  done(
+    `/settings/rbac?view=person&u=${userId}`,
+    picked.length
+      ? `${target.name} can now see ${picked.length} BOU${picked.length === 1 ? "" : "s"}.`
+      : `${target.name} is unscoped — every BOU their pages allow.`,
+  );
 }

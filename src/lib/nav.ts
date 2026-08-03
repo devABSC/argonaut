@@ -24,6 +24,13 @@ export type NavSection = {
 
 export const NAV: NavSection[] = [
   {
+    // First in the list, so it is where everyone lands. Open to every signed-in
+    // user — it is their own space, not a granted module.
+    key: "my-space",
+    label: "My Space",
+    tabs: [{ slug: "overview", label: "Overview" }],
+  },
+  {
     key: "service-desk",
     label: "Service Desk",
     tabs: [
@@ -126,10 +133,7 @@ export const NAV: NavSection[] = [
   {
     key: "project",
     label: "PROJECT",
-    tabs: [
-      { slug: "projects", label: "Projects" },
-      { slug: "tasks", label: "Tasks" },
-    ],
+    tabs: [{ slug: "projects", label: "Projects" }],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {

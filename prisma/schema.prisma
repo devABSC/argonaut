@@ -55,8 +55,8 @@ model User {
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
   menuGrants      MenuGrant[]            @relation("MenuGrants")
+  bouAccess       BouAccess[]            @relation("BouAccess")
   candidates      Candidate[]            @relation("Recruiting")
-  tasksRaised     ProjectTask[]          @relation("TasksRaised")
   passwordResets  PasswordReset[]        @relation("PasswordResets")
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
@@ -507,7 +507,6 @@ model Employee {
   candidate Candidate? @relation("HiredFrom")
 
   /// Work assigned to this person under PROJECT.
-  assignedTasks  ProjectTask[]   @relation("AssignedTasks")
   projects       ProjectMember[] @relation("ProjectMemberships")
   milestonesOwned Milestone[]    @relation("MilestoneOwner")
   roadblocksOwned Roadblock[]    @relation("RoadblockOwner")
@@ -702,7 +701,7 @@ model Bou {
 
   employees    Employee[]
   candidates   Candidate[]
-  projectTasks ProjectTask[] @relation("ProjectTasks")
+  bouAccess    BouAccess[]   @relation("BouAccess")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -790,39 +789,22 @@ model Candidate {
   @@index([lastName, firstName])
 }
 
-/// A piece of work assigned to one employee. Distinct from the Task model,
-/// which is the Workflow catalogue of task names — this is an actual assignment.
-model ProjectTask {
+/// Which BOUs one user may see records for. Menu access says which *pages* a
+/// user can open; this says which *records* they may see once there.
+/// No rows for a user means unscoped — the pages they can open show everything.
+model BouAccess {
   id String @id @default(cuid())
 
-  /// The task itself, written as a description.
-  description String
-  /// Optional short title; the description stands alone when absent.
-  title       String?
+  userId String
+  user   User   @relation("BouAccess", fields: [userId], references: [id], onDelete: Cascade)
 
-  /// Which part of the business the work belongs to.
-  bouId String?
-  bou   Bou?   @relation("ProjectTasks", fields: [bouId], references: [id], onDelete: SetNull)
+  bouId String
+  bou   Bou    @relation("BouAccess", fields: [bouId], references: [id], onDelete: Cascade)
 
-  /// Who is doing it.
-  assigneeId String?
-  assignee   Employee? @relation("AssignedTasks", fields: [assigneeId], references: [id], onDelete: SetNull)
+  grantedAt DateTime @default(now())
 
-  /// Open, In Progress, Blocked, Done, Cancelled.
-  status   String    @default("Open")
-  priority String    @default("Normal")
-  dueDate  DateTime?
-  doneAt   DateTime?
-
-  createdById String?
-  createdBy   User?   @relation("TasksRaised", fields: [createdById], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([status])
-  @@index([assigneeId])
-  @@index([bouId])
+  @@unique([userId, bouId])
+  @@index([userId])
 }
 
 model City {

@@ -1,7 +1,6 @@
 import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
 import AppShell from "../../AppShell";
-import TaskList from "../TaskList";
 import ProjectList from "../ProjectList";
 
 export default async function ProjectTab({ params }: { params: Promise<{ tab: string }> }) {
@@ -15,9 +14,7 @@ export default async function ProjectTab({ params }: { params: Promise<{ tab: st
       activeSection={section.key}
       activeTab={active.slug}
     >
-      {active.slug === "tasks" ? (
-        <TaskList />
-      ) : active.slug === "projects" ? (
+      {active.slug === "projects" ? (
         <ProjectList />
       ) : (
         <div className="panel">
