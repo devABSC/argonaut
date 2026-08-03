@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { saveCandidate, reparseCV } from "../actions/candidates";
-import { IconSave } from "../icons";
+import { saveCandidate, reparseCV, addExperience, deleteExperience } from "../actions/candidates";
+import { IconSave, IconPlus, IconTrash } from "../icons";
 
 const fmtWhen = (d: Date | null) =>
   d
@@ -75,6 +75,93 @@ export default async function CandidatePanel({
           </>
         ) : (
           <p>No CV on file for this candidate.</p>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "work-experience") {
+    const rows = await prisma.workExperience.findMany({
+      where: { candidateId },
+      orderBy: [{ yearFrom: "desc" }, { createdAt: "desc" }],
+    });
+    const span = (a: number | null, b: number | null) =>
+      a || b ? `${a ?? "?"} – ${b ?? "present"}` : "—";
+
+    return (
+      <div className="panel">
+        <div className="cat-head">
+          <h2>Work Experience <span className="count">{rows.length}</span></h2>
+          <span className="spacer" />
+          <span className="tree-meta">most recent first</span>
+        </div>
+
+        <form action={addExperience} className="addrow wxrow">
+          <input type="hidden" name="candidateId" value={c.id} />
+          <input name="yearFrom" type="number" min={1950} max={2100} placeholder="From" title="Year from" />
+          <input name="yearTo" type="number" min={1950} max={2100} placeholder="To" title="Year to — blank if current" />
+          <input name="companyName" required placeholder="Company" autoComplete="off" />
+          <input name="position" placeholder="Position" autoComplete="off" />
+          <input name="city" placeholder="City" autoComplete="off" />
+          <input name="country" placeholder="Country" autoComplete="off" defaultValue="Philippines" />
+          <input name="duties" placeholder="Duties and responsibilities" autoComplete="off" />
+          <button className="save icon" type="submit" title="Add post" aria-label="Add post">
+            <IconPlus />
+          </button>
+        </form>
+
+        {rows.length === 0 ? (
+          <p style={{ marginTop: 14 }}>
+            Nothing on file. Add posts above, or read the CV again to pull them out.
+          </p>
+        ) : (
+          <div className="tablewrap">
+            <table className="utable stacked">
+              <thead>
+                <tr>
+                  <th className="numcol">No.</th><th>Years</th><th>Company</th><th>Position</th>
+                  <th>City</th><th>Country</th><th>Duties and responsibilities</th><th />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.id}>
+                    <td className="numcol" data-label="No.">{i + 1}</td>
+                    <td className="muted nowrap" data-label="Years">{span(r.yearFrom, r.yearTo)}</td>
+                    <td data-label="Company"><b>{r.companyName}</b></td>
+                    <td data-label="Position">{r.position ?? "—"}</td>
+                    <td className="muted" data-label="City">{r.city ?? "—"}</td>
+                    <td className="muted" data-label="Country">{r.country ?? "—"}</td>
+                    <td className="muted" data-label="Duties">{r.duties ?? "—"}</td>
+                    <td className="rowacts">
+                      <form action={deleteExperience.bind(null, r.id)}>
+                        <button className="reject icon" type="submit" title="Remove" aria-label="Remove"><IconTrash /></button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "skills") {
+    return (
+      <div className="panel">
+        <div className="cat-head">
+          <h2>Skills <span className="count">{c.skills.length}</span></h2>
+        </div>
+        {c.skills.length ? (
+          <div className="skillrow">
+            {c.skills.map((s) => <span className="skill" key={s}>{s}</span>)}
+          </div>
+        ) : (
+          <p>
+            Nothing on file — the CV listed no skills, or has not been read yet.
+          </p>
         )}
       </div>
     );

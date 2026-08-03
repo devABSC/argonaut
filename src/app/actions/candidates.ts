@@ -176,3 +176,55 @@ export async function deleteCandidate(candidateId: string) {
   await logHistory({ type: "delete", module: "Recruitment > Candidates", description: `Deleted candidate ${c.firstName} ${c.lastName}`, user: me });
   done(PATH, `${c.firstName} ${c.lastName} deleted.`);
 }
+
+/* ---------- work experience ---------- */
+
+const at = (id: string) => `/recruitment/candidate/${id}/work-experience`;
+
+const year = (f: FormData, k: string) => {
+  const v = String(f.get(k) ?? "").trim();
+  if (!v) return null;
+  const n = Number(v);
+  // A four-digit year within living memory; anything else is a typo.
+  return Number.isInteger(n) && n >= 1950 && n <= new Date().getFullYear() + 1 ? n : null;
+};
+
+export async function addExperience(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const candidateId = String(formData.get("candidateId") ?? "");
+  const companyName = String(formData.get("companyName") ?? "").trim();
+  if (!candidateId) return;
+  if (!companyName) done(at(candidateId), "Not added — a post needs a company name.");
+
+  const yearFrom = year(formData, "yearFrom");
+  const yearTo = year(formData, "yearTo");
+  if (yearFrom && yearTo && yearTo < yearFrom) {
+    done(at(candidateId), "Not added — the end year is before the start year.");
+  }
+
+  await prisma.workExperience.create({
+    data: {
+      candidateId, companyName, yearFrom, yearTo,
+      position: text(formData, "position"),
+      city: text(formData, "city"),
+      country: text(formData, "country"),
+      duties: text(formData, "duties"),
+    },
+  });
+
+  revalidatePath(at(candidateId));
+  await logHistory({ type: "create", module: "Recruitment > Work Experience", description: `Added ${companyName} to a candidate`, user: me });
+  done(at(candidateId), `${companyName} added.`);
+}
+
+export async function deleteExperience(experienceId: string) {
+  const me = await requireRecruiter();
+  const row = await prisma.workExperience.delete({
+    where: { id: experienceId },
+    select: { candidateId: true, companyName: true },
+  });
+  revalidatePath(at(row.candidateId));
+  await logHistory({ type: "delete", module: "Recruitment > Work Experience", description: `Removed ${row.companyName} from a candidate`, user: me });
+  done(at(row.candidateId), `${row.companyName} removed.`);
+}

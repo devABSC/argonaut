@@ -816,6 +816,8 @@ model Candidate {
   recruiterId String?
   recruiter   User?   @relation("Recruiting", fields: [recruiterId], references: [id], onDelete: SetNull)
 
+  experience WorkExperience[]
+
   /// Set when the candidate is hired and becomes staff.
   employeeId String?   @unique
   employee   Employee? @relation("HiredFrom", fields: [employeeId], references: [id], onDelete: SetNull)
@@ -876,6 +878,32 @@ model ProjectChange {
   createdAt DateTime @default(now())
 
   @@index([projectId, createdAt])
+}
+
+/// One post held by a candidate. Rows rather than free text, so they can be
+/// sorted, counted and searched — a CV's employment history is structured.
+model WorkExperience {
+  id String @id @default(cuid())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  /// Years only. A CV rarely gives months, and "to" is blank while current.
+  yearFrom Int?
+  yearTo   Int?
+
+  companyName String
+  position    String?
+  city        String?
+  country     String?
+
+  /// What they actually did.
+  duties String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([candidateId])
 }
 
 model City {

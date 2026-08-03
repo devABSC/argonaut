@@ -819,3 +819,6 @@ button{font-family:inherit}
 .app .pwform input{width:100%;font-family:var(--body);font-size:.9rem;color:var(--text);
   background:var(--s4);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .app .pwform input:focus{outline:none;border-color:var(--cyan)}
+
+/* Work-experience add row */
+.app .wxrow{grid-template-columns:78px 78px minmax(120px,1.1fr) minmax(120px,1.1fr) 110px 110px minmax(150px,1.6fr) 36px}

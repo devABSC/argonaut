@@ -2,7 +2,9 @@
 export const CAND_VIEWS = [
   { slug: "personal-info", label: "Personal Info" },
   { slug: "cv", label: "CV" },
-  { slug: "experience", label: "Experience" },
+  { slug: "work-experience", label: "Work Experience" },
+  { slug: "skills", label: "Skills" },
+  { slug: "experience", label: "Summary" },
   { slug: "notes", label: "Notes" },
 ] as const;
 
