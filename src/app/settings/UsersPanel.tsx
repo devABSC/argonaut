@@ -4,7 +4,7 @@ import {
   canApproveRegistrations,
   canManageUser,
   canManageUsers,
-  assignableRoles,
+  canAssignRole,
   type Actor,
 } from "@/lib/rbac";
 import { approveRegistration, rejectRegistration, updateUserFromForm } from "../actions/users";
@@ -40,7 +40,15 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   const pending = users.filter((u) => u.status === "PENDING");
   const canApprove = canApproveRegistrations(me);
   const canEdit = canManageUsers(me);
-  const roleChoices = assignableRoles(me);
+  // Assignable roles come from the table so custom ones appear, then are
+  // filtered by what this actor is permitted to grant.
+  const roleRows = await prisma.role.findMany({
+    where: { isActive: true },
+    orderBy: [{ rank: "desc" }, { label: "asc" }],
+    select: { key: true, label: true },
+  });
+  const roleLabel = (k: string) => roleRows.find((r) => r.key === k)?.label ?? ROLE_LABEL[k as keyof typeof ROLE_LABEL] ?? k;
+  const roleChoices = roleRows.map((r) => r.key).filter((k) => canAssignRole(me, k as never));
   // Anyone at supervisor level or above can be a reporting line.
   const managers = users.filter(
     (u) => u.status === "ACTIVE" && u.role.key !== "EMPLOYEE",
@@ -137,7 +145,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                           <select name="role" defaultValue={uKey}>
                             {(roleChoices.includes(uKey) ? roleChoices : [uKey, ...roleChoices])
                               .map((r) => (
-                                <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+                                <option key={r} value={r}>{roleLabel(r)}</option>
                               ))}
                           </select>
                           <select name="managerId" defaultValue={u.managerId ?? ""}>
@@ -155,7 +163,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                     ) : (
                       <>
                         <td className="muted">{u.company ?? "—"}</td>
-                        <td><span className={`pill r-${uKey}`}>{ROLE_LABEL[uKey]}</span></td>
+                        <td><span className={`pill r-${uKey}`}>{roleLabel(uKey)}</span></td>
                         <td className="muted">{u.manager?.name ?? "—"}</td>
                         <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
                       </>

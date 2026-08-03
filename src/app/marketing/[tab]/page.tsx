@@ -3,6 +3,7 @@ import { requireAccess } from "@/lib/guard";
 import AppShell from "../../AppShell";
 import SendPanel from "../SendPanel";
 import TemplatesPanel from "../TemplatesPanel";
+import DiagnosticsPanel from "../DiagnosticsPanel";
 
 export default async function MarketingTab({ params }: { params: Promise<{ tab: string }> }) {
   const { tab } = await params;
@@ -17,6 +18,7 @@ export default async function MarketingTab({ params }: { params: Promise<{ tab: 
     >
       {active.slug === "send" && <SendPanel />}
       {active.slug === "templates" && <TemplatesPanel />}
+      {active.slug === "diagnostics" && <DiagnosticsPanel />}
     </AppShell>
   );
 }

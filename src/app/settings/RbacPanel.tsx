@@ -1,4 +1,4 @@
-import { ROLE_KEYS, type RoleKey } from "@/lib/roles";
+import { type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { accessTree, allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
 import { ROLE_LABEL } from "@/lib/rbac";
@@ -7,11 +7,20 @@ import { IconTrash } from "../icons";
 import RbacMatrix, { type MatrixGroup } from "./RbacMatrix";
 import UserPicker from "./UserPicker";
 
-const ROLES: RoleKey[] = [...ROLE_KEYS];
+
 
 export default async function RbacPanel({ userId }: { userId?: string }) {
   const tree = accessTree();
   const nodes = allNodes();
+
+  // Driven by the Role table, so a role added on the Roles tab appears here.
+  const roleRows = await prisma.role.findMany({
+    where: { isActive: true },
+    orderBy: [{ rank: "desc" }, { label: "asc" }],
+    select: { key: true, label: true },
+  });
+  const ROLES = roleRows.map((r) => r.key as RoleKey);
+  const labels = Object.fromEntries(roleRows.map((r) => [r.key, r.label]));
 
   const roleGrants = await prisma.menuGrant.findMany({
     where: { roleId: { not: null } },
@@ -70,7 +79,7 @@ export default async function RbacPanel({ userId }: { userId?: string }) {
         </p>
 
         <form action={saveRoleMatrix}>
-          <RbacMatrix groups={groups} roles={ROLES} initial={initial} />
+          <RbacMatrix groups={groups} roles={ROLES} labels={labels} initial={initial} />
         </form>
       </div>
 

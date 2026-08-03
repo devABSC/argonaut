@@ -86,6 +86,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "send", label: "Send Email" },
       { slug: "templates", label: "Templates" },
+      { slug: "diagnostics", label: "Diagnostics" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },

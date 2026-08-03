@@ -6,13 +6,7 @@ import { IconSave } from "../icons";
 export type MatrixNode = { key: string; label: string; moduleKey: string; isModule: boolean };
 export type MatrixGroup = { moduleKey: string; moduleLabel: string; nodes: MatrixNode[] };
 
-const ROLE_LABEL: Record<string, string> = {
-  SUPER_USER: "Super User",
-  ADMINISTRATOR: "Administrator",
-  HR_SUPERVISOR: "HR Supervisor",
-  SUPERVISOR: "Supervisor",
-  EMPLOYEE: "Employee",
-};
+
 
 /**
  * Roles across the top, modules down the side as a collapsible tree. Modules
@@ -23,10 +17,13 @@ const ROLE_LABEL: Record<string, string> = {
 export default function RbacMatrix({
   groups,
   roles,
+  labels,
   initial,
 }: {
   groups: MatrixGroup[];
   roles: string[];
+  /** Display names, keyed by role key — editable on the Roles tab. */
+  labels: Record<string, string>;
   /** "ROLE|nodeKey" -> allowed */
   initial: Record<string, boolean>;
 }) {
@@ -100,10 +97,10 @@ export default function RbacMatrix({
               <th>Module / Page</th>
               {roles.map((r) => (
                 <th key={r} className="rolecol">
-                  <span>{ROLE_LABEL[r] ?? r}</span>
+                  <span>{labels[r] ?? r}</span>
                   <span className="bulk">
-                    <button type="button" onClick={() => setColumn(r, true)} title={`Grant everything to ${ROLE_LABEL[r]}`}>all</button>
-                    <button type="button" onClick={() => setColumn(r, false)} title={`Revoke everything from ${ROLE_LABEL[r]}`}>none</button>
+                    <button type="button" onClick={() => setColumn(r, true)} title={`Grant everything to ${labels[r] ?? r}`}>all</button>
+                    <button type="button" onClick={() => setColumn(r, false)} title={`Revoke everything from ${labels[r] ?? r}`}>none</button>
                   </span>
                 </th>
               ))}
@@ -179,7 +176,7 @@ export default function RbacMatrix({
       <div className="previewbar">
         {roles.map((r) => (
           <div className="prevcard" key={r}>
-            <span className="prevrole">{ROLE_LABEL[r] ?? r}</span>
+            <span className="prevrole">{labels[r] ?? r}</span>
             <span className="prevmenus">
               {preview[r].length ? preview[r].join(" · ") : "no menus at all"}
             </span>

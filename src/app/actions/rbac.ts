@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { ROLE_KEYS, type RoleKey } from "@/lib/roles";
+import { type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
 
 const PATH = "/settings/rbac";
-const ROLES: RoleKey[] = [...ROLE_KEYS];
+
 
 /** Only the owner reassigns access — an admin cannot widen their own reach. */
 async function requireOwner() {
@@ -24,6 +24,8 @@ export async function saveRoleMatrix(formData: FormData) {
   await requireOwner();
 
   const nodes = allNodes();
+  const roleRows = await prisma.role.findMany({ select: { id: true, key: true } });
+  const ROLES = roleRows.map((r) => r.key as RoleKey);
 
   // Only deviations from the code default are stored.
   const desired = new Map<string, boolean>(); // "ROLE|node" -> allowed
@@ -34,7 +36,6 @@ export async function saveRoleMatrix(formData: FormData) {
     }
   }
 
-  const roleRows = await prisma.role.findMany({ select: { id: true, key: true } });
   const idByKey = new Map(roleRows.map((r) => [r.key, r.id]));
 
   const existing = await prisma.menuGrant.findMany({
