@@ -15,6 +15,9 @@ ok("employee may NOT open Workflow", !defaultAllows("EMPLOYEE", "workflow"));
 ok("employee may NOT open Settings", !defaultAllows("EMPLOYEE", "settings"));
 ok("unknown node denied", !defaultAllows("SUPER_USER", "does-not-exist"));
 ok("employee may NOT open Reports-Analytics", !defaultAllows("EMPLOYEE", "reports-analytics"));
+ok("employee may NOT open Marketing", !defaultAllows("EMPLOYEE", "marketing"));
+ok("supervisor may NOT open Marketing", !defaultAllows("SUPERVISOR", "marketing"));
+ok("admin MAY open Marketing", defaultAllows("ADMINISTRATOR", "marketing"));
 ok("admin MAY open Reports-Analytics", defaultAllows("ADMINISTRATOR", "reports-analytics"));
 ok("reports module is in the tree", allNodes().some((x) => x.key === "reports-analytics:overview"));
 

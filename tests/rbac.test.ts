@@ -76,12 +76,12 @@ assert.deepEqual(
 );
 assert.deepEqual(
   keys("ADMINISTRATOR"),
-  ["service-desk", "hris", "finance", "workflow", "crm", "reports-analytics", "settings"],
+  ["service-desk", "hris", "finance", "workflow", "crm", "marketing", "reports-analytics", "settings"],
   "administrator sees finance + workflow config + settings",
 );
 assert.deepEqual(
   keys("SUPER_USER"),
-  ["service-desk", "hris", "finance", "workflow", "crm", "reports-analytics", "settings"],
+  ["service-desk", "hris", "finance", "workflow", "crm", "marketing", "reports-analytics", "settings"],
   "super user sees everything",
 );
 n += 5;

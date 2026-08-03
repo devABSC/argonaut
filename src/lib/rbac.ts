@@ -1,7 +1,13 @@
 // Argonaut — role-based access control. Single source of truth for "who can do what".
 // Server actions and page queries both consult this; never re-derive rules inline.
 import type { Prisma } from "@prisma/client";
-import { type RoleKey, RANK } from "./roles.ts";
+import { type RoleKey, RANK as BUILTIN_RANK } from "./roles.ts";
+
+/** Custom roles are not in the built-in table; they rank lowest, so they can
+ *  never outrank or manage anyone until the owner says otherwise. */
+const RANK = new Proxy(BUILTIN_RANK, {
+  get: (t, k: string) => (k in t ? t[k as RoleKey] : 0),
+}) as Record<string, number>;
 
 export { ROLE_LABEL, type RoleKey } from "./roles.ts";
 

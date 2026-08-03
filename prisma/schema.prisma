@@ -605,3 +605,41 @@ model City {
 
   @@index([region])
 }
+
+/// Reusable marketing email templates. Each carries a default subject, body
+/// and signature the send form can load.
+model EmailTemplate {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  subject       String   @default("")
+  body          String   @default("")
+  signature     String   @default("")
+  createdById   String?
+  createdByName String   @default("System")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  recipients EmailTemplateRecipient[]
+
+  @@index([name])
+}
+
+/// Per-recipient send log for a template, so we can tell whether an address
+/// already received this one and skip it rather than pestering them twice.
+model EmailTemplateRecipient {
+  id         String        @id @default(cuid())
+  templateId String
+  template   EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  email      String
+  sentAt     DateTime      @default(now())
+
+  @@unique([templateId, email])
+  @@index([templateId])
+}
+
+/// Unsubscribe list — addresses here are skipped by every campaign.
+model Suppression {
+  email     String   @id
+  reason    String?
+  createdAt DateTime @default(now())
+}

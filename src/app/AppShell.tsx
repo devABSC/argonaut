@@ -38,6 +38,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M16.2 12.2l1.9 1.9 3.6-3.9" />
     </svg>
   ),
+  marketing: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M3 10.5l17-6.2-3 16-4.6-4.2z" />
+      <path d="M12.4 16.1L8.6 19v-5.3L20 4.3" />
+    </svg>
+  ),
   "reports-analytics": (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <path d="M3.5 20.5h17" />

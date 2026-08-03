@@ -16,6 +16,41 @@ async function requireOwner() {
   return u;
 }
 
+/**
+ * Adds a role. The key is derived from the label and fixed thereafter, since
+ * permissions and user records point at it. A new role starts with no access
+ * at all — grant it on the RBAC matrix.
+ */
+export async function createRole(formData: FormData) {
+  const me = await requireOwner();
+
+  const label = String(formData.get("label") ?? "").trim();
+  if (!label) return;
+
+  const key = label.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
+  if (!key) return;
+  if (await prisma.role.findUnique({ where: { key } })) throw new Error("ROLE_KEY_TAKEN");
+
+  const rank = Number(formData.get("rank") ?? 1);
+
+  await prisma.role.create({
+    data: {
+      key,
+      label,
+      description: String(formData.get("description") ?? "").trim() || null,
+      rank: Number.isFinite(rank) ? Math.trunc(rank) : 1,
+      isSystem: false,
+    },
+  });
+
+  revalidatePath(PATH, "layout");
+  await logHistory({
+    type: "create", module: "Settings > Roles",
+    description: `Added role ${label} (${key})`, user: me,
+  });
+  done(PATH, `Role ${label} added — grant its access on the RBAC tab.`);
+}
+
 export async function saveRole(formData: FormData) {
   const me = await requireOwner();
 

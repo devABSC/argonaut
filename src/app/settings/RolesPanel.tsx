@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { saveRole, deleteRole } from "../actions/roles";
-import { IconSave, IconTrash } from "../icons";
+import { saveRole, createRole, deleteRole } from "../actions/roles";
+import { IconSave, IconTrash, IconPlus } from "../icons";
 
 /**
  * Manages what the owner can safely change about a role. The Role enum itself
@@ -60,6 +60,17 @@ export default async function RolesPanel() {
             </form>
           );
         })}
+
+        <form className="frow rrow fadd" action={createRole}>
+          <span className="rkey">auto</span>
+          <input name="label" placeholder="New role name" required />
+          <input name="description" placeholder="What this role is for" />
+          <input name="rank" type="number" min="0" defaultValue={1} />
+          <span /><span />
+          <span className="rowacts">
+            <button className="save icon" type="submit" title="Add role" aria-label="Add role"><IconPlus /></button>
+          </span>
+        </form>
       </div>
     </div>
   );
