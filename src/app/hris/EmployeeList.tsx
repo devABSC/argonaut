@@ -32,11 +32,12 @@ export default async function EmployeeList({
             { firstName: { contains: term, mode: "insensitive" as const } },
             { emailAdd: { contains: term, mode: "insensitive" as const } },
             { jobTitle: { contains: term, mode: "insensitive" as const } },
+            { bou: { name: { contains: term, mode: "insensitive" as const } } },
             { individ: { contains: term, mode: "insensitive" as const } },
           ],
         }
       : {}),
-    ...(bou ? { bouID: bou } : {}),
+    ...(bou ? { bou: { name: bou } } : {}),
     ...(dept ? { subBou: dept } : {}),
     ...(scopedCompany ? { company: scopedCompany } : {}),
   };
@@ -52,12 +53,14 @@ export default async function EmployeeList({
       select: {
         id: true, individ: true, lastName: true, firstName: true, middleName: true,
         jobTitle: true, emailAdd: true, mobile: true, city: true, company: true,
-        bouID: true, subBou: true,
+        subBou: true,
+        bou: { select: { name: true } },
       },
     }),
-    prisma.employee.findMany({
-      where: { AND: [{ NOT: { bouID: null } }, { NOT: { bouID: "" } }] },
-      distinct: ["bouID"], select: { bouID: true }, orderBy: { bouID: "asc" },
+    prisma.bou.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
     }),
     prisma.employee.findMany({
       where: { NOT: { company: null } },
@@ -69,7 +72,8 @@ export default async function EmployeeList({
     }),
   ]);
 
-  const bous = bouRows.map((b) => b.bouID!).filter(Boolean);
+  const bouOptions = bouRows;                       // for the add form
+  const bous = bouRows.map((b) => b.name);          // for the filter dropdown
   const companies = companyRows.map((c) => c.company!).filter(Boolean);
   const depts = deptRows.map((d) => d.subBou!).filter(Boolean);
   const qs = (extra: Record<string, string | number>) => {
@@ -102,7 +106,7 @@ export default async function EmployeeList({
         />
       </div>
 
-      <AddEmployee bous={bous} companies={companies} />
+      <AddEmployee bous={bouOptions} companies={companies} />
 
       {!isOwner && viewer.company && (
         <p className="pvhelp" style={{ marginTop: 10 }}>
@@ -143,7 +147,7 @@ export default async function EmployeeList({
                       <Link className="ticket" href={`/hris/personal-info?emp=${e.id}`}>{e.individ}</Link>
                     </td>
                     <td data-label="Job Title">{e.jobTitle ?? "—"}</td>
-                    <td className="muted" data-label="BOU">{e.bouID ?? "—"}</td>
+                    <td className="muted" data-label="BOU">{e.bou?.name ?? "—"}</td>
                     <td className="muted" data-label="Department">{e.subBou ?? "—"}</td>
                     <td className="muted" data-label="Email">{e.emailAdd ?? "—"}</td>
                     <td className="muted nowrap" data-label="Mobile">{e.mobile ?? "—"}</td>

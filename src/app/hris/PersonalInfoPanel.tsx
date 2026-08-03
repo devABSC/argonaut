@@ -27,7 +27,10 @@ export default async function PersonalInfoPanel({ empId }: { empId?: string }) {
     );
   }
 
-  const e = await prisma.employee.findUnique({ where: { id: empId } });
+  const e = await prisma.employee.findUnique({
+    where: { id: empId },
+    include: { bou: { select: { name: true } } },
+  });
   if (!e) {
     return (
       <div className="panel">
@@ -83,8 +86,8 @@ export default async function PersonalInfoPanel({ empId }: { empId?: string }) {
         <dl className="tmeta wide">
           <Field label="Company" value={e.company} />
           <Field label="Job title" value={e.jobTitle} />
-          <Field label="BOU" value={e.bouID} />
-          <Field label="Department" value={e.department ?? e.departmentID} />
+          <Field label="BOU" value={e.bou?.name ?? e.bouID} />
+          <Field label="Department" value={e.subBou} />
           <Field label="Biometric ID" value={e.biometricID} />
           <Field label="Encoded by" value={e.encodedBy} />
           <Field label="Source created" value={fmtDate(e.sourceCreatedAt)} />

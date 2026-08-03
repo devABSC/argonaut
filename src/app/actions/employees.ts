@@ -61,7 +61,7 @@ export async function createEmployee(formData: FormData) {
       firstName,
       middleName: text(formData, "middleName"),
       emailAdd: text(formData, "emailAdd"),
-      bouID: text(formData, "bouID"),
+      bouId: text(formData, "bouId"),
       subBou: text(formData, "subBou"),
       street: text(formData, "street"),
       city: text(formData, "city"),

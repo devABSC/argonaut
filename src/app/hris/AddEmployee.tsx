@@ -15,7 +15,7 @@ const STATUS = ["Active", "Resigned", "Terminated", "On Leave"];
  */
 export default function AddEmployee({
   bous, companies,
-}: { bous: string[]; companies: string[] }) {
+}: { bous: { id: string; name: string }[]; companies: string[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,8 +37,10 @@ export default function AddEmployee({
             <label><span>Middle name</span><input name="middleName" /></label>
 
             <label><span>BOU</span>
-              <input name="bouID" list="bou-list" placeholder="UNISTAR" />
-              <datalist id="bou-list">{bous.map((b) => <option key={b} value={b} />)}</datalist>
+              <select name="bouId" defaultValue="">
+                <option value="">— none —</option>
+                {bous.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
             </label>
             <label><span>Sub-BOU / Dept</span><input name="subBou" /></label>
             <label><span>Company</span>

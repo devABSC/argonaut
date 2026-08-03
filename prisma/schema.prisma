@@ -354,6 +354,9 @@ model Employee {
   sourceUpdatedAt    DateTime?
 
   // --- fields captured by the HRIS form ---
+  /// The BOU this employee belongs to.
+  bouId            String?
+  bou              Bou?      @relation(fields: [bouId], references: [id], onDelete: SetNull)
   /// Sub-BOU or department under the BOU.
   subBou           String?
   gender           String?
@@ -540,4 +543,31 @@ model Role {
   grants MenuGrant[]
 
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Business Operating Unit. Employees belong to one; it is the grouping the
+/// HRIS reports on, kept as its own table so the name can change without
+/// touching every employee record.
+model Bou {
+  id           String  @id @default(cuid())
+  /// Source system's row id.
+  rowId        Int     @unique
+  /// Stable code, e.g. B2020-00001.
+  code         String  @unique
+  name         String
+  /// Company code this BOU sits under; matches Company.code.
+  companyCode  String
+  /// The fallback BOU when none is chosen.
+  isDefault    Boolean @default(false)
+  managerName  String?
+  managerEmail String?
+  isActive     Boolean @default(true)
+
+  employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([companyCode])
+  @@index([name])
 }
