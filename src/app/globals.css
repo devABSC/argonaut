@@ -843,3 +843,11 @@ button{font-family:inherit}
 /* Role pickers on a project — BOU narrows, employee selects */
 .app .leadpick .picker{margin-top:4px}
 .app .leadpick .pvf label{font-size:.56rem}
+
+/* Assessment: run row and risk cards */
+.app .asrow{grid-template-columns:minmax(200px,1fr) auto}
+.app .riskcard{margin-top:12px;padding:12px 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--s3)}
+.app .riskcard .cat-head{margin:0}
+.app .riskcard p{margin:6px 0 0;font-size:.88rem;line-height:1.55}
+.app .riskcard em{color:var(--cyan);font-style:normal}

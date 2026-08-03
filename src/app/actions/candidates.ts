@@ -444,3 +444,50 @@ export async function deletePreJoDoc(docId: string) {
   await logHistory({ type: "delete", module: "Recruitment > PreJO Docs", description: `Removed ${d.docType}`, user: me });
   done(docAt(d.candidateId), `${d.docType} removed.`);
 }
+
+/* ---------- Argonaut AI Analytics ---------- */
+
+/**
+ * Runs the hiring assessment. Costs a few cents per candidate, so it is never
+ * automatic — a recruiter decides this one is worth it.
+ */
+export async function runAssessment(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const id = String(formData.get("candidateId") ?? "");
+  if (!id) return;
+  const where = `/recruitment/candidate/${id}/assessment`;
+
+  const role =
+    String(formData.get("role") ?? "").trim() ||
+    "the position the candidate applied for";
+
+  try {
+    const { assessCandidate } = await import("@/lib/assess");
+    const { assessment, tokens } = await assessCandidate(id, role);
+
+    const c = await prisma.candidate.update({
+      where: { id },
+      data: { assessment, assessedAt: new Date(), assessTokens: tokens },
+      select: { firstName: true, lastName: true },
+    });
+
+    revalidatePath(where);
+    await logHistory({
+      type: "update", module: "Recruitment > Assessment",
+      description: `Ran AI analytics on ${c.firstName} ${c.lastName} (${tokens} tokens)`,
+      user: me,
+    });
+    done(where, `Assessment ready — ${tokens.toLocaleString()} tokens.`);
+  } catch (e) {
+    const m = (e as Error).message;
+    done(
+      where,
+      m === "NO_API_KEY"
+        ? "No Anthropic API key is set — add one under Settings → Email."
+        : m === "CV_NOT_READ"
+          ? "Read the CV first — the CV tab has a Read again button."
+          : `Could not run the assessment (${m}).`,
+    );
+  }
+}

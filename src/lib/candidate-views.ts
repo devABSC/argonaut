@@ -7,6 +7,7 @@ export const CAND_VIEWS = [
   { slug: "char-ref", label: "Char Ref" },
   { slug: "prejo-docs", label: "PreJO Docs" },
   { slug: "ai-data", label: "Other AI Data" },
+  { slug: "assessment", label: "Assessment" },
   { slug: "experience", label: "Summary" },
   { slug: "notes", label: "Notes" },
 ] as const;

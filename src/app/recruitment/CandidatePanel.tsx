@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import {
   saveCandidate, reparseCV, addExperience, deleteExperience,
   addReference, markReferenceContacted, deleteReference, saveAiNotes,
-  addPreJoDoc, setPreJoStatus, deletePreJoDoc,
+  addPreJoDoc, setPreJoStatus, deletePreJoDoc, runAssessment,
 } from "../actions/candidates";
+import RunAssessment from "./RunAssessment";
+import type { Assessment } from "@/lib/assess";
 import { IconSave, IconPlus, IconTrash } from "../icons";
 import { PREJO_DOCS, PREJO_STATUS, PREJO_PILL } from "@/lib/candidate-views";
 import CellSelect from "../settings/CellSelect";
@@ -172,6 +174,120 @@ export default async function CandidatePanel({
           </div>
         )}
       </div>
+    );
+  }
+
+  if (view === "assessment") {
+    const a = c.assessment as Assessment | null;
+    const sev: Record<string, string> = { high: "s-REJECTED", medium: "s-PENDING", low: "s-SUSPENDED" };
+    const conf: Record<string, string> = {
+      strong: "s-ACTIVE", claimed: "s-PENDING", "mentioned only": "s-SUSPENDED",
+    };
+
+    return (
+      <>
+        <div className="panel">
+          <div className="cat-head">
+            <h2>Argonaut AI Analytics</h2>
+            <span className="spacer" />
+            {c.assessedAt && (
+              <span className="tree-meta">
+                run {fmtWhen(c.assessedAt)}
+                {c.assessTokens ? ` · ${c.assessTokens.toLocaleString()} tokens` : ""}
+              </span>
+            )}
+          </div>
+          <p>
+            Reads the CV against a role and returns what it evidences, what it
+            does not, and what to test at interview. It costs a few cents each
+            time, so it runs only when you ask — not every candidate is worth it.
+          </p>
+
+          {!c.parsedAt ? (
+            <p>Read the CV first — the CV tab has a Read again button.</p>
+          ) : (
+            <RunAssessment
+              action={runAssessment}
+              candidateId={c.id}
+              rerun={!!a}
+              defaultRole={c.position ?? ""}
+            />
+          )}
+        </div>
+
+        {a && (
+          <>
+            <div className="panel" style={{ marginTop: 14 }}>
+              <h2>Summary</h2>
+              <p>{a.fitSummary}</p>
+
+              <p className="secdiv">Fit for the role</p>
+              <p>{a.roleFit}</p>
+
+              <p className="secdiv">Trajectory</p>
+              <p>{a.trajectory}</p>
+
+              <p className="secdiv">What the CV evidences <span className="count">{a.strengths.length}</span></p>
+              <ul className="findings">{a.strengths.map((x) => <li key={x}>{x}</li>)}</ul>
+            </div>
+
+            <div className="panel" style={{ marginTop: 14 }}>
+              <h2>Skill depth <span className="count">{a.depthBySkill.length}</span></h2>
+              <p>
+                Separates what the history actually shows from what is only
+                listed — a skill named but tied to no project is exactly the
+                thing to probe.
+              </p>
+              <div className="tablewrap">
+                <table className="utable stacked">
+                  <thead>
+                    <tr><th>Skill</th><th className="numcol">Yrs</th><th>Confidence</th><th>Evidence</th></tr>
+                  </thead>
+                  <tbody>
+                    {a.depthBySkill.map((d) => (
+                      <tr key={d.skill}>
+                        <td data-label="Skill"><b>{d.skill}</b></td>
+                        <td className="numcol" data-label="Yrs">{d.yearsEvidenced ?? "—"}</td>
+                        <td data-label="Confidence">
+                          <span className={`pill ${conf[d.confidence] ?? "s-PENDING"}`}>{d.confidence}</span>
+                        </td>
+                        <td className="muted" data-label="Evidence">{d.evidence}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="panel" style={{ marginTop: 14 }}>
+              <h2>Risks to test <span className="count">{a.hiringRisks.length}</span></h2>
+              <p>
+                Questions for interview, not conclusions about the person. Each
+                one cites what in the document raised it.
+              </p>
+              {a.hiringRisks.map((r) => (
+                <div className="riskcard" key={r.risk}>
+                  <div className="cat-head">
+                    <b>{r.risk}</b>
+                    <span className="spacer" />
+                    <span className={`pill ${sev[r.severity] ?? "s-PENDING"}`}>{r.severity}</span>
+                  </div>
+                  <p className="tree-meta">{r.basis}</p>
+                  <p><em>How to test:</em> {r.howToTest}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="panel" style={{ marginTop: 14 }}>
+              <h2>Verify these <span className="count">{a.verifyThese.length}</span></h2>
+              <ul className="findings">{a.verifyThese.map((x) => <li key={x}>{x}</li>)}</ul>
+
+              <p className="secdiv">Interview questions <span className="count">{a.interviewQuestions.length}</span></p>
+              <ol className="findings">{a.interviewQuestions.map((x) => <li key={x}>{x}</li>)}</ol>
+            </div>
+          </>
+        )}
+      </>
     );
   }
 

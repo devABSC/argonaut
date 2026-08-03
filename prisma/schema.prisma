@@ -816,6 +816,13 @@ model Candidate {
   /// Everything the reader returned, including anything with no field of its
   /// own. Kept so a useful value is not thrown away before it has a column.
   aiData          Json?
+  /// The assessment, when it has been run. Held whole so the tab renders it
+  /// without a second call, and so a re-run can be compared against the last.
+  assessment    Json?
+  assessedAt    DateTime?
+  /// Input + output tokens of the last run, so the cost is visible.
+  assessTokens  Int?
+
   /// A recruiter's own notes against the AI findings — kept apart from the
   /// general notes so a judgement is never mistaken for something the CV said.
   aiNotes         String?
