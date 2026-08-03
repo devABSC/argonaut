@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import {
   saveCandidate, reparseCV, addExperience, deleteExperience,
   addReference, markReferenceContacted, deleteReference, saveAiNotes,
-  addPreJoDoc, setPreJoStatus, deletePreJoDoc, runAssessment, seedVerifyItems,
+  addPreJoDoc, setPreJoStatus, deletePreJoDoc, runAssessment, seedVerifyItems, saveSalary,
 } from "../actions/candidates";
 import RunAssessment from "./RunAssessment";
 import CheckList from "./CheckList";
@@ -11,7 +11,7 @@ import type { Assessment } from "@/lib/assess";
 import type { RoleKey } from "@/lib/roles";
 import { fmtCost, costUsd, fmtUsd, fmtPhp, USD_PHP } from "@/lib/cost";
 import { IconSave, IconPlus, IconTrash } from "../icons";
-import { PREJO_DOCS, PREJO_STATUS, PREJO_PILL } from "@/lib/candidate-views";
+import { PREJO_DOCS, PREJO_STATUS, PREJO_PILL, SALARY_PERIODS } from "@/lib/candidate-views";
 import CellSelect from "../settings/CellSelect";
 
 const fmtWhen = (d: Date | null) =>
@@ -703,27 +703,75 @@ export default async function CandidatePanel({
     );
   }
 
-  if (view === "experience") {
+  if (view === "salary") {
+    const n = (v: unknown) => (v == null ? "" : String(v));
+    const money = (v: unknown) =>
+      v == null ? null : `${c.salaryCurrency} ${Number(v).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+
+    const cur = c.currentSalary == null ? null : Number(c.currentSalary);
+    const exp = c.expectedSalary == null ? null : Number(c.expectedSalary);
+    const off = c.offeredSalary == null ? null : Number(c.offeredSalary);
+    // The number that actually gets argued over.
+    const jump = cur && exp ? Math.round(((exp - cur) / cur) * 100) : null;
+    const gap = exp && off ? off - exp : null;
+
     return (
       <div className="panel">
-        <h2>Experience</h2>
-        <dl className="tmeta wide">
-          <Field label="Years of experience" value={c.yearsExperience?.toString() ?? null} />
-          <Field label="Current employer" value={c.currentEmployer} />
-          <Field label="Education" value={c.education} />
-        </dl>
+        <div className="cat-head">
+          <h2>Salary</h2>
+          <span className="spacer" />
+          {jump != null && (
+            <span className={`pill ${jump > 50 ? "s-REJECTED" : jump > 25 ? "s-PENDING" : "s-ACTIVE"}`}>
+              {jump > 0 ? "+" : ""}{jump}% on current
+            </span>
+          )}
+        </div>
+        <p>
+          Figures rather than a note, so a shortlist can be compared. What the
+          CV itself stated, if anything, is on the Other AI Data tab — this is
+          what the candidate has told you.
+        </p>
 
-        <p className="secdiv">Summary</p>
-        <p>{c.summary ?? "Nothing on file — the CV had no summary, or has not been read."}</p>
+        <form action={saveSalary} className="statgrid">
+          <input type="hidden" name="candidateId" value={c.id} />
 
-        <p className="secdiv">Skills <span className="count">{c.skills.length}</span></p>
-        {c.skills.length ? (
-          <div className="skillrow">
-            {c.skills.map((s) => <span className="skill" key={s}>{s}</span>)}
+          <label className="statfield"><span>Currency</span>
+            <input name="salaryCurrency" defaultValue={c.salaryCurrency} maxLength={3} autoComplete="off" /></label>
+          <label className="statfield"><span>Period</span>
+            <select name="salaryPeriod" defaultValue={c.salaryPeriod}>
+              {SALARY_PERIODS.map((x) => <option key={x} value={x}>{x}</option>)}
+            </select></label>
+          <label className="statfield"><span>Current salary</span>
+            <input name="currentSalary" defaultValue={n(cur)} inputMode="decimal" autoComplete="off" /></label>
+          <label className="statfield"><span>Expected salary</span>
+            <input name="expectedSalary" defaultValue={n(exp)} inputMode="decimal" autoComplete="off" /></label>
+          <label className="statfield"><span>Offered salary</span>
+            <input name="offeredSalary" defaultValue={n(off)} inputMode="decimal" autoComplete="off" /></label>
+
+          <label className="statfield full"><span>Notes</span>
+            <textarea name="salaryNotes" rows={3} defaultValue={c.salaryNotes ?? ""}
+              placeholder="Allowances, bonus, notice period — anything that changes the real number" /></label>
+
+          <div className="statacts">
+            <button className="btn-primary" type="submit"><IconSave /> Save salary</button>
           </div>
-        ) : (
-          <p>No skills listed on the CV.</p>
-        )}
+        </form>
+
+        <p className="secdiv">At a glance</p>
+        <dl className="tmeta wide">
+          <Field label={`Current (${c.salaryPeriod})`} value={money(cur)} />
+          <Field label="Expected" value={money(exp)} />
+          <Field label="Offered" value={money(off)} />
+          <Field
+            label="Expected vs current"
+            value={jump == null ? null : `${jump > 0 ? "+" : ""}${jump}%`}
+          />
+          <Field
+            label="Offer vs expected"
+            value={gap == null ? null : `${gap >= 0 ? "+" : ""}${c.salaryCurrency} ${Math.abs(gap).toLocaleString("en-PH")}`}
+          />
+          <Field label="Stage" value={c.stage} />
+        </dl>
       </div>
     );
   }

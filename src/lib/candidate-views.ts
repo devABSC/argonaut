@@ -8,7 +8,7 @@ export const CAND_VIEWS = [
   { slug: "prejo-docs", label: "PreJO Docs" },
   { slug: "ai-data", label: "Other AI Data" },
   { slug: "assessment", label: "Assessment" },
-  { slug: "experience", label: "Summary" },
+  { slug: "salary", label: "Salary" },
   { slug: "notes", label: "Notes" },
 ] as const;
 
@@ -67,3 +67,5 @@ export const VERIFY_PILL: Record<string, string> = {
   "Cannot Verify": "s-SUSPENDED",
   "Not Applicable": "s-SUSPENDED",
 };
+
+export const SALARY_PERIODS = ["Monthly", "Daily", "Hourly", "Annual"] as const;

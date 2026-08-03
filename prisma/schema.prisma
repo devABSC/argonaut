@@ -835,6 +835,18 @@ model Candidate {
   /// general notes so a judgement is never mistaken for something the CV said.
   aiNotes         String?
 
+  // --- money ---
+  /// What they are on now and what they want, as figures rather than a note,
+  /// so a shortlist can be compared. Monthly PHP unless a period says otherwise.
+  currentSalary  Decimal? @db.Decimal(12, 2)
+  expectedSalary Decimal? @db.Decimal(12, 2)
+  offeredSalary  Decimal? @db.Decimal(12, 2)
+  salaryPeriod   String   @default("Monthly")
+  salaryCurrency String   @default("PHP")
+  /// Allowances, bonus structure, notice period, anything that changes the
+  /// real number.
+  salaryNotes    String?
+
   /// Applied, Screening, Interview, Offer, Hired, Rejected, Withdrawn.
   stage  String  @default("Applied")
   rating Int?

@@ -632,3 +632,42 @@ export async function revokeInvite(inviteId: string) {
   await logHistory({ type: "update", module: "Recruitment > Interview link", description: "Revoked an interview link", user: me });
   done(vAt(i.candidateId), "Link revoked — it will no longer open.");
 }
+
+/* ---------- salary ---------- */
+
+/** Blank stays blank — an empty expectation is not zero. */
+const money = (f: FormData, k: string) => {
+  const v = String(f.get(k) ?? "").replace(/[^\d.-]/g, "").trim();
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+export async function saveSalary(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const id = String(formData.get("candidateId") ?? "");
+  if (!id) return;
+  const c = await prisma.candidate.findUnique({ where: { id }, select: { firstName: true, lastName: true } });
+  if (!c) return;
+
+  await prisma.candidate.update({
+    where: { id },
+    data: {
+      currentSalary: money(formData, "currentSalary"),
+      expectedSalary: money(formData, "expectedSalary"),
+      offeredSalary: money(formData, "offeredSalary"),
+      salaryPeriod: String(formData.get("salaryPeriod") ?? "Monthly"),
+      salaryCurrency: String(formData.get("salaryCurrency") ?? "PHP").toUpperCase().slice(0, 3),
+      salaryNotes: text(formData, "salaryNotes"),
+    },
+  });
+
+  const where = `/recruitment/candidate/${id}/salary`;
+  revalidatePath(where);
+  await logHistory({
+    type: "update", module: "Recruitment > Salary",
+    description: `Saved salary details for ${c.firstName} ${c.lastName}`, user: me,
+  });
+  done(where, "Salary saved.");
+}
