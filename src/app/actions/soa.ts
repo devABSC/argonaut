@@ -8,14 +8,34 @@ import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
 import { notify } from "@/lib/notify";
 import { loadSoa, soaWorkbook, soaFilename, AP_CC } from "@/lib/soa-doc";
+import { soaViewer, canUseSoa } from "@/lib/soa-scope";
+import { readSoaWorkbook } from "@/lib/soa-import";
 
 const PATH = "/finance/soa";
 
-/** Finance is granted, not assumed — the same gate the module itself uses. */
+/** Raising, closing, deleting and sending a statement stay with Finance. */
 async function requireFinanceUser() {
   const u = await requireUser();
   if (!canManageUsers({ id: u.id, role: u.role })) throw new Error("FORBIDDEN");
   return u;
+}
+
+/**
+ * Posting to a statement is open to Finance and to the person the statement
+ * belongs to — an employee keeps their own expenses up to date. Anyone else
+ * is refused, and a closed statement takes no changes from either.
+ */
+async function requirePoster(soaId: string) {
+  const u = await requireUser();
+  const soa = await prisma.soa.findUnique({
+    where: { id: soaId },
+    select: { id: true, ref: true, status: true, employeeId: true },
+  });
+  if (!soa) throw new Error("NOT_FOUND");
+
+  const v = await soaViewer({ id: u.id, role: u.role, email: u.email });
+  if (!canUseSoa(v, soa)) throw new Error("FORBIDDEN");
+  return { me: u, soa };
 }
 
 function date(f: FormData, k: string): Date | null {
@@ -43,14 +63,17 @@ function back(f: FormData): string {
 }
 
 /**
- * Next reference for the year. Counting is good enough at this volume, and the
- * unique index is what actually guarantees it — two people creating at the
- * same instant retry rather than collide.
+ * Reference in the house format: `yymm-<bou code>-nnnnnn`, where the series
+ * runs within that month and BOU. Counting gives the next number and the
+ * unique index is what actually guarantees it — two people raising a statement
+ * in the same instant retry rather than collide.
  */
-async function nextRef(): Promise<string> {
-  const year = new Date().getUTCFullYear();
-  const n = await prisma.soa.count({ where: { ref: { startsWith: `SOA-${year}-` } } });
-  return `SOA-${year}-${String(n + 1).padStart(4, "0")}`;
+async function nextRef(bouCode: string): Promise<string> {
+  const now = new Date();
+  const yymm = `${String(now.getUTCFullYear()).slice(2)}${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const prefix = `${yymm}-${bouCode}-`;
+  const n = await prisma.soa.count({ where: { ref: { startsWith: prefix } } });
+  return `${prefix}${String(n + 1).padStart(6, "0")}`;
 }
 
 export async function createSoa(formData: FormData) {
@@ -63,9 +86,18 @@ export async function createSoa(formData: FormData) {
 
   const emp = await prisma.employee.findUnique({
     where: { id: employeeId },
-    select: { firstName: true, lastName: true, bou: { select: { name: true } } },
+    select: { firstName: true, lastName: true, bou: { select: { name: true, code: true } } },
   });
   if (!emp) done(where, "That employee no longer exists.");
+
+  // A statement is a running account, not a document reissued each period.
+  const already = await prisma.soa.findUnique({
+    where: { employeeId },
+    select: { ref: true },
+  });
+  if (already) {
+    done(where, `${emp!.firstName} already has ${already.ref} — post to that statement rather than raising another.`);
+  }
 
   const periodFrom = date(formData, "periodFrom");
   const periodTo = date(formData, "periodTo");
@@ -78,7 +110,8 @@ export async function createSoa(formData: FormData) {
     try {
       soa = await prisma.soa.create({
         data: {
-          ref: await nextRef(),
+          // No BOU on the record still needs a slot in the series.
+          ref: await nextRef(emp!.bou?.code ?? "NOBOU"),
           employeeId,
           bouName: emp!.bou?.name ?? null,
           periodFrom,
@@ -103,15 +136,13 @@ export async function createSoa(formData: FormData) {
 }
 
 export async function addSoaLine(formData: FormData) {
-  const me = await requireFinanceUser();
   const where = back(formData);
-
   const soaId = String(formData.get("soaId") ?? "").trim();
-  const particulars = String(formData.get("particulars") ?? "").trim();
-  if (!soaId || !particulars) done(where, "Not added — a line needs particulars.");
+  if (!soaId) return;
+  const { me, soa } = await requirePoster(soaId);
 
-  const soa = await prisma.soa.findUnique({ where: { id: soaId }, select: { ref: true, status: true } });
-  if (!soa) return;
+  const particulars = String(formData.get("particulars") ?? "").trim();
+  if (!particulars) done(where, "Not added — a line needs particulars.");
   if (soa.status === "Closed") done(where, `${soa.ref} is closed — reopen it to post a line.`);
 
   const debit = money(formData, "debit");
@@ -141,23 +172,91 @@ export async function addSoaLine(formData: FormData) {
 }
 
 export async function deleteSoaLine(id: string, formData: FormData) {
-  const me = await requireFinanceUser();
   const where = back(formData);
-
-  const line = await prisma.soaLine.findUnique({
-    where: { id },
-    select: { particulars: true, soa: { select: { ref: true, status: true } } },
-  });
-  if (!line) return;
-  if (line.soa.status === "Closed") done(where, `${line.soa.ref} is closed — reopen it to remove a line.`);
+  const owner = await prisma.soaLine.findUnique({ where: { id }, select: { soaId: true } });
+  if (!owner) return;
+  const { me, soa } = await requirePoster(owner.soaId);
+  if (soa.status === "Closed") done(where, `${soa.ref} is closed — reopen it to remove a line.`);
 
   await prisma.soaLine.delete({ where: { id } });
+  const line = { soa };
   revalidatePath(PATH);
   await logHistory({
     type: "delete", module: "Finance > SOA",
     description: `Removed a line from ${line.soa.ref}`, user: me,
   });
   done(where, `Line removed from ${line.soa.ref}.`);
+}
+
+/** Correct a line in place — the same people who may post one may fix it. */
+export async function editSoaLine(id: string, formData: FormData) {
+  const where = back(formData);
+  const owner = await prisma.soaLine.findUnique({ where: { id }, select: { soaId: true } });
+  if (!owner) return;
+  const { me, soa } = await requirePoster(owner.soaId);
+  if (soa.status === "Closed") done(where, `${soa.ref} is closed — reopen it to change a line.`);
+
+  const particulars = String(formData.get("particulars") ?? "").trim();
+  if (!particulars) done(where, "Not saved — a line needs a description.");
+
+  const debit = money(formData, "debit");
+  const credit = money(formData, "credit");
+  if (debit === 0 && credit === 0) done(where, "Not saved — enter a debit (charge) or a credit (payment).");
+  if (debit > 0 && credit > 0) done(where, "Not saved — a line is either a charge or a payment, not both.");
+
+  await prisma.soaLine.update({
+    where: { id },
+    data: {
+      particulars,
+      requestor: String(formData.get("requestor") ?? "").trim() || null,
+      date: date(formData, "date") ?? undefined,
+      debit,
+      credit,
+    },
+  });
+
+  revalidatePath(PATH);
+  await logHistory({
+    type: "update", module: "Finance > SOA",
+    description: `Edited a line on ${soa.ref}`, user: me,
+  });
+  done(where, `Line updated on ${soa.ref}.`);
+}
+
+/**
+ * Load a statement from a workbook — the sheet Finance already keeps, or the
+ * one this page exports. Anyone who may post a line may import a batch of
+ * them; the rows land as ordinary lines that can then be edited or removed.
+ */
+export async function importSoaLines(soaId: string, formData: FormData) {
+  const where = back(formData);
+  const { me, soa } = await requirePoster(soaId);
+  if (soa.status === "Closed") done(where, `${soa.ref} is closed — reopen it to import.`);
+
+  const file = formData.get("sheet");
+  if (!(file instanceof File) || file.size === 0) done(where, "Pick a spreadsheet to import.");
+  const f = file as File;
+  if (f.size > 4 * 1024 * 1024) done(where, "Not imported — that file is over 4 MB.");
+
+  const { lines, skipped, error } = await readSoaWorkbook(Buffer.from(await f.arrayBuffer()));
+  if (error) done(where, `Not imported — ${error}`);
+  if (lines.length === 0) done(where, "Not imported — no movements found in that sheet.");
+
+  await prisma.soaLine.createMany({
+    data: lines.map((l) => ({ ...l, soaId })),
+  });
+
+  revalidatePath(PATH);
+  await logHistory({
+    type: "create", module: "Finance > SOA",
+    description: `Imported ${lines.length} line(s) into ${soa.ref} from ${f.name}`,
+    user: me,
+  });
+  done(
+    where,
+    `${lines.length} line${lines.length === 1 ? "" : "s"} imported into ${soa.ref}` +
+      (skipped ? `, ${skipped} row${skipped === 1 ? "" : "s"} skipped as unreadable.` : "."),
+  );
 }
 
 export async function setSoaStatus(formData: FormData) {

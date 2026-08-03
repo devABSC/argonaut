@@ -25,6 +25,51 @@ function readRow(f: FormData) {
   };
 }
 
+/** 512 KB of PNG, JPEG or SVG. Big enough for a mark, small enough to inline. */
+const LOGO_MAX = 512 * 1024;
+const LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"];
+
+/**
+ * Upload the brand mark shown on statements and other outgoing documents.
+ * Stored as a data URL so a rendering document never has to fetch it.
+ */
+export async function uploadCompanyLogo(companyId: string, formData: FormData) {
+  const me = await requireAdmin();
+  const file = formData.get("logo");
+
+  if (!(file instanceof File) || file.size === 0) done(PATH, "Pick an image file first.");
+  const f = file as File;
+  if (!LOGO_TYPES.includes(f.type)) done(PATH, "Not saved — use a PNG, JPEG, SVG or WebP image.");
+  if (f.size > LOGO_MAX) {
+    done(PATH, `Not saved — that file is ${Math.round(f.size / 1024)} KB; the limit is ${LOGO_MAX / 1024} KB.`);
+  }
+
+  const b64 = Buffer.from(await f.arrayBuffer()).toString("base64");
+  const c = await prisma.company.update({
+    where: { id: companyId },
+    data: { logo: `data:${f.type};base64,${b64}` },
+    select: { name: true },
+  });
+
+  revalidatePath(PATH);
+  revalidatePath("/finance/soa");
+  await logHistory({ type: "update", module: "Settings > Company", description: `Set the logo for ${c.name}`, user: me });
+  done(PATH, `Logo saved for ${c.name}.`);
+}
+
+export async function clearCompanyLogo(companyId: string) {
+  const me = await requireAdmin();
+  const c = await prisma.company.update({
+    where: { id: companyId },
+    data: { logo: null },
+    select: { name: true },
+  });
+  revalidatePath(PATH);
+  revalidatePath("/finance/soa");
+  await logHistory({ type: "update", module: "Settings > Company", description: `Removed the logo for ${c.name}`, user: me });
+  done(PATH, `Logo removed for ${c.name}.`);
+}
+
 export async function createCompany(formData: FormData) {
   const me = await requireAdmin();
   const r = readRow(formData);

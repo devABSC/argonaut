@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createCompany, updateCompany, deleteCompany } from "../actions/company";
+import { createCompany, updateCompany, deleteCompany, uploadCompanyLogo, clearCompanyLogo } from "../actions/company";
 import { IconSave, IconTrash, IconPlus } from "../icons";
 
 /** Registers the companies the business operates as. */
@@ -52,6 +52,26 @@ export default async function CompanyPanel() {
               </form>
             ))
           )}
+
+          {/* The brand mark that heads every statement. Its own form — a file
+              input cannot ride along with the row above it. */}
+          {companies.map((c) => (
+            <form className="logorow" action={uploadCompanyLogo.bind(null, c.id)} key={`logo-${c.id}`}>
+              <span className="tree-meta">{c.name} logo</span>
+              {c.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="logopreview" src={c.logo} alt={`${c.name} logo`} />
+              ) : (
+                <span className="muted">none set</span>
+              )}
+              <input type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" />
+              <button className="save icon" type="submit" title="Upload logo" aria-label="Upload logo"><IconSave /></button>
+              {c.logo && (
+                <button className="reject icon" type="submit" title="Remove logo" aria-label="Remove logo"
+                  formAction={clearCompanyLogo.bind(null, c.id)}><IconTrash /></button>
+              )}
+            </form>
+          ))}
 
           <form className="frow crow fadd" action={createCompany}>
             <input name="code" placeholder="ATO01-165846" required />

@@ -10,10 +10,10 @@ export default async function FinanceTab({
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ bou?: string; emp?: string }>;
+  searchParams: Promise<{ bou?: string; emp?: string; ref?: string; editLine?: string }>;
 }) {
   const { tab } = await params;
-  const { bou, emp } = await searchParams;
+  const { bou, emp, ref, editLine } = await searchParams;
   const { user, nav, section, tab: active } = await requireAccess("finance", tab);
 
   // The strip belongs to Expenses / Cash Adv / Bills only. BIR, Payroll,
@@ -55,7 +55,8 @@ export default async function FinanceTab({
       {active.slug === "cash-advance" ? (
         <CashAdvanceList />
       ) : active.slug === "soa" ? (
-        <SoaPanel bou={bou} emp={emp} />
+        <SoaPanel bou={bou} emp={emp} ref={ref} editLine={editLine}
+          viewer={{ id: user.id, role: user.role, email: user.email }} />
       ) : inReceivable ? (
         <div className="panel">
           <h2>Ageing</h2>

@@ -187,7 +187,9 @@ model Soa {
   /// Human reference, e.g. SOA-2026-0001. What people quote to each other.
   ref String @unique
 
-  employeeId String
+  /// One statement per employee — it is a running account, not a document
+  /// reissued each period. Every debit and credit for that person lands here.
+  employeeId String   @unique
   employee   Employee @relation("SoaEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
 
   /// The employee's BOU when the statement was raised. Snapshotted, so a
@@ -622,7 +624,7 @@ model Employee {
   managesProjects Project[]       @relation("ProjectManager")
   oicProjects     Project[]       @relation("ProjectOic")
   milestonesOwned Milestone[]     @relation("MilestoneOwner")
-  soas            Soa[]           @relation("SoaEmployee")
+  soa             Soa?            @relation("SoaEmployee")
   roadblocksOwned Roadblock[]     @relation("RoadblockOwner")
   risksOwned      Risk[]          @relation("RiskOwner")
 
@@ -646,6 +648,10 @@ model Company {
   tin       String?
   address   String?
   pocEmail  String?
+  /// Brand mark as a data URL, shown on documents the company sends out.
+  /// Held inline rather than in object storage — one small image per company,
+  /// and it must be there when a statement renders.
+  logo      String?
   isActive  Boolean @default(true)
   sortOrder Int     @default(0)
 

@@ -67,7 +67,7 @@ export async function soaWorkbook(d: SoaDoc): Promise<Buffer> {
     ["", "", "", "Total Credits", credits],
     ["", "", "", "Balance Due", balance],
     [],
-    ["Date", "Item Description", "Requestor", "Debit / Charges", "Credit / Payment", "Balance"],
+    ["Date", "Item Description", "Debit / Charges", "Credit / Payment", "Balance"],
   ];
 
   let run = 0;
@@ -75,8 +75,9 @@ export async function soaWorkbook(d: SoaDoc): Promise<Buffer> {
     run += Number(l.credit) - Number(l.debit);
     rows.push([
       day(l.date),
-      l.particulars,
-      l.requestor ?? "",
+      // Who asked for the spend rides with the item — the statement is already
+      // addressed to one person, so it does not need a column of its own.
+      l.requestor ? `${l.particulars} · ${l.requestor}` : l.particulars,
       Number(l.debit) || null,
       Number(l.credit) || null,
       run,
@@ -84,7 +85,7 @@ export async function soaWorkbook(d: SoaDoc): Promise<Buffer> {
   }
 
   rows.push([]);
-  rows.push(["", "", "", "Account Current Balance", "", balance]);
+  rows.push(["", "", "", "Account Current Balance", balance]);
   rows.push([]);
   rows.push(["Please make your payment to cover the balance by the due date."]);
   if (company?.name) rows.push([`Make all cheques payable to ${company.name}.`]);
@@ -94,7 +95,7 @@ export async function soaWorkbook(d: SoaDoc): Promise<Buffer> {
   }
 
   const ws = xlsx.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 12 }, { wch: 46 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+  ws["!cols"] = [{ wch: 12 }, { wch: 58 }, { wch: 16 }, { wch: 17 }, { wch: 14 }];
 
   const wb = xlsx.utils.book_new();
   xlsx.utils.book_append_sheet(wb, ws, "SOA");
@@ -116,14 +117,38 @@ export async function soaPdf(d: SoaDoc): Promise<Buffer> {
 
   const L = 44;
   const R = doc.page.width - 44;
-  // Date, Description, Requestor, Charges, Credits, Line Total.
-  const COLS = [L, L + 66, L + 250, L + 340, L + 415, L + 490];
+
+  // Five columns sized to the printable width, so a header never wraps and
+  // the last one never runs off the page. Widths, not offsets — the previous
+  // fixed offsets overflowed A4 once the headings grew.
+  const W = { date: 58, item: R - L - 58 - 84 - 88 - 78, debit: 84, credit: 88, bal: 78 };
+  const X = {
+    date: L,
+    item: L + W.date,
+    debit: L + W.date + W.item,
+    credit: L + W.date + W.item + W.debit,
+    bal: L + W.date + W.item + W.debit + W.credit,
+  };
   const right = (text: string, x: number, y: number, w: number) =>
     doc.text(text, x, y, { width: w, align: "right" });
 
-  doc.fontSize(14).font("Helvetica-Bold").text(company?.name ?? "", L, 44);
+  // The brand mark heads the page when one is set. SVG is skipped — pdfkit
+  // draws raster images only, and a missing logo must not fail the statement.
+  let textX = L;
+  const logo = company?.logo ?? "";
+  if (logo.startsWith("data:image/") && !logo.startsWith("data:image/svg")) {
+    try {
+      const bytes = Buffer.from(logo.slice(logo.indexOf(",") + 1), "base64");
+      doc.image(bytes, L, 40, { fit: [42, 42] });
+      textX = L + 52;
+    } catch {
+      /* an unreadable logo is not a reason to fail the statement */
+    }
+  }
+
+  doc.fontSize(14).font("Helvetica-Bold").text(company?.name ?? "", textX, 44);
   doc.fontSize(9).font("Helvetica").fillColor("#555");
-  if (company?.address) doc.text(company.address, { width: 300 });
+  if (company?.address) doc.text(company.address, textX, 62, { width: 260 });
   doc.fillColor("#000");
 
   doc.fontSize(16).font("Helvetica-Bold").text("STATEMENT", L, 44, { width: R - L, align: "right" });
@@ -149,22 +174,22 @@ export async function soaPdf(d: SoaDoc): Promise<Buffer> {
   sums.forEach(([k, v], i) => {
     const ty = y + i * 14;
     doc.fontSize(9).font(i === 2 ? "Helvetica-Bold" : "Helvetica");
-    right(k, R - 220, ty, 120);
-    right(v, R - 100, ty, 100);
+    right(k, R - 250, ty, 140);
+    right(v, R - 105, ty, 105);
   });
 
   y += 74;
   doc.moveTo(L, y).lineTo(R, y).strokeColor("#ccc").stroke();
   y += 8;
-  doc.fontSize(8).font("Helvetica-Bold").fillColor("#777");
-  doc.text("DATE", COLS[0], y);
-  doc.text("ITEM DESCRIPTION", COLS[1], y);
-  doc.text("REQUESTOR", COLS[2], y);
-  right("DEBIT / CHARGES", COLS[3], y, 70);
-  right("CREDIT / PAYMENT", COLS[4], y, 70);
-  right("BALANCE", COLS[5], y, R - COLS[5]);
+  // 7pt so "CREDIT / PAYMENT" sits on one line inside its column.
+  doc.fontSize(7).font("Helvetica-Bold").fillColor("#777");
+  doc.text("DATE", X.date, y, { width: W.date, lineBreak: false });
+  doc.text("ITEM DESCRIPTION", X.item, y, { width: W.item, lineBreak: false });
+  right("DEBIT / CHARGES", X.debit, y, W.debit);
+  right("CREDIT / PAYMENT", X.credit, y, W.credit);
+  right("BALANCE", X.bal, y, W.bal);
   doc.fillColor("#000");
-  y += 14;
+  y += 12;
   doc.moveTo(L, y).lineTo(R, y).stroke();
   y += 7;
 
@@ -173,20 +198,19 @@ export async function soaPdf(d: SoaDoc): Promise<Buffer> {
   for (const l of soa.lines) {
     run += Number(l.credit) - Number(l.debit);
 
-    const desc = l.particulars;
-    const h = Math.max(doc.heightOfString(desc, { width: COLS[2] - COLS[1] - 8 }), 11);
+    const desc = l.requestor ? `${l.particulars}  ·  ${l.requestor}` : l.particulars;
+    const h = Math.max(doc.heightOfString(desc, { width: W.item - 10 }), 11);
     // A statement can run past one page; keep the columns readable when it does.
     if (y + h > doc.page.height - 90) {
       doc.addPage();
       y = 60;
     }
 
-    doc.text(day(l.date), COLS[0], y, { width: COLS[1] - COLS[0] - 6 });
-    doc.text(desc, COLS[1], y, { width: COLS[2] - COLS[1] - 8 });
-    doc.text(l.requestor ?? "", COLS[2], y, { width: COLS[3] - COLS[2] - 8 });
-    right(Number(l.debit) ? money(Number(l.debit)) : "", COLS[3], y, 70);
-    right(Number(l.credit) ? money(Number(l.credit)) : "", COLS[4], y, 70);
-    right(acct(run), COLS[5], y, R - COLS[5]);
+    doc.text(day(l.date), X.date, y, { width: W.date - 6 });
+    doc.text(desc, X.item, y, { width: W.item - 10 });
+    right(Number(l.debit) ? money(Number(l.debit)) : "", X.debit, y, W.debit);
+    right(Number(l.credit) ? money(Number(l.credit)) : "", X.credit, y, W.credit);
+    right(acct(run), X.bal, y, W.bal);
     y += h + 5;
   }
 
@@ -194,14 +218,14 @@ export async function soaPdf(d: SoaDoc): Promise<Buffer> {
   doc.moveTo(L, y).lineTo(R, y).stroke();
   y += 7;
   doc.fontSize(9).font("Helvetica-Bold");
-  right(money(charges), COLS[3], y, 70);
-  right(money(credits), COLS[4], y, 70);
-  right(acct(balance), COLS[5], y, R - COLS[5]);
+  right(money(charges), X.debit, y, W.debit);
+  right(money(credits), X.credit, y, W.credit);
+  right(acct(balance), X.bal, y, W.bal);
 
   y += 24;
   doc.fontSize(10).font("Helvetica-Bold");
-  right("Account Current Balance", R - 260, y, 160);
-  right(acct(balance), R - 100, y, 100);
+  right("Account Current Balance", X.item, y, W.item + W.debit + W.credit - 12);
+  right(acct(balance), X.bal, y, W.bal);
 
   y += 30;
   doc.fontSize(8.5).font("Helvetica").fillColor("#555");

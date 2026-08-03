@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { IconTrash, IconPlus, IconExcel, IconPdf, IconMail } from "../icons";
+import { IconTrash, IconPlus, IconSave, IconEdit, IconX, IconUpload, IconExcel, IconPdf, IconMail } from "../icons";
 import CellSelect from "../settings/CellSelect";
 import SoaFilter from "./SoaFilter";
-import { createSoa, addSoaLine, deleteSoaLine, setSoaStatus, deleteSoa, emailSoa } from "../actions/soa";
+import { soaViewer, soaWhere } from "@/lib/soa-scope";
+import type { RoleKey } from "@/lib/roles";
+import { createSoa, addSoaLine, editSoaLine, deleteSoaLine, setSoaStatus, deleteSoa, emailSoa, importSoaLines } from "../actions/soa";
 import { AP_CC } from "@/lib/soa-doc";
 
 const SOA_STATUS = ["Open", "Closed"] as const;
@@ -32,7 +34,24 @@ const running = (n: number) => (n === 0 ? "-" : n < 0 ? `(${amt(-n)})` : amt(n))
  * Lines live inside their statement rather than on a page of their own, so no
  * record id ever reaches the address bar.
  */
-export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; emp?: string }) {
+export default async function SoaPanel({
+  bou = "",
+  emp = "",
+  ref = "",
+  editLine = "",
+  viewer,
+}: {
+  bou?: string;
+  emp?: string;
+  /** Which statement is open, by its reference. Human-readable, not an id. */
+  ref?: string;
+  /** Which line is being corrected. One at a time. */
+  editLine?: string;
+  viewer: { id: string; role: RoleKey; email: string };
+}) {
+  // Finance sees every statement; everyone else sees their own and nothing
+  // else — scoped in the query, not hidden in the render.
+  const v = await soaViewer(viewer);
   const [company, bous, staff] = await Promise.all([
     prisma.company.findFirst({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.bou.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
@@ -49,8 +68,9 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
 
   const rows = await prisma.soa.findMany({
     where: {
-      ...(empId ? { employeeId: empId } : {}),
-      ...(bou && !empId ? { employee: { bouId: bou } } : {}),
+      ...soaWhere(v),
+      ...(v.admin && empId ? { employeeId: empId } : {}),
+      ...(v.admin && bou && !empId ? { employee: { bouId: bou } } : {}),
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -59,11 +79,34 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
     },
   });
 
-  // Every write returns to the filters the user was looking at.
+  const totals = rows.map((s) => {
+    const charges = s.lines.reduce((t, l) => t + Number(l.debit), 0);
+    const credits = s.lines.reduce((t, l) => t + Number(l.credit), 0);
+    // Charges pull the balance negative, a credit settles it — the workbook's
+    // convention. A negative balance is money the employee laid out and has
+    // not been paid back, which is what is due to them.
+    const balance = credits - charges;
+    return { s, charges, credits, balance, dueToEmployee: balance < 0 ? -balance : 0 };
+  });
+
+  // One statement is open at a time; the rest stay a row in the list.
+  const open = totals.find((t) => t.s.ref === ref) ?? null;
+
+  const href = (r: string) => {
+    const q = new URLSearchParams();
+    if (bou) q.set("bou", bou);
+    if (empId) q.set("emp", empId);
+    if (r) q.set("ref", r);
+    const qs = q.toString();
+    return qs ? `/finance/soa?${qs}` : "/finance/soa";
+  };
+
+  // Every write returns to the filters and the statement being looked at.
   const carry = (
     <>
       <input type="hidden" name="bou" value={bou} />
       <input type="hidden" name="emp" value={empId} />
+      <input type="hidden" name="ref" value={ref} />
     </>
   );
 
@@ -74,21 +117,79 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
           <h2>Statement of Account <span className="count">{rows.length}</span></h2>
         </div>
 
-        <SoaFilter
-          bou={bou}
-          emp={empId}
-          bous={bous}
-          staff={staff.map((e) => ({ id: e.id, name: `${e.lastName}, ${e.firstName}` }))}
-          action={createSoa}
-        />
+        {v.admin ? (
+          <SoaFilter
+            bou={bou}
+            emp={empId}
+            bous={bous}
+            staff={staff.map((e) => ({ id: e.id, name: `${e.lastName}, ${e.firstName}` }))}
+            action={createSoa}
+          />
+        ) : (
+          <p className="soahint">
+            {rows.length
+              ? "Your own statement. Add, correct or remove your expense lines below."
+              : "You have no statement yet — Finance raises it, then your expenses go here."}
+          </p>
+        )}
       </div>
 
-      {rows.length === 0 ? (
-        <div className="panel" style={{ marginTop: 14 }}>
-          <p>{bou || empId ? "No statements for that filter." : "No statements yet."}</p>
+      <div className="panel" style={{ marginTop: 14 }}>
+        <div className="cat-head">
+          <h2>Statements <span className="count">{rows.length}</span></h2>
+          <span className="spacer" />
+          {open && <a className="clear" href={href("")}>Close {open.s.ref}</a>}
         </div>
-      ) : (
-        rows.map((s) => {
+
+        {rows.length === 0 ? (
+          <p style={{ marginTop: 14 }}>
+            {bou || empId ? "No statements for that filter." : "No statements yet."}
+          </p>
+        ) : (
+          <div className="tablewrap">
+            <table className="utable stacked">
+              <thead><tr>
+                <th>SOA No.</th><th>Employee</th><th>BOU</th>
+                <th className="amt">Total Charges</th>
+                <th className="amt">Total Credit</th>
+                <th className="amt">Balance</th>
+                <th className="amt">Amount Due to Employee</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody>
+                {totals.map((t) => (
+                  <tr key={t.s.id} className={t.s.ref === ref ? "iscurrent" : undefined}>
+                    <td data-label="SOA No.">
+                      {/* The reference opens the statement — readable, and it
+                          keeps record ids out of the address bar. */}
+                      <a className="ticket" href={href(t.s.ref)}>{t.s.ref}</a>
+                    </td>
+                    <td data-label="Employee">{t.s.employee.firstName} {t.s.employee.lastName}</td>
+                    <td className="muted nowrap" data-label="BOU">{t.s.bouName ?? "—"}</td>
+                    <td className="amt" data-label="Total Charges">{cell(t.charges)}</td>
+                    <td className="amt" data-label="Total Credit">{cell(t.credits)}</td>
+                    <td className={t.balance < 0 ? "amt owed" : "amt"} data-label="Balance">
+                      {running(t.balance)}
+                    </td>
+                    <td className={t.dueToEmployee > 0 ? "amt owed" : "amt"} data-label="Amount Due to Employee">
+                      {t.dueToEmployee > 0 ? amt(t.dueToEmployee) : "—"}
+                    </td>
+                    <td data-label="Status">
+                      <span className={`pill ${t.s.status === "Closed" ? "s-SUSPENDED" : "s-ACTIVE"}`}>
+                        {t.s.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {open && (
+        (() => {
+          const s = open.s;
           const charges = s.lines.reduce((t, l) => t + Number(l.debit), 0);
           const credits = s.lines.reduce((t, l) => t + Number(l.credit), 0);
           // Charges pull the balance negative; a credit settles it. Same
@@ -100,9 +201,15 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
           return (
             <div className="panel soa" key={s.id} style={{ marginTop: 14 }}>
               <div className="soahead">
-                <div>
-                  <h2 className="soaco">{company?.name ?? "—"}</h2>
-                  {company?.address && <p className="soaaddr">{company.address}</p>}
+                <div className="soabrand">
+                  {company?.logo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="soalogo" src={company.logo} alt={`${company.name} logo`} />
+                  )}
+                  <div>
+                    <h2 className="soaco">{company?.name ?? "—"}</h2>
+                    {company?.address && <p className="soaaddr">{company.address}</p>}
+                  </div>
                 </div>
                 <div className="soatitle">
                   <span className="soaword">Statement</span>
@@ -141,7 +248,7 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                     title="Download Excel" aria-label="Download Excel"><IconExcel /></a>
                   <a className="ghost icon" href={`/api/soa/${s.id}/pdf`}
                     title="Download PDF" aria-label="Download PDF"><IconPdf /></a>
-                  <form action={emailSoa.bind(null, s.id)}>
+                  {v.admin && <form action={emailSoa.bind(null, s.id)}>
                     {carry}
                     <button className="ghost icon" type="submit"
                       title={s.employee.emailAdd
@@ -149,15 +256,31 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                         : "This employee has no email address on file"}
                       disabled={!s.employee.emailAdd}
                       aria-label="Email this statement"><IconMail /></button>
-                  </form>
+                  </form>}
+
+                  {/* Load a batch from the sheet Finance already keeps. The
+                      rows land as ordinary lines, editable like any other. */}
+                  {!closed && (
+                    <form action={importSoaLines.bind(null, s.id)} className="soaimport">
+                      {carry}
+                      <label className="ghost icon" title="Import from a spreadsheet">
+                        <IconUpload />
+                        <input type="file" name="sheet"
+                          accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                          aria-label="Spreadsheet to import" />
+                      </label>
+                      <button className="save icon" type="submit" title="Import the chosen sheet"
+                        aria-label="Import the chosen sheet"><IconSave /></button>
+                    </form>
+                  )}
                 </div>
 
-                <form action={setSoaStatus} className="soastatus">
+                {v.admin && <form action={setSoaStatus} className="soastatus">
                   {carry}
                   <input type="hidden" name="soaId" value={s.id} />
                   <CellSelect name="status" defaultValue={s.status}
-                    options={SOA_STATUS.map((v) => ({ value: v, label: v }))} />
-                </form>
+                    options={SOA_STATUS.map((o) => ({ value: o, label: o }))} />
+                </form>}
               </div>
 
               <div className="tablewrap">
@@ -173,26 +296,53 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                       line += Number(l.credit) - Number(l.debit);
                       return (
                         <tr key={l.id}>
-                          <td className="muted nowrap">{day(l.date)}</td>
-                          <td>
-                            {l.particulars}
-                            {/* Requestor rides with the item rather than
-                                taking a column of its own. */}
-                            {l.requestor && <span className="tree-meta"> · {l.requestor}</span>}
-                          </td>
-                          <td className="amt">{cell(Number(l.debit))}</td>
-                          <td className="amt">{cell(Number(l.credit))}</td>
-                          <td className={line < 0 ? "amt owed" : "amt"}>{running(line)}</td>
+                          {l.id === editLine && !closed ? (
+                            // The correction form lives inside the row it is
+                            // correcting; a form cannot span table cells, so
+                            // it takes the whole row.
+                            <td colSpan={5}>
+                              <form action={editSoaLine.bind(null, l.id)} className="addrow soaline">
+                                {carry}
+                                <input name="date" type="date" defaultValue={day(l.date)} aria-label="Date" />
+                                <input name="particulars" defaultValue={l.particulars} required aria-label="Item description" />
+                                <input name="requestor" defaultValue={l.requestor ?? ""} placeholder="Requestor" aria-label="Requestor" />
+                                <input name="debit" type="number" step="0.01" min="0"
+                                  defaultValue={Number(l.debit) || ""} placeholder="Debit / Charges" aria-label="Debit or charges" />
+                                <input name="credit" type="number" step="0.01" min="0"
+                                  defaultValue={Number(l.credit) || ""} placeholder="Credit / Payment" aria-label="Credit or payment" />
+                                <button className="save icon" type="submit" title="Save" aria-label="Save"><IconSave /></button>
+                              </form>
+                            </td>
+                          ) : (
+                            <>
+                              <td className="muted nowrap">{day(l.date)}</td>
+                              <td>
+                                {l.particulars}
+                                {/* Requestor rides with the item rather than
+                                    taking a column of its own. */}
+                                {l.requestor && <span className="tree-meta"> · {l.requestor}</span>}
+                              </td>
+                              <td className="amt">{cell(Number(l.debit))}</td>
+                              <td className="amt">{cell(Number(l.credit))}</td>
+                              <td className={line < 0 ? "amt owed" : "amt"}>{running(line)}</td>
+                            </>
+                          )}
                           <td className="rowacts">
                             {closed ? (
                               <button className="reject icon" type="button" disabled
                                 title="This statement is closed"
                                 aria-label="Delete unavailable on a closed statement"><IconTrash /></button>
+                            ) : l.id === editLine ? (
+                              <a className="ghost icon" href={href(s.ref)} title="Cancel" aria-label="Cancel"><IconX /></a>
                             ) : (
-                              <form action={deleteSoaLine.bind(null, l.id)}>
-                                {carry}
-                                <button className="reject icon" type="submit" title="Remove line" aria-label="Remove line"><IconTrash /></button>
-                              </form>
+                              <>
+                                <a className="ghost icon" href={`${href(s.ref)}${href(s.ref).includes("?") ? "&" : "?"}editLine=${l.id}`}
+                                  title="Correct this line" aria-label="Correct this line"><IconEdit /></a>
+                                <form action={deleteSoaLine.bind(null, l.id)}>
+                                  {carry}
+                                  <button className="reject icon" type="submit" title="Remove line" aria-label="Remove line"><IconTrash /></button>
+                                </form>
+                              </>
                             )}
                           </td>
                         </tr>
@@ -258,7 +408,7 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
               )}
             </div>
           );
-        })
+        })()
       )}
     </>
   );

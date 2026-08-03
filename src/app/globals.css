@@ -878,6 +878,22 @@ button{font-family:inherit}
 .app .soabar .btn-primary:disabled{opacity:.45;cursor:not-allowed}
 .app .soabar .clear{font-size:.82rem;color:var(--muted)}
 .app .soaacts{display:flex;align-items:center;gap:7px}
+.app .soabrand{display:flex;align-items:center;gap:12px}
+/* The file input hides inside its icon label, so the upload control matches
+   the download icons beside it instead of showing a browser file widget. */
+.app .soaimport{display:flex;align-items:center;gap:6px}
+.app .soaimport label.ghost.icon{position:relative;overflow:hidden;cursor:pointer;
+  display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;
+  color:var(--muted);background:transparent;border:1px solid var(--line)}
+.app .soaimport label.ghost.icon:hover{color:var(--cyan);border-color:rgba(56,232,255,.42);background:rgba(56,232,255,.08)}
+.app .soaimport label.ghost.icon:focus-within{border-color:var(--cyan)}
+.app .soaimport input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.app .soaimport label.ghost.icon svg{width:15px;height:15px}
+.app .soalogo{width:44px;height:44px;object-fit:contain;border-radius:8px}
+.app .logorow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;
+  padding:9px 11px;border:1px dashed var(--line);border-radius:11px;background:var(--s3)}
+.app .logorow input[type=file]{font-size:.8rem;color:var(--muted);max-width:260px}
+.app .logopreview{width:34px;height:34px;object-fit:contain;border-radius:7px;background:var(--s4)}
 @media (max-width:700px){.app .soabar>*{flex:1 1 132px}.app .soabar .btn-primary{flex:1 1 100%}}
 
 .app .soahead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}

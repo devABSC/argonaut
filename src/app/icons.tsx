@@ -60,27 +60,39 @@ export const IconDownload = () => (
   </svg>
 );
 
-/* A statement leaves the system three ways: as a sheet, as a page, or by post.
-   Distinct silhouettes so the three read apart at icon size. */
+/* File-type marks people already recognise: a green sheet for Excel, a red
+   page badged PDF, and a plain envelope for post. Colour carries the meaning
+   at icon size, so they are filled rather than stroked like the action
+   glyphs. */
 export const IconExcel = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
-    <path d="M5 3.5h9l5 5v12H5z" />
-    <path d="M14 3.5v5h5" />
-    <path d="M9 12.5l4 5M13 12.5l-4 5" />
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"
+      fill="#1D6F42" stroke="#1D6F42" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M13 2v7h7" fill="#0f4d2c" stroke="#1D6F42" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M8.6 12.4l4.8 6M13.4 12.4l-4.8 6" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
   </svg>
 );
 
 export const IconPdf = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"
+      fill="#C8102E" stroke="#C8102E" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M13 2v7h7" fill="#8f0a20" stroke="#C8102E" strokeWidth="1.6" strokeLinejoin="round" />
+    <text x="12" y="18.4" textAnchor="middle" fontSize="6.6" fontFamily="Helvetica, Arial, sans-serif"
+      fontWeight="700" fill="#fff">PDF</text>
+  </svg>
+);
+
+export const IconUpload = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
-    <path d="M5 3.5h9l5 5v12H5z" />
-    <path d="M14 3.5v5h5" />
-    <path d="M8.5 16.5v-4h1.6a1.2 1.2 0 010 2.4H8.5M13 16.5v-4h1.4a2 2 0 010 4z" />
+    <path d="M12 20.5v-11M7.5 13.5L12 9l4.5 4.5" />
+    <path d="M4.5 4.5h15" />
   </svg>
 );
 
 export const IconMail = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
-    <path d="M3.5 5.5h17v13h-17z" />
-    <path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3.6 6.2l8.4 6.4 8.4-6.4" />
   </svg>
 );
