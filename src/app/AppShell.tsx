@@ -8,6 +8,13 @@ import Flash from "./Flash";
 import type { NavSection } from "@/lib/nav";
 
 const ICONS: Record<string, ReactNode> = {
+  home: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M4 10.4L12 4l8 6.4" />
+      <path d="M6 12v8h12v-8" />
+      <path d="M10 20v-4.6h4V20" />
+    </svg>
+  ),
   "my-space": (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <path d="M3.6 10.6L12 4l8.4 6.6" />

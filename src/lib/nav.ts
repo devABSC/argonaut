@@ -37,6 +37,14 @@ export type NavSection = {
 
 export const NAV: NavSection[] = [
   {
+    // First in the list, so the owner lands here. Owner-only for now — it is
+    // the front page of the product, not a personal dashboard.
+    key: "home",
+    label: "Home",
+    tabs: [{ slug: "overview", label: "Overview" }],
+    roles: ["SUPER_USER"],
+  },
+  {
     // First in the list, so it is where everyone lands. Open to every signed-in
     // user — it is their own space, not a granted module.
     key: "my-space",
