@@ -229,6 +229,10 @@ model SoaLine {
   debit       Decimal  @default(0) @db.Decimal(14, 2)
   credit      Decimal  @default(0) @db.Decimal(14, 2)
 
+  /// The ticket this line came from, when it was posted by the system rather
+  /// than typed. Unique, so an approval can never post the same advance twice.
+  sourceRef String? @unique
+
   /// The receipt backing a charge. Held on the line because a receipt only
   /// means anything next to the expense it proves.
   receiptData    Bytes?

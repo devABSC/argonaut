@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { noticeDecision, noticeAwaitingApprover } from "@/lib/notices";
+import { postCashAdvanceToSoa } from "@/lib/soa-post";
 
 /**
  * Record one decision on a ticket. Only the person the step is assigned to may
@@ -50,6 +51,10 @@ export async function decide(approvalId: string, formData: FormData) {
       where: { id: approval.requestId },
       data: { status: "APPROVED", closedAt: new Date() },
     });
+    // A cash advance that clears its route is money released, so it lands on
+    // the requester's statement as a payment. Raises the statement if they do
+    // not have one yet, and never posts the same ticket twice.
+    await postCashAdvanceToSoa(approval.requestId);
   } else {
     await prisma.serviceRequest.update({
       where: { id: approval.requestId },
