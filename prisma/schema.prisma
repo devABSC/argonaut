@@ -59,6 +59,7 @@ model User {
   bir2307s       Bir2307[]           @relation("Bir2307Encoder")
   stockMovements InventoryMovement[] @relation("StockMovements")
   agencyLinks    AgencyLink[]        @relation("AgencyLinkEditor")
+  cronJobs       CronJob[]           @relation("CronAuthor")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -810,6 +811,68 @@ model Bir2307Line {
   createdAt DateTime @default(now())
 
   @@index([certId])
+}
+
+/// How often a job runs.
+enum CronFrequency {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+/// A job the system runs on a schedule.
+model CronJob {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+
+  frequency CronFrequency @default(DAILY)
+  /// Times of day it fires, as "HH:mm" in Manila time. A daily job may have
+  /// several; an hourly one ignores them.
+  times     String[]      @default([])
+  /// Day of week for WEEKLY (1 = Monday), day of month for MONTHLY.
+  onDay     Int?
+
+  /// Whether it keeps going after its first run.
+  recurring Boolean   @default(true)
+  /// Last day it may run. Past this it is skipped and marked finished.
+  endsOn    DateTime?
+
+  /// Which piece of logic to run, from the registry in lib/cron-actions.
+  action String
+  /// Anything that logic needs — a recipient, a threshold.
+  config Json?
+
+  isActive  Boolean   @default(true)
+  lastRunAt DateTime?
+  runs      CronRun[]
+
+  createdById   String?
+  createdBy     User?   @relation("CronAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// One attempt at a job, kept whether it worked or not — a schedule with no
+/// run history cannot be trusted.
+model CronRun {
+  id    String  @id @default(cuid())
+  jobId String
+  job   CronJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  ok         Boolean   @default(false)
+  /// What happened, in a sentence.
+  message    String    @default("")
+  /// True when a person pressed Test Run rather than the schedule firing.
+  manual     Boolean   @default(false)
+
+  @@index([jobId])
+  @@index([startedAt])
 }
 
 /// How the company connects to one statutory agency.
