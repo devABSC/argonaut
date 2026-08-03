@@ -98,6 +98,9 @@ export async function saveWithholdingAgent(formData: FormData) {
       address: String(formData.get("address") ?? "").trim() || null,
       city: String(formData.get("city") ?? "").trim() || null,
       zipCode: String(formData.get("zipCode") ?? "").trim() || null,
+      region: String(formData.get("region") ?? "").trim() || null,
+      country: String(formData.get("country") ?? "").trim() || null,
+      issuanceDate: date(formData, "issuanceDate"),
     },
   });
 
@@ -105,6 +108,56 @@ export async function saveWithholdingAgent(formData: FormData) {
   revalidatePath("/settings/company");
   await logHistory({ type: "update", module: "Finance > BIR", description: `Saved the withholding agent details for ${name}`, user: u });
   done(P2307, `Withholding agent saved — ${name}.`);
+}
+
+/**
+ * Add or correct the Supplier Info block — the payee side of a certificate.
+ *
+ * This is the box that gets used over and over, so it saves to the supplier
+ * register itself: the details entered here are the ones every later
+ * certificate for that supplier starts from.
+ */
+export async function saveSupplierInfo(formData: FormData) {
+  const me = await requireFinanceUser();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) done(P2307, "Not saved — a supplier needs a company name.");
+
+  const data = {
+    name,
+    tin: String(formData.get("tin") ?? "").trim() || null,
+    address: String(formData.get("address") ?? "").trim() || null,
+    city: String(formData.get("city") ?? "").trim() || null,
+    region: String(formData.get("region") ?? "").trim() || null,
+    country: String(formData.get("country") ?? "").trim() || null,
+    issuanceDate: date(formData, "issuanceDate"),
+  };
+
+  const id = String(formData.get("supplierId") ?? "").trim();
+  if (id) {
+    await prisma.supplier.update({ where: { id }, data });
+    revalidatePath(P2307);
+    await logHistory({ type: "update", module: "Finance > BIR", description: `Saved supplier ${name}`, user: me });
+    done(P2307, `Supplier ${name} saved.`);
+  }
+
+  // Names are unique in the register, so adding one that is already there
+  // updates it rather than failing on the constraint.
+  const clash = await prisma.supplier.findFirst({
+    where: { name: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (clash) {
+    await prisma.supplier.update({ where: { id: clash.id }, data });
+    revalidatePath(P2307);
+    await logHistory({ type: "update", module: "Finance > BIR", description: `Updated supplier ${name}`, user: me });
+    done(P2307, `${name} was already on the register — their details were updated.`);
+  }
+
+  await prisma.supplier.create({ data });
+  revalidatePath(P2307);
+  await logHistory({ type: "create", module: "Finance > BIR", description: `Added supplier ${name}`, user: me });
+  done(P2307, `Supplier ${name} added.`);
 }
 
 /**

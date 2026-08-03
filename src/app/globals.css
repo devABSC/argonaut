@@ -921,6 +921,32 @@ button{font-family:inherit}
 /* Chart of Accounts: a fuller record, so a grid rather than a strip. */
 .app .birrow{grid-template-columns:130px minmax(160px,1.5fr) minmax(150px,1fr) minmax(140px,1fr) 36px}
 .app .birnote{margin-top:10px;font-size:.86rem;color:var(--muted);max-width:none}
+
+/* Buyer beside Supplier — the certificate's own two-box shape. Label left,
+   value right, so the two columns read across at a glance. */
+.app .infoboxes{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.app .infobox{margin:0}
+.app .infoform{display:grid;gap:8px;margin-top:12px}
+.app .inforow{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;align-items:center}
+.app .inforow>span{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);line-height:1.3}
+.app .inforow input,.app .inforow select,.app .inforow textarea{width:100%;font-family:var(--body);
+  font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);
+  border-radius:8px;padding:7px 9px;resize:vertical}
+.app .inforow input:focus,.app .inforow select:focus,.app .inforow textarea:focus{outline:none;border-color:var(--cyan)}
+.app .inforow.pick{padding-bottom:8px;border-bottom:1px solid var(--line-2);margin-bottom:2px}
+.app .infoact{display:flex;justify-content:flex-end;margin-top:6px}
+.app .btn-primary.wide{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-width:190px;letter-spacing:.06em;font-weight:700}
+.app .infolist{display:grid;gap:7px;margin-top:12px}
+.app .infolist>div{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;align-items:baseline}
+.app .infolist dt{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.app .infolist dd{font-size:.9rem}
+@media (max-width:900px){
+  .app .infoboxes{grid-template-columns:1fr}
+  .app .inforow,.app .infolist>div{grid-template-columns:1fr}
+  .app .btn-primary.wide{width:100%}
+}
 .app .yeargroup{margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)}
 .app .yeargroup:first-of-type{border-top:0;padding-top:0}
 /* A full address in a table cell wraps rather than stretching the column. */

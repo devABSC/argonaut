@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { IconTrash, IconSave, IconDownload } from "../icons";
-import { addBir2307, deleteBir2307, saveWithholdingAgent } from "../actions/birforms";
+import { addBir2307, deleteBir2307, saveWithholdingAgent, saveSupplierInfo } from "../actions/birforms";
+import SupplierInfoForm from "./SupplierInfoForm";
 import Bir2307Form from "./Bir2307Form";
 import { quarterLabel } from "@/lib/quarters";
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
+const dayInput = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
 
 /** Every 2307 raised, newest first. */
 export default async function Bir2307Panel({ isOwner }: { isOwner: boolean }) {
@@ -13,60 +15,92 @@ export default async function Bir2307Panel({ isOwner }: { isOwner: boolean }) {
     prisma.bir2307.findMany({ orderBy: [{ year: "desc" }, { quarter: "asc" }, { supplierName: "asc" }] }),
     prisma.supplier.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, tin: true, address: true },
+      select: {
+        id: true, name: true, tin: true, address: true,
+        city: true, region: true, country: true, issuanceDate: true,
+      },
     }),
   ]);
 
-  const agent = [company?.address, company?.city, company?.zipCode].filter(Boolean).join(", ");
+  // The picker hands dates to a date input, which wants yyyy-mm-dd.
+  const supplierRows = suppliers.map((x) => ({
+    ...x,
+    issuanceDate: x.issuanceDate ? dayInput(x.issuanceDate) : null,
+  }));
   // Newest year first; the list is read backwards from the current filing.
   const years = [...new Set(rows.map((r) => r.year))].sort((a, b) => b - a);
 
   return (
     <>
-      {/* Who is doing the withholding. The same on every certificate, so it is
-          set once here rather than retyped per 2307 — and only by the owner,
-          since it is the company's own registered detail. */}
-      <div className="panel">
-        <div className="cat-head">
-          <h2>Withholding Agent / Payor</h2>
-          <span className="spacer" />
-          {!isOwner && <span className="tree-meta">Owner sets this</span>}
+      {/* Buyer beside supplier, the same seven lines in the same order — the
+          shape the certificate itself uses. The buyer is entered once; the
+          supplier box is the one used over and over. */}
+      <div className="infoboxes">
+        <div className="panel infobox">
+          <div className="cat-head">
+            <h2>Buyer Info</h2>
+            <span className="spacer" />
+            {!isOwner && <span className="tree-meta">Owner sets this</span>}
+          </div>
+
+          {isOwner && company ? (
+            <form action={saveWithholdingAgent} className="infoform">
+              <input type="hidden" name="companyId" value={company.id} />
+              <label className="inforow">
+                <span>Company Name</span>
+                <input name="name" required defaultValue={company.name} autoComplete="off" />
+              </label>
+              <label className="inforow">
+                <span>TIN No</span>
+                <input name="tin" defaultValue={company.tin ?? ""} placeholder="000-000-000-000000" autoComplete="off" />
+              </label>
+              <label className="inforow">
+                <span>Issuance Date</span>
+                <input name="issuanceDate" type="date" defaultValue={dayInput(company.issuanceDate)} />
+              </label>
+              <label className="inforow">
+                <span>Registered Add</span>
+                <textarea name="address" rows={2} defaultValue={company.address ?? ""} autoComplete="off" />
+              </label>
+              <label className="inforow">
+                <span>City</span>
+                <input name="city" defaultValue={company.city ?? ""} autoComplete="off" />
+              </label>
+              <label className="inforow">
+                <span>Region</span>
+                <input name="region" defaultValue={company.region ?? ""} autoComplete="off" />
+              </label>
+              <label className="inforow">
+                <span>Country</span>
+                <input name="country" defaultValue={company.country ?? "PHILIPPINES"} autoComplete="off" />
+              </label>
+              {/* Kept off the certificate block, but the record still carries it. */}
+              <input type="hidden" name="zipCode" value={company.zipCode ?? ""} />
+              <div className="infoact">
+                <button className="btn-primary wide" type="submit"><IconSave /> SAVE BUYER</button>
+              </div>
+            </form>
+          ) : (
+            <dl className="infolist">
+              <div><dt>Company Name</dt><dd>{company?.name ?? "—"}</dd></div>
+              <div><dt>TIN No</dt><dd>{company?.tin ?? "—"}</dd></div>
+              <div><dt>Issuance Date</dt><dd>{company?.issuanceDate ? day(company.issuanceDate) : "—"}</dd></div>
+              <div><dt>Registered Add</dt><dd>{company?.address ?? "—"}</dd></div>
+              <div><dt>City</dt><dd>{company?.city ?? "—"}</dd></div>
+              <div><dt>Region</dt><dd>{company?.region ?? "—"}</dd></div>
+              <div><dt>Country</dt><dd>{company?.country ?? "—"}</dd></div>
+            </dl>
+          )}
         </div>
 
-        {isOwner && company ? (
-          <form action={saveWithholdingAgent} className="coaform">
-            <input type="hidden" name="companyId" value={company.id} />
-            <label className="statfield">
-              <span>Company Name</span>
-              <input name="name" required defaultValue={company.name} autoComplete="off" />
-            </label>
-            <label className="statfield">
-              <span>Company TIN</span>
-              <input name="tin" defaultValue={company.tin ?? ""} placeholder="000-000-000-000" autoComplete="off" />
-            </label>
-            <label className="statfield">
-              <span>City</span>
-              <input name="city" defaultValue={company.city ?? ""} autoComplete="off" />
-            </label>
-            <label className="statfield">
-              <span>Company Address</span>
-              <input name="address" defaultValue={company.address ?? ""} autoComplete="off" />
-            </label>
-            <label className="statfield">
-              <span>Zip Code</span>
-              <input name="zipCode" defaultValue={company.zipCode ?? ""} autoComplete="off" />
-            </label>
-            <div className="statacts">
-              <button className="btn-primary" type="submit"><IconSave /> Save</button>
-            </div>
-          </form>
-        ) : (
-          <dl className="tmeta wide" style={{ marginTop: 12 }}>
-            <div><dt>Company Name</dt><dd>{company?.name ?? "—"}</dd></div>
-            <div><dt>Company TIN</dt><dd>{company?.tin ?? "—"}</dd></div>
-            <div><dt>Company Address</dt><dd>{agent || "—"}</dd></div>
-          </dl>
-        )}
+        <div className="panel infobox">
+          <div className="cat-head">
+            <h2>Supplier Info</h2>
+            <span className="spacer" />
+            <span className="tree-meta">{suppliers.length} on the register</span>
+          </div>
+          <SupplierInfoForm suppliers={supplierRows} action={saveSupplierInfo} />
+        </div>
       </div>
 
     <div className="panel" style={{ marginTop: 14 }}>

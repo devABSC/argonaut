@@ -665,22 +665,26 @@ model Employee {
 
 /// A company the business operates as. Employees and accounts belong to one.
 model Company {
-  id        String  @id @default(cuid())
+  id           String    @id @default(cuid())
   /// Short code shared with Employee.company, e.g. ATO01-165846.
-  code      String  @unique
-  name      String
-  tin       String?
-  address   String?
+  code         String    @unique
+  name         String
+  tin          String?
+  address      String?
   /// Split out from the address because the BIR forms ask for them apart.
-  city      String?
-  zipCode   String?
-  pocEmail  String?
+  city         String?
+  zipCode      String?
+  region       String?
+  country      String?   @default("Philippines")
+  /// Date of registration with the BIR, as printed on a certificate.
+  issuanceDate DateTime?
+  pocEmail     String?
   /// Brand mark as a data URL, shown on documents the company sends out.
   /// Held inline rather than in object storage — one small image per company,
   /// and it must be there when a statement renders.
-  logo      String?
-  isActive  Boolean @default(true)
-  sortOrder Int     @default(0)
+  logo         String?
+  isActive     Boolean   @default(true)
+  sortOrder    Int       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -841,10 +845,13 @@ model Supplier {
 
   address String?
   city    String?
-  country String?
+  region  String?
+  country String? @default("Philippines")
 
   /// Registration and payment details.
   tin          String?
+  /// Date of registration with the BIR, as printed on a certificate.
+  issuanceDate DateTime?
   paymentTerms String?
 
   notes    String?
