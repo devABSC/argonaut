@@ -65,7 +65,7 @@ export async function deleteCompany(companyId: string) {
   // Refuse while anyone still points at the code.
   const [users, employees] = await Promise.all([
     prisma.user.count({ where: { company: c.code } }),
-    prisma.employee.count({ where: { company: c.code } }),
+    prisma.employee.count({ where: { company: c.code, status: 0 } }),
   ]);
   if (users + employees > 0) throw new Error("COMPANY_IN_USE");
 

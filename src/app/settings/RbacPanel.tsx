@@ -112,7 +112,18 @@ export default async function RbacPanel({
     ? await prisma.bou.findMany({
         where: { isActive: true },
         orderBy: { name: "asc" },
-        select: { id: true, name: true, code: true, _count: { select: { employees: true } } },
+        select: {
+          id: true, name: true, code: true,
+          _count: { select: { employees: { where: { status: 0 } } } },
+          // Enough for a hover card; a BOU with 68 people does not need all of
+          // them listed to answer "who is in here?".
+          employees: {
+            where: { status: 0 },
+            orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+            take: 12,
+            select: { id: true, firstName: true, lastName: true, jobTitle: true },
+          },
+        },
       })
     : [];
   const scoped = target
@@ -213,7 +224,27 @@ export default async function RbacPanel({
                   />
                   <span>
                     <b>{b.name}</b>
-                    <span className="tree-meta"> {b._count.employees} staff</span>
+                    {b._count.employees === 0 ? (
+                      <span className="tree-meta"> no staff</span>
+                    ) : (
+                      <span className="staffhint" tabIndex={0}>
+                        {b._count.employees} staff
+                        <span className="staffcard" role="tooltip">
+                          <b>{b.name}</b>
+                          {b.employees.map((e) => (
+                            <span key={e.id}>
+                              {e.lastName}, {e.firstName}
+                              {e.jobTitle && <em> — {e.jobTitle}</em>}
+                            </span>
+                          ))}
+                          {b._count.employees > b.employees.length && (
+                            <span className="more">
+                              +{b._count.employees - b.employees.length} more
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                    )}
                   </span>
                 </label>
               ))}

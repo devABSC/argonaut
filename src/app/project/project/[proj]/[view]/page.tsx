@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
+import { canSeeProject } from "@/lib/project-scope";
 import { PROJECT_VIEWS, isProjectView, PROJECT_PILL } from "@/lib/projects";
 import AppShell from "../../../../AppShell";
 import ProjectDetail from "../../../ProjectDetail";
@@ -17,6 +18,12 @@ export default async function ProjectView({
   if (!isProjectView(view)) notFound();
 
   const { user, nav, section } = await requireAccess("project", "projects");
+
+  // The list is scoped to membership; so is the URL. A project someone is not
+  // on must 404 for them, not merely be absent from a list.
+  if (!(await canSeeProject({ id: user.id, role: user.role, email: user.email }, proj))) {
+    notFound();
+  }
 
   const p = await prisma.project.findUnique({
     where: { id: proj },

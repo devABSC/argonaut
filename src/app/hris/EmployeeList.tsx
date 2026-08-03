@@ -49,7 +49,7 @@ export default async function EmployeeList({
 
   const [total, all, rows, bouRows, companyRows, deptRows, cityRows] = await Promise.all([
     prisma.employee.count({ where }),
-    prisma.employee.count(),
+    prisma.employee.count({ where: { status: 0 } }),
     prisma.employee.findMany({
       where,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],

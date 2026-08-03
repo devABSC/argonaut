@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
+import { projectViewer, requireProjectMember, diff, display } from "@/lib/project-access";
 
 const PATH = "/project/projects";
 
@@ -88,28 +89,36 @@ export async function createProject(formData: FormData) {
 }
 
 export async function setProjectStatus(formData: FormData) {
-  const me = await requireProjectUser();
-
   const id = String(formData.get("projectId") ?? "");
   const status = String(formData.get("status") ?? "").trim();
   if (!id || !status) return;
+  const me = await requireProjectMember(id);
+
+  const before = await prisma.project.findUnique({ where: { id }, select: { name: true, status: true, closedAt: true } });
+  if (!before) return;
 
   const closing = status === "Closed" || status === "Cancelled";
-  const p = await prisma.project.update({
-    where: { id },
-    data: { status, closedAt: closing ? new Date() : null },
-    select: { name: true },
-  });
+  const closedAt = closing ? new Date() : null;
+
+  const [p] = await prisma.$transaction([
+    prisma.project.update({ where: { id }, data: { status, closedAt }, select: { name: true } }),
+    prisma.projectChange.createMany({
+      data: diff(before, { status, closedAt }, { status: "Status", closedAt: "Date closed" }).map((c) => ({
+        projectId: id, entity: "Project", entityName: before.name, ...c,
+        actorId: me.userId, actorName: me.name,
+      })),
+    }),
+  ]);
 
   revalidatePath(PATH);
-  await logHistory({ type: "update", module: "Project > Projects", description: `${p.name} → ${status}`, user: me });
+  await logHistory({ type: "update", module: "Project > Projects", description: `${p.name} → ${status}`, user: { id: me.userId, name: me.name } });
   done(PATH, `${p.name} is now ${status}.`);
 }
 
 export async function addProjectMember(formData: FormData) {
-  const me = await requireProjectUser();
-
   const projectId = String(formData.get("projectId") ?? "");
+  const me = await requireProjectMember(projectId);
+
   const employeeId = String(formData.get("employeeId") ?? "");
   if (!projectId || !employeeId) done(PATH, "Pick someone to add.");
 
@@ -124,30 +133,55 @@ export async function addProjectMember(formData: FormData) {
   });
   if (existing) done(PATH, `${emp!.firstName} ${emp!.lastName} is already on this project.`);
 
-  await prisma.projectMember.create({
-    data: { projectId, employeeId, holder: String(formData.get("holder") ?? "Member") },
-  });
+  const holder = String(formData.get("holder") ?? "Member");
+  await prisma.$transaction([
+    prisma.projectMember.create({ data: { projectId, employeeId, holder } }),
+    prisma.projectChange.create({
+      data: {
+        projectId, entity: "Member", entityId: employeeId,
+        entityName: `${emp!.firstName} ${emp!.lastName}`,
+        field: "Member", oldValue: null, newValue: holder, action: "create",
+        actorId: me.userId, actorName: me.name,
+      },
+    }),
+  ]);
 
   revalidatePath(PATH);
-  await logHistory({ type: "create", module: "Project > Projects", description: `Added ${emp!.firstName} ${emp!.lastName} to a project`, user: me });
+  await logHistory({ type: "create", module: "Project > Projects", description: `Added ${emp!.firstName} ${emp!.lastName} to a project`, user: { id: me.userId, name: me.name } });
   done(PATH, `${emp!.firstName} ${emp!.lastName} added.`);
 }
 
 export async function removeProjectMember(memberId: string) {
-  const me = await requireProjectUser();
-  const m = await prisma.projectMember.delete({
+  const row = await prisma.projectMember.findUnique({
     where: { id: memberId },
     include: { employee: { select: { firstName: true, lastName: true } } },
   });
+  if (!row) return;
+  const me = await requireProjectMember(row.projectId);
+
+  const [m] = await prisma.$transaction([
+    prisma.projectMember.delete({
+      where: { id: memberId },
+      include: { employee: { select: { firstName: true, lastName: true } } },
+    }),
+    prisma.projectChange.create({
+      data: {
+        projectId: row.projectId, entity: "Member", entityId: row.employeeId,
+        entityName: `${row.employee.firstName} ${row.employee.lastName}`,
+        field: "Member", oldValue: row.holder, newValue: null, action: "delete",
+        actorId: me.userId, actorName: me.name,
+      },
+    }),
+  ]);
   revalidatePath(PATH);
-  await logHistory({ type: "delete", module: "Project > Projects", description: `Removed ${m.employee.firstName} ${m.employee.lastName} from a project`, user: me });
+  await logHistory({ type: "delete", module: "Project > Projects", description: `Removed ${m.employee.firstName} ${m.employee.lastName} from a project`, user: { id: me.userId, name: me.name } });
   done(PATH, `${m.employee.firstName} ${m.employee.lastName} removed.`);
 }
 
 export async function deleteProject(projectId: string) {
-  const me = await requireProjectUser();
+  const me = await requireProjectMember(projectId);
   const p = await prisma.project.delete({ where: { id: projectId }, select: { name: true } });
   revalidatePath(PATH);
-  await logHistory({ type: "delete", module: "Project > Projects", description: `Deleted project ${p.name}`, user: me });
+  await logHistory({ type: "delete", module: "Project > Projects", description: `Deleted project ${p.name}`, user: { id: me.userId, name: me.name } });
   done(PATH, `${p.name} deleted.`);
 }

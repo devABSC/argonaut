@@ -15,7 +15,7 @@ export default async function ProjectTab({ params }: { params: Promise<{ tab: st
       activeTab={active.slug}
     >
       {active.slug === "projects" ? (
-        <ProjectList />
+        <ProjectList viewer={{ id: user.id, role: user.role, email: user.email }} />
       ) : (
         <div className="panel">
           <h2>{active.label}</h2>

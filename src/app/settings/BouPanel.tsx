@@ -11,7 +11,8 @@ export default async function BouPanel({ showInactive = false }: { showInactive?
     prisma.bou.findMany({
       where: showInactive ? {} : { isActive: true },
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
-      include: { _count: { select: { employees: true } } },
+      // Active staff only — status 0 is active, 1 and above are leavers.
+      include: { _count: { select: { employees: { where: { status: 0 } } } } },
     }),
     prisma.bou.count({ where: { isActive: false } }),
   ]);

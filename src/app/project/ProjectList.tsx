@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { projectScope } from "@/lib/project-scope";
+import type { RoleKey } from "@/lib/roles";
 import { createProject, setProjectStatus, deleteProject } from "../actions/projects";
 import { PROJECT_STATUS, PROJECT_PILL } from "@/lib/projects";
 import { IconTrash, IconSave } from "../icons";
@@ -8,9 +10,18 @@ import MemberPicker from "./MemberPicker";
 
 const fmtDate = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "—");
 
-export default async function ProjectList() {
+export default async function ProjectList({
+  viewer,
+}: {
+  viewer: { id: string; role: RoleKey; email: string };
+}) {
+  // A user sees a project only if they are on it. Scoped in the query, not
+  // the render.
+  const scope = await projectScope(viewer);
+
   const [projects, staffRows, bouRows] = await Promise.all([
     prisma.project.findMany({
+      where: scope,
       orderBy: [{ closedAt: "asc" }, { launchedAt: "desc" }, { createdAt: "desc" }],
       include: {
         user: { select: { name: true } },
