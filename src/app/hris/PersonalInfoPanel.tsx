@@ -115,7 +115,7 @@ export default async function PersonalInfoPanel({ empId }: { empId?: string }) {
           </div>
 
           <label className="statfield"><span>Country</span>
-            <input name="country" defaultValue={e.country ?? ""} autoComplete="off" /></label>
+            <input name="country" defaultValue={e.country || "Philippines"} autoComplete="off" /></label>
           <div className="statacts">
             <button className="btn-primary" type="submit"><IconSave /> Save contact</button>
           </div>

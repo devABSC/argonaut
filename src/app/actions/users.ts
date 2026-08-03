@@ -145,3 +145,49 @@ export async function setUserManager(userId: string, managerId: string | null) {
   await prisma.user.update({ where: { id: userId }, data: { managerId, updatedById: me.id } });
   revalidatePath("/settings/users");
 }
+
+/**
+ * Permanently removes an account. Owner only.
+ *
+ * ServiceRequest.requester and RequestApproval.approver both cascade, so
+ * deleting someone who has raised a ticket or decided on one would take that
+ * history with them. Those accounts are refused rather than quietly gutting
+ * the service desk — suspend them instead.
+ */
+export async function deleteUser(userId: string) {
+  const me = await actor();
+  if (me.role !== "SUPER_USER") deny();
+  if (me.id === userId) {
+    done("/settings/users", "You cannot delete your own account.");
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: { select: { key: true } },
+      _count: { select: { requests: true, approvalsGiven: true } },
+    },
+  });
+  if (!target) deny();
+
+  if (target.role.key === "SUPER_USER") {
+    const owners = await prisma.user.count({ where: { role: { key: "SUPER_USER" } } });
+    if (owners <= 1) done("/settings/users", "That is the last Super User — the system would be left with no owner.");
+  }
+
+  const { requests, approvalsGiven } = target._count;
+  if (requests > 0 || approvalsGiven > 0) {
+    done(
+      "/settings/users",
+      `${target.name} has ${requests} ticket${requests === 1 ? "" : "s"} and ${approvalsGiven} approval${approvalsGiven === 1 ? "" : "s"} — deleting would take that history too. Suspend the account instead.`,
+    );
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+  revalidatePath("/settings/users");
+  await logHistory({
+    type: "delete", module: "Settings > Users",
+    description: `Deleted account ${target.name} <${target.email}>`, user: me,
+  });
+  done("/settings/users", `${target.name} deleted.`);
+}

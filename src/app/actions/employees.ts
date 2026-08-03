@@ -85,6 +85,7 @@ export async function createEmployee(formData: FormData) {
       employmentStatus: text(formData, "employmentStatus") ?? "Active",
       remarks: text(formData, "remarks"),
       status: 0, // active
+      country: "Philippines",
       hasAccess: formData.get("hasAccess") === "on",
       hasExpense: formData.get("hasExpense") === "on",
       company: text(formData, "company"),
@@ -156,7 +157,7 @@ export async function saveEmployeeContact(formData: FormData) {
       city: text(formData, "city"),
       state: text(formData, "state"),
       region: text(formData, "region"),
-      country: text(formData, "country"),
+      country: text(formData, "country") ?? "Philippines",
       zipCode: text(formData, "zipCode"),
     },
   });

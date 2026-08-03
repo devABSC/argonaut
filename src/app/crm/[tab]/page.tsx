@@ -3,6 +3,7 @@ import { requireAccess } from "@/lib/guard";
 import AppShell from "../../AppShell";
 import PipelineBoard from "../PipelineBoard";
 import ClientsPanel from "../ClientsPanel";
+import SuppliersPanel from "../SuppliersPanel";
 import ContactsPanel from "../ContactsPanel";
 
 export default async function CrmTab({ params }: { params: Promise<{ tab: string }> }) {
@@ -18,6 +19,7 @@ export default async function CrmTab({ params }: { params: Promise<{ tab: string
     >
       {active.slug === "pipeline" && <PipelineBoard />}
       {active.slug === "clients" && <ClientsPanel />}
+      {active.slug === "suppliers" && <SuppliersPanel />}
       {active.slug === "contacts" && <ContactsPanel />}
     </AppShell>
   );

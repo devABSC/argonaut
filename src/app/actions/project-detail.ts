@@ -45,19 +45,20 @@ export async function saveProjectInfo(formData: FormData) {
 
   const before = await prisma.project.findUnique({
     where: { id },
-    select: { name: true, description: true, status: true, launchedAt: true, closedAt: true },
+    select: { name: true, description: true, customer: true, status: true, launchedAt: true, closedAt: true },
   });
   if (!before) return;
 
   const after = {
     name,
     description: text(formData, "description"),
+    customer: text(formData, "customer"),
     status: String(formData.get("status") ?? "Planning"),
     launchedAt,
     closedAt,
   };
   const changes = diff(before, after, {
-    name: "Project name", description: "Description", status: "Status",
+    name: "Project name", description: "Description", customer: "Customer", status: "Status",
     launchedAt: "Date launched", closedAt: "Date closed",
   });
 

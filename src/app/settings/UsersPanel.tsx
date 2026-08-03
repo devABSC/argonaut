@@ -7,9 +7,9 @@ import {
   canAssignRole,
   type Actor,
 } from "@/lib/rbac";
-import { approveRegistration, rejectRegistration, updateUserFromForm } from "../actions/users";
+import { approveRegistration, rejectRegistration, updateUserFromForm, deleteUser } from "../actions/users";
 import { requirePasswordChange } from "../actions/changepw";
-import { IconCheck, IconX, IconEdit } from "../icons";
+import { IconCheck, IconX, IconEdit, IconTrash } from "../icons";
 import CellSelect from "./CellSelect";
 
 /** Manila time — the server runs UTC. */
@@ -202,6 +202,18 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                               title="Require a password change at next sign-in"
                               aria-label="Require password change"
                             ><IconEdit /></button>
+                          </form>
+                        )}
+                        {/* Hard delete is the owner's alone, and never on
+                            themselves. Accounts with service-desk history are
+                            refused server-side. */}
+                        {isOwner && u.id !== me.id && (
+                          <form action={deleteUser.bind(null, u.id)}>
+                            <button
+                              className="reject icon" type="submit"
+                              title={`Delete ${u.name} permanently`}
+                              aria-label="Delete account"
+                            ><IconTrash /></button>
                           </form>
                         )}
                       </td>

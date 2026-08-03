@@ -13,34 +13,41 @@ export default function EmployeeFilters({
   company: string;
   bous: string[];
   depts: string[];
-  companies: string[];
-  /** The company filter is the owner's tool; others are pinned to their own. */
+  companies: { code: string; name: string }[];
+  /** Owner-only, and locked to the default company until there is a second. */
   showCompany: boolean;
 }) {
   return (
     <form className="empsearch" action="/hris/employees" method="get">
       <input name="q" defaultValue={q} placeholder="Search name, ID, job title, email" />
 
-      <select name="bou" defaultValue={bou} aria-label="Filter by BOU">
+      <select name="bou" defaultValue={bou} aria-label="Search by BOU">
         <option value="">
           {bous.length ? "All BOUs" : "No BOU data"}
         </option>
         {bous.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
 
-      <select name="dept" defaultValue={dept} aria-label="Filter by department">
+      <select name="dept" defaultValue={dept} aria-label="Search by department">
         <option value="">{depts.length ? "All departments" : "No department data"}</option>
         {depts.map((d) => <option key={d} value={d}>{d}</option>)}
       </select>
 
       {showCompany && (
-        <select name="company" defaultValue={company} aria-label="Filter by company">
-          <option value="">All companies</option>
-          {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+        // Locked to the one company for now — shown so it is obvious which set
+        // is on screen, disabled because there is nothing else to pick yet.
+        <select
+          name="company"
+          defaultValue={company}
+          aria-label="Company"
+          title="Locked to ATOMIT for now"
+          disabled
+        >
+          {companies.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
         </select>
       )}
 
-      <button type="submit">Filter</button>
+      <button type="submit">Search</button>
       {(q || bou || dept || (showCompany && company)) && <a className="clear" href="/hris/employees">Clear</a>}
     </form>
   );

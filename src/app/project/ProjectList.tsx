@@ -74,6 +74,7 @@ export default async function ProjectList({
                 <tr>
                   <th className="numcol">No.</th>
                   <th>Project</th>
+                  <th>Customer</th>
                   <th>Description</th>
                   <th>Launched</th>
                   <th>Closed</th>
@@ -92,6 +93,7 @@ export default async function ProjectList({
                         {p.name}
                       </Link>
                     </td>
+                    <td className="muted">{p.customer ?? "—"}</td>
                     <td className="muted">{p.description ?? "—"}</td>
                     <td className="muted nowrap">{fmtDate(p.launchedAt)}</td>
                     <td className="muted nowrap">{fmtDate(p.closedAt)}</td>
@@ -158,6 +160,11 @@ export default async function ProjectList({
           <label className="statfield full">
             <span>Project description</span>
             <textarea name="description" rows={3} placeholder="What is this project for?" />
+          </label>
+
+          <label className="statfield full">
+            <span>Customer</span>
+            <input name="customer" autoComplete="off" placeholder="Who the work is for" />
           </label>
 
           <label className="statfield">

@@ -63,6 +63,7 @@ export async function createProject(formData: FormData) {
     data: {
       name,
       description: text(formData, "description"),
+      customer: text(formData, "customer"),
       status: String(formData.get("status") ?? "Planning"),
       launchedAt,
       closedAt,

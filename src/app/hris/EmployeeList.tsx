@@ -24,7 +24,16 @@ export default async function EmployeeList({
   // own, so hiding the control is backed by the query rather than decorating
   // a list that still contains everybody.
   const isOwner = viewer.role === "SUPER_USER";
-  const scopedCompany = isOwner ? company : (viewer.company ?? "");
+  // The company control is locked to the register's first company for now, so
+  // even the owner sees that one set rather than an unscoped mix.
+  const defaultCompany = await prisma.company.findFirst({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { code: true },
+  });
+  const scopedCompany = isOwner
+    ? (company || defaultCompany?.code || "")
+    : (viewer.company ?? "");
   const lockedOut = !isOwner && !viewer.company;
   // Only active staff. status is the source system's own flag: 0 active,
   // 1 and above are leavers and disabled accounts.
@@ -47,7 +56,7 @@ export default async function EmployeeList({
     ...(scopedCompany ? { company: scopedCompany } : {}),
   };
 
-  const [total, all, rows, bouRows, companyRows, deptRows, cityRows] = await Promise.all([
+  const [total, all, rows, bouRows, companyRows, deptRows, companyNames, cityRows] = await Promise.all([
     prisma.employee.count({ where }),
     prisma.employee.count({ where: { status: 0 } }),
     prisma.employee.findMany({
@@ -76,6 +85,7 @@ export default async function EmployeeList({
       where: { AND: [{ NOT: { subBou: null } }, { NOT: { subBou: "" } }] },
       distinct: ["subBou"], select: { subBou: true }, orderBy: { subBou: "asc" },
     }),
+    prisma.company.findMany({ select: { code: true, name: true } }),
     prisma.city.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
@@ -85,9 +95,13 @@ export default async function EmployeeList({
 
   const bouOptions = bouRows;                       // for the add form
   const bous = bouRows.map((b) => b.name);          // for the filter dropdown
-  const companies = companyRows.map((c) => c.code);
+  const companies = companyRows;   // code + name, for the locked company control
   const companyOptions = companyRows;  // code + display name, first is the default
   const depts = deptRows.map((d) => d.subBou!).filter(Boolean);
+  // Codes mean nothing at a glance; show the name and keep the code as a hint.
+  const byCode = new Map(companyNames.map((c) => [c.code, c.name]));
+  const companyName = (code: string | null) =>
+    !code ? "—" : (byCode.get(code) ?? code);
   const qs = (extra: Record<string, string | number>) => {
     const p = new URLSearchParams();
     if (term) p.set("q", term);
@@ -110,7 +124,7 @@ export default async function EmployeeList({
           q={term}
           bou={bou}
           dept={dept}
-          company={company}
+          company={scopedCompany}
           bous={bous}
           depts={depts}
           companies={isOwner ? companies : []}
@@ -150,7 +164,7 @@ export default async function EmployeeList({
                   <th className="numcol">No.</th>
                   {isOwner && <th className="rownum">Row ID</th>}
                   <th>Employee</th><th>ID</th><th>Job Title</th>
-                  <th>BOU</th><th>Department</th>
+                  <th>Company</th><th>BOU</th><th>Department</th>
                   <th>Email</th><th>Mobile</th><th>City</th>
                 </tr>
               </thead>
@@ -169,6 +183,7 @@ export default async function EmployeeList({
                       <Link className="ticket" href={`/hris/employee/${e.id}/personal-info`}>{e.individ}</Link>
                     </td>
                     <td data-label="Job Title">{e.jobTitle ?? "—"}</td>
+                    <td className="muted" data-label="Company">{companyName(e.company)}</td>
                     <td className="muted" data-label="BOU">{e.bou?.name ?? "—"}</td>
                     <td className="muted" data-label="Department">{e.subBou ?? "—"}</td>
                     <td className="muted" data-label="Email">{e.emailAdd ?? "—"}</td>

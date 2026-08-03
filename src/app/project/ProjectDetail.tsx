@@ -30,15 +30,10 @@ async function ownerOptions(projectId: string) {
 
 function OwnerField({ options }: { options: { value: string; label: string }[] }) {
   return (
-    <label className="statfield">
-      <span>Owner</span>
-      <select name="ownerId" defaultValue="">
-        <option value="">
-          {options.length ? "— nobody —" : "— add members first —"}
-        </option>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </label>
+    <select name="ownerId" defaultValue="" title="Owner" aria-label="Owner">
+      <option value="">{options.length ? "— owner —" : "— add members first —"}</option>
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
   );
 }
 
@@ -63,35 +58,71 @@ export default async function ProjectDetail({
     ]);
     const doneCount = rows.filter((r) => r.status === "Done").length;
 
+    // The current milestone: the next one still to be reached, soonest first.
+    // Undated ones fall behind dated ones rather than jumping the queue.
+    const outstanding = rows.filter((r) => r.status !== "Done" && r.status !== "Missed");
+    const current =
+      outstanding.find((r) => r.status === "In Progress") ??
+      outstanding.find((r) => r.dueDate) ??
+      outstanding[0] ??
+      null;
+
+    // Current first, then the rest of the outstanding ones, then what is closed.
+    const ordered = [
+      ...(current ? [current] : []),
+      ...outstanding.filter((r) => r.id !== current?.id),
+      ...rows.filter((r) => r.status === "Done" || r.status === "Missed"),
+    ];
+
     return (
       <>
-        <div className="panel">
-          <h2>Add a milestone</h2>
-          <form action={addMilestone} className="statgrid">
-            <input type="hidden" name="projectId" value={projectId} />
-            <label className="statfield"><span>Milestone</span>
-              <input name="name" required placeholder="What is being reached?" /></label>
-            <label className="statfield"><span>Due date</span>
-              <input name="dueDate" type="date" /></label>
-            <label className="statfield"><span>Status</span>
-              <select name="status" defaultValue="Pending">
-                {MILESTONE_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select></label>
-            <OwnerField options={owners} />
-            <label className="statfield full"><span>Description</span>
-              <textarea name="description" rows={2} /></label>
-            <div className="statacts">
-              <button className="btn-primary" type="submit"><IconPlus /> Add milestone</button>
+        {current && (
+          <div className="panel current">
+            <div className="cat-head">
+              <span className="pill s-PENDING">Current milestone</span>
+              <span className="spacer" />
+              {current.dueDate && (
+                <span className={current.dueDate < new Date() ? undefined : "tree-meta"}>
+                  due {day(current.dueDate)}
+                  {current.dueDate < new Date() && <span className="you">overdue</span>}
+                </span>
+              )}
             </div>
-          </form>
-        </div>
+            <h2 style={{ marginTop: 6 }}>{current.name}</h2>
+            {current.description && <p>{current.description}</p>}
+            <dl className="tmeta wide">
+              <div><dt>Status</dt><dd>{current.status}</dd></div>
+              <div>
+                <dt>Owner</dt>
+                <dd>{current.owner ? `${current.owner.firstName} ${current.owner.lastName}` : "—"}</dd>
+              </div>
+              <div><dt>Position</dt><dd>{doneCount + 1} of {rows.length}</dd></div>
+            </dl>
+          </div>
+        )}
 
-        <div className="panel" style={{ marginTop: 18 }}>
+        <div className="panel" style={{ marginTop: 14 }}>
           <div className="cat-head">
             <h2>Milestones <span className="count">{rows.length}</span></h2>
             <span className="spacer" />
             {rows.length > 0 && <span className="tree-meta">{doneCount} of {rows.length} done</span>}
           </div>
+
+          {/* One row, above the list it feeds — the list stays in view while
+              typing, and the next entry is one tab away. */}
+          <form action={addMilestone} className="addrow msrow">
+            <input type="hidden" name="projectId" value={projectId} />
+            <input name="name" required placeholder="Milestone" autoComplete="off" />
+            <input name="description" placeholder="Description (optional)" autoComplete="off" />
+            <input name="dueDate" type="date" title="Due date" aria-label="Due date" />
+            <OwnerField options={owners} />
+            <select name="status" defaultValue="Pending" title="Status" aria-label="Status">
+              {MILESTONE_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <button className="save icon" type="submit" title="Add milestone" aria-label="Add milestone">
+              <IconPlus />
+            </button>
+          </form>
           {rows.length === 0 ? (
             <p style={{ marginTop: 16 }}>No milestones yet.</p>
           ) : (
@@ -102,10 +133,10 @@ export default async function ProjectDetail({
                   <th>Owner</th><th>Status</th><th>Completed</th><th />
                 </tr></thead>
                 <tbody>
-                  {rows.map((m, i) => {
+                  {ordered.map((m, i) => {
                     const late = m.dueDate && m.dueDate < new Date() && m.status !== "Done";
                     return (
-                      <tr key={m.id}>
+                      <tr key={m.id} className={m.id === current?.id ? "iscurrent" : undefined}>
                         <td className="numcol">{i + 1}</td>
                         <td>
                           <b>{m.name}</b>
@@ -344,6 +375,9 @@ export default async function ProjectDetail({
             <input name="launchedAt" type="date" defaultValue={dayInput(p.launchedAt)} /></label>
           <label className="statfield"><span>Date closed</span>
             <input name="closedAt" type="date" defaultValue={dayInput(p.closedAt)} /></label>
+          <label className="statfield full"><span>Customer</span>
+            <input name="customer" defaultValue={p.customer ?? ""} autoComplete="off"
+              placeholder="Who the work is for" /></label>
           <label className="statfield full"><span>Project description</span>
             <textarea name="description" rows={3} defaultValue={p.description ?? ""} /></label>
           <div className="statacts">

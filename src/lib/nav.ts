@@ -28,7 +28,13 @@ export const NAV: NavSection[] = [
     // user — it is their own space, not a granted module.
     key: "my-space",
     label: "My Space",
-    tabs: [{ slug: "overview", label: "Overview" }],
+    tabs: [
+      { slug: "overview", label: "Overview" },
+      { slug: "personal-info", label: "Personal Info" },
+      { slug: "statutory", label: "Statutory" },
+      { slug: "change-password", label: "Change Pw" },
+      { slug: "notifications", label: "Notifications" },
+    ],
   },
   {
     key: "service-desk",
@@ -94,6 +100,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "pipeline", label: "Pipeline" },
       { slug: "clients", label: "Clients" },
+      { slug: "suppliers", label: "Suppliers" },
       { slug: "contacts", label: "Contacts" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "SUPERVISOR"],

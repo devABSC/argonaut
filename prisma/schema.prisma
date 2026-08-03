@@ -62,6 +62,7 @@ model User {
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
   ownedClients    Client[]               @relation("ClientOwner")
+  ownedSuppliers  Supplier[]             @relation("SupplierOwner")
   ownedDeals      Deal[]                 @relation("DealOwner")
   requests        ServiceRequest[]       @relation("RequestedBy")
   approvalsGiven  RequestApproval[]      @relation("ApprovalsGiven")
@@ -80,6 +81,8 @@ model Project {
   id          String  @id @default(cuid())
   name        String
   description String?
+  /// Who the work is for. Free text for now — CRM clients may take over later.
+  customer    String?
 
   /// When the work started, and when it finished. Closed is null while live.
   launchedAt DateTime?
@@ -447,7 +450,7 @@ model Employee {
   state    String?
   /// Region of the chosen city, copied at save time.
   region   String?
-  country  String?
+  country  String   @default("Philippines")
   zipCode  String?
   language String?
   timeZone String?
@@ -554,6 +557,41 @@ enum DealStage {
   NEGOTIATION
   WON
   LOST
+}
+
+/// A company we buy from. Kept apart from Client: a supplier is the other
+/// side of the relationship, with its own terms and contacts.
+model Supplier {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  category String?
+  /// What they supply, in a sentence.
+  supplies String?
+
+  contactName  String?
+  contactEmail String?
+  phone        String?
+  website      String?
+
+  address String?
+  city    String?
+  country String?
+
+  /// Registration and payment details.
+  tin          String?
+  paymentTerms String?
+
+  notes    String?
+  isActive Boolean @default(true)
+
+  /// Who owns the relationship.
+  ownerId String?
+  owner   User?   @relation("SupplierOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([name])
 }
 
 model Client {
