@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconPlus } from "../icons";
+import { IconPlus, IconX } from "../icons";
 
 /**
  * One row: supplier, account, recurring, amount — and MSF, which only exists
@@ -21,14 +21,28 @@ export default function BillForm({
   action: (formData: FormData) => void;
 }) {
   const [coaId, setCoaId] = useState("");
+  const [adding, setAdding] = useState(false);
   const telco = accounts.some((a) => a.id === coaId && /telco/i.test(a.name));
 
   return (
     <form action={action} className="billbar">
-      <select name="supplierId" required defaultValue="" aria-label="Supplier">
-        <option value="" disabled>{suppliers.length ? "Supplier" : "No suppliers yet"}</option>
-        {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-      </select>
+      {/* A supplier that is not on the list yet should not send anyone to
+          another page — the + turns the picker into a name box, and the new
+          supplier is created with the bill. */}
+      {adding ? (
+        <input name="supplierName" required autoComplete="off" placeholder="New supplier name"
+          aria-label="New supplier name" autoFocus />
+      ) : (
+        <select name="supplierId" required defaultValue="" aria-label="Supplier">
+          <option value="" disabled>{suppliers.length ? "Supplier" : "No suppliers yet"}</option>
+          {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      )}
+      <button className="ghost icon" type="button" onClick={() => setAdding(!adding)}
+        title={adding ? "Pick an existing supplier instead" : "Add a supplier not on the list"}
+        aria-label={adding ? "Pick an existing supplier instead" : "Add a supplier not on the list"}>
+        {adding ? <IconX /> : <IconPlus />}
+      </button>
 
       <select
         name="coaId"
@@ -54,8 +68,8 @@ export default function BillForm({
       <input name="invoiceAmount" type="number" step="0.01" min="0" required
         placeholder="Invoice amount" aria-label="Invoice amount" />
 
-      <button className="btn-primary" type="submit" disabled={!suppliers.length || !accounts.length}
-        title={suppliers.length && accounts.length ? "Add this bill" : "Add a supplier and an account first"}>
+      <button className="btn-primary" type="submit" disabled={!accounts.length || (!adding && !suppliers.length)}
+        title={accounts.length ? "Add this bill" : "Add an account first"}>
         <IconPlus /> Add bill
       </button>
     </form>

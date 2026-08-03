@@ -922,7 +922,13 @@ button{font-family:inherit}
 .app .coaform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
 .app .coaform .full{grid-column:1/-1}
 .app .coaform .statacts{grid-column:1/-1}
-@media (max-width:900px){.app .coaform{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Type and subtype are one decision — they sit together, and stay together
+   when the grid collapses, rather than drifting onto separate rows. */
+.app .fieldpair{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:900px){
+  .app .coaform{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app .fieldpair{grid-column:1/-1}
+}
 @media (max-width:560px){.app .coaform{grid-template-columns:1fr}}
 .app .chartkey{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px}
 .app .chartkey span{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted)}

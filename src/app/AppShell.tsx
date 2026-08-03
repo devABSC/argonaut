@@ -15,6 +15,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M9.9 19.4v-4.6h4.2v4.6" />
     </svg>
   ),
+  payroll: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <rect x="2.8" y="6" width="18.4" height="12" rx="2.2" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M6.2 9.4h.01M17.8 14.6h.01" />
+    </svg>
+  ),
   hris: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <circle cx="9" cy="8" r="3.2" />

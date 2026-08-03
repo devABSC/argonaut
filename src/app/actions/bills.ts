@@ -83,17 +83,73 @@ export async function addCoaAccount(formData: FormData) {
   done(COA_PATH, `${code} — ${name} added.`);
 }
 
+/** Correct an account in place. The same rules as adding one. */
+export async function editCoaAccount(id: string, formData: FormData) {
+  const me = await requireFinanceUser();
+  const before = await prisma.coaAccount.findUnique({ where: { id }, select: { code: true } });
+  if (!before) return;
+
+  const code = String(formData.get("code") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim();
+  if (!code || !name) done(COA_PATH, "Not saved — an account needs a name and a number.");
+
+  const clash = await prisma.coaAccount.findUnique({ where: { code }, select: { id: true } });
+  if (clash && clash.id !== id) done(COA_PATH, `Not saved — ${code} belongs to another account.`);
+
+  const accountType = String(formData.get("accountType") ?? "").trim() || null;
+  if (accountType && !isQboAccountType(accountType)) {
+    done(COA_PATH, "Not saved — that is not a QuickBooks account type.");
+  }
+  const sub = String(formData.get("accountSubType") ?? "").trim();
+  const accountSubType =
+    accountType && sub && subtypesFor(accountType).includes(sub) ? sub : null;
+
+  // An account cannot be its own parent, and nesting it under one of its own
+  // children would make a loop nothing could render.
+  let parentId = String(formData.get("parentId") ?? "").trim() || null;
+  if (parentId === id) parentId = null;
+  if (parentId) {
+    const kids = await prisma.coaAccount.findMany({ where: { parentId: id }, select: { id: true } });
+    if (kids.some((k) => k.id === parentId)) {
+      done(COA_PATH, "Not saved — an account cannot sit under one of its own sub-accounts.");
+    }
+  }
+
+  await prisma.coaAccount.update({
+    where: { id },
+    data: {
+      code, name, accountType, accountSubType, parentId,
+      description: String(formData.get("description") ?? "").trim() || null,
+    },
+  });
+
+  revalidatePath(COA_PATH);
+  revalidatePath(PATH);
+  await logHistory({ type: "update", module: "Finance > COA", description: `Saved account ${code} ${name}`, user: me });
+  done(COA_PATH, `${code} — ${name} saved.`);
+}
+
 export async function deleteCoaAccount(id: string) {
   const me = await requireFinanceUser();
   const acct = await prisma.coaAccount.findUnique({
     where: { id },
-    select: { code: true, name: true, _count: { select: { bills: true } } },
+    select: {
+      code: true, name: true,
+      _count: { select: { bills: true, children: true } },
+    },
   });
   if (!acct) return;
-  // Deleting an account with bills would orphan them; the account is the only
-  // record of what the cost was.
-  if (acct._count.bills > 0) {
-    done(COA_PATH, `${acct.code} has ${acct._count.bills} bill${acct._count.bills === 1 ? "" : "s"} against it — it cannot be removed.`);
+
+  // Deleting an account with transactions would orphan them — the account is
+  // the only record of what the cost was. Deleting one with sub-accounts would
+  // strand them at the top level. Both say so plainly rather than half-doing it.
+  const { bills, children } = acct._count;
+  if (bills > 0 || children > 0) {
+    const why = [
+      bills > 0 ? `${bills} bill${bills === 1 ? "" : "s"} booked against it` : "",
+      children > 0 ? `${children} sub-account${children === 1 ? "" : "s"} under it` : "",
+    ].filter(Boolean).join(" and ");
+    done(COA_PATH, `${acct.code} ${acct.name} was not deleted — it has ${why}. Move or remove those first.`);
   }
 
   await prisma.coaAccount.delete({ where: { id } });
@@ -105,8 +161,26 @@ export async function deleteCoaAccount(id: string) {
 export async function addBill(formData: FormData) {
   const me = await requireFinanceUser();
 
-  const supplierId = String(formData.get("supplierId") ?? "").trim();
   const coaId = String(formData.get("coaId") ?? "").trim();
+  // Either an existing supplier, or a name typed into the + box.
+  let supplierId = String(formData.get("supplierId") ?? "").trim();
+  const newName = String(formData.get("supplierName") ?? "").trim();
+
+  if (!supplierId && newName) {
+    // Matched on name rather than created blindly, so typing a supplier that
+    // already exists picks them up instead of making a duplicate.
+    const existing = await prisma.supplier.findFirst({
+      where: { name: { equals: newName, mode: "insensitive" } },
+      select: { id: true },
+    });
+    supplierId =
+      existing?.id ??
+      (await prisma.supplier.create({ data: { name: newName }, select: { id: true } })).id;
+    if (!existing) {
+      await logHistory({ type: "create", module: "CRM > Suppliers", description: `Added supplier ${newName} while entering a bill`, user: me });
+    }
+  }
+
   if (!supplierId || !coaId) done(PATH, "Not added — a bill needs a supplier and an account.");
 
   const invoiceAmount = money(formData, "invoiceAmount");

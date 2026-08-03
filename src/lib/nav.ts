@@ -86,7 +86,6 @@ export const NAV: NavSection[] = [
       { slug: "bills", label: "Bills", hideInSubmenu: true },
       { slug: "soa", label: "SOA", title: "Statement of Account", hideInSubmenu: true },
       { slug: "bir", label: "BIR" },
-      { slug: "payroll", label: "Payroll" },
       { slug: "payable", label: "Payable" },
       { slug: "receivable", label: "Receivable" },
       { slug: "config", label: "Config" },
@@ -101,6 +100,18 @@ export const NAV: NavSection[] = [
       { slug: "bills", label: "Bills" },
       { slug: "soa", label: "SOA", title: "Statement of Account" },
     ],
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+  {
+    // Its own module, not a page inside Finance — payroll is run by different
+    // people, on its own cycle.
+    key: "payroll",
+    label: "Payroll",
+    tabs: [
+      { slug: "runs", label: "Payroll Runs" },
+      { slug: "register", label: "Register" },
+    ],
+    children: "submenu",
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
