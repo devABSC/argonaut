@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createEmployee } from "../actions/employees";
 import { IconPlus } from "../icons";
 import SubmitButton from "../SubmitButton";
+import CityRegion, { type CityOption } from "./CityRegion";
 
 const EMP_STATUS = ["Term-Based", "Probationary", "Regular", "Project-Based", "Consultant"];
 const EMP_TYPE = ["Rank & File", "Supervisory", "Managerial", "Executive"];
@@ -15,8 +16,12 @@ const STATUS = ["Active", "Resigned", "Terminated", "On Leave"];
  * left blank, and Age and Tenure are derived rather than stored.
  */
 export default function AddEmployee({
-  bous, companies,
-}: { bous: { id: string; name: string }[]; companies: { code: string; name: string }[] }) {
+  bous, companies, cities,
+}: {
+  bous: { id: string; name: string }[];
+  companies: { code: string; name: string }[];
+  cities: CityOption[];
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -56,8 +61,7 @@ export default function AddEmployee({
           <p className="secdiv">Address</p>
           <div className="grid3">
             <label><span>Street</span><input name="street" /></label>
-            <label><span>City</span><input name="city" /></label>
-            <label><span>Province</span><input name="state" /></label>
+            <CityRegion cities={cities} />
           </div>
 
           <p className="secdiv">Employment</p>

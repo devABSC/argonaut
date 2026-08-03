@@ -44,7 +44,7 @@ export default async function EmployeeList({
     ...(scopedCompany ? { company: scopedCompany } : {}),
   };
 
-  const [total, all, rows, bouRows, companyRows, deptRows] = await Promise.all([
+  const [total, all, rows, bouRows, companyRows, deptRows, cityRows] = await Promise.all([
     prisma.employee.count({ where }),
     prisma.employee.count(),
     prisma.employee.findMany({
@@ -72,6 +72,11 @@ export default async function EmployeeList({
     prisma.employee.findMany({
       where: { AND: [{ NOT: { subBou: null } }, { NOT: { subBou: "" } }] },
       distinct: ["subBou"], select: { subBou: true }, orderBy: { subBou: "asc" },
+    }),
+    prisma.city.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { name: true, province: true, region: true },
     }),
   ]);
 
@@ -116,7 +121,7 @@ export default async function EmployeeList({
         </div>
       )}
 
-      <AddEmployee bous={bouOptions} companies={companyOptions} />
+      <AddEmployee bous={bouOptions} companies={companyOptions} cities={cityRows} />
 
       {!isOwner && viewer.company && (
         <p className="pvhelp" style={{ marginTop: 10 }}>

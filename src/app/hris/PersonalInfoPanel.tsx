@@ -77,7 +77,8 @@ export default async function PersonalInfoPanel({ empId }: { empId?: string }) {
           <Field label="Landline" value={e.landline} />
           <Field label="Street" value={e.street} />
           <Field label="City" value={e.city} />
-          <Field label="State / Province" value={e.state} />
+          <Field label="Province" value={e.state} />
+          <Field label="Region" value={e.region} />
           <Field label="Country" value={e.country} />
           <Field label="Zip code" value={e.zipCode} />
         </dl>

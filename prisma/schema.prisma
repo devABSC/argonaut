@@ -326,6 +326,8 @@ model Employee {
   street   String?
   city     String?
   state    String?
+  /// Region of the chosen city, copied at save time.
+  region   String?
   country  String?
   zipCode  String?
   language String?
@@ -587,4 +589,19 @@ model LogHistory {
 
   @@index([createdAt])
   @@index([module])
+}
+
+/// Cities employees can be based in, with the province and region they sit in
+/// so choosing a city settles the region rather than asking twice.
+model City {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  province String?
+  region   String?
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([region])
 }

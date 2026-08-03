@@ -67,6 +67,7 @@ export async function createEmployee(formData: FormData) {
       street: text(formData, "street"),
       city: text(formData, "city"),
       state: text(formData, "state"),
+      region: text(formData, "region"),
       startDate,
       birthDate: date(formData, "birthDate"),
       jobTitle: text(formData, "jobTitle"),
