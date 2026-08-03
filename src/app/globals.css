@@ -868,10 +868,17 @@ button{font-family:inherit}
 .app .soafilter select{font-family:var(--body);font-size:.86rem;color:var(--text);
   background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px;cursor:pointer}
 .app .soafilter select:focus{outline:none;border-color:var(--cyan)}
-.app .soaadd{grid-template-columns:160px 160px auto;justify-content:start;margin-top:10px}
-.app .soaadd .btn-primary{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-.app .soaadd .btn-primary:disabled{opacity:.45;cursor:not-allowed}
-.app .soahint{margin-top:6px;font-size:.84rem;color:var(--muted)}
+/* BOU, employee, both dates and the button on ONE line. */
+.app .soabar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.app .soabar select,.app .soabar input{font-family:var(--body);font-size:.86rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+.app .soabar select{cursor:pointer;max-width:210px}
+.app .soabar select:focus,.app .soabar input:focus{outline:none;border-color:var(--cyan)}
+.app .soabar .btn-primary{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:9px 15px}
+.app .soabar .btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.app .soabar .clear{font-size:.82rem;color:var(--muted)}
+.app .soaacts{display:flex;align-items:center;gap:7px}
+@media (max-width:700px){.app .soabar>*{flex:1 1 132px}.app .soabar .btn-primary{flex:1 1 100%}}
 
 .app .soahead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
 .app .soaco{font-size:1.05rem;letter-spacing:.01em}

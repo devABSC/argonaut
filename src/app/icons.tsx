@@ -59,3 +59,28 @@ export const IconDownload = () => (
     <path d="M4.5 19.5h15" />
   </svg>
 );
+
+/* A statement leaves the system three ways: as a sheet, as a page, or by post.
+   Distinct silhouettes so the three read apart at icon size. */
+export const IconExcel = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M5 3.5h9l5 5v12H5z" />
+    <path d="M14 3.5v5h5" />
+    <path d="M9 12.5l4 5M13 12.5l-4 5" />
+  </svg>
+);
+
+export const IconPdf = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M5 3.5h9l5 5v12H5z" />
+    <path d="M14 3.5v5h5" />
+    <path d="M8.5 16.5v-4h1.6a1.2 1.2 0 010 2.4H8.5M13 16.5v-4h1.4a2 2 0 010 4z" />
+  </svg>
+);
+
+export const IconMail = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M3.5 5.5h17v13h-17z" />
+    <path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
+  </svg>
+);

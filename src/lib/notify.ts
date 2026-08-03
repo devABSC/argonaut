@@ -96,13 +96,20 @@ export interface NotifyInput {
    * caller names another; pass null only for mail that must go out bare.
    */
   template?: string | null;
+  /** Standing copies, e.g. Accounts Payable on a statement. */
+  cc?: string;
+  /**
+   * Files to send with the message. Attachments force the SMTP path — the
+   * Mailgun call posts form fields and cannot carry one.
+   */
+  attachments?: { filename: string; content: Buffer }[];
 }
 
 /**
  * Records the notification, then tries to deliver it. Never throws — a mail
  * problem must not roll back the action that triggered it.
  */
-export async function notify(input: NotifyInput): Promise<void> {
+export async function notify(input: NotifyInput): Promise<boolean> {
   const { text, html } =
     input.template === null
       ? { text: input.body, html: undefined as string | undefined }
@@ -120,7 +127,9 @@ export async function notify(input: NotifyInput): Promise<void> {
   });
 
   try {
-    const preferMailgun = (await mailgunConfigured()) && (await routeToMailgun(input.to));
+    const hasFiles = (input.attachments?.length ?? 0) > 0;
+    const preferMailgun =
+      !hasFiles && (await mailgunConfigured()) && (await routeToMailgun(input.to));
 
     if (preferMailgun) {
       try {
@@ -131,7 +140,7 @@ export async function notify(input: NotifyInput): Promise<void> {
           where: { id: note.id },
           data: { provider: "mailgun", providerId: id || null, status: "sent", sentAt: new Date() },
         });
-        return;
+        return true;
       } catch (e) {
         // A rejected key or an unverified domain must not swallow the message —
         // SMTP reaches every recipient Mailgun would have, just with less
@@ -148,7 +157,7 @@ export async function notify(input: NotifyInput): Promise<void> {
         where: { id: note.id },
         data: { status: "queued", failReason: "no transport configured" },
       });
-      return;
+      return false;
     }
 
     const fromSetting = await prisma.setting.findUnique({ where: { key: "mail_from" } }).catch(() => null);
@@ -162,19 +171,23 @@ export async function notify(input: NotifyInput): Promise<void> {
     await tx.sendMail({
       from: input.fromName ? `${input.fromName} <${from.replace(/^.*</, "").replace(/>$/, "")}>` : from,
       to: input.to,
+      cc: input.cc,
       subject: input.subject,
       text,
       html,
+      attachments: input.attachments,
     });
     await prisma.notification.update({
       where: { id: note.id },
       data: { provider: "smtp", status: "sent", sentAt: new Date() },
     });
+    return true;
   } catch (e) {
     await prisma.notification.update({
       where: { id: note.id },
       data: { status: "failed", failedAt: new Date(), failReason: String((e as Error).message).slice(0, 300) },
     });
     console.error("notify failed:", (e as Error).message);
+    return false;
   }
 }

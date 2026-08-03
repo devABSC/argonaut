@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { IconTrash, IconPlus } from "../icons";
+import { IconTrash, IconPlus, IconExcel, IconPdf, IconMail } from "../icons";
 import CellSelect from "../settings/CellSelect";
-import { createSoa, addSoaLine, deleteSoaLine, setSoaStatus, deleteSoa } from "../actions/soa";
+import SoaFilter from "./SoaFilter";
+import { createSoa, addSoaLine, deleteSoaLine, setSoaStatus, deleteSoa, emailSoa } from "../actions/soa";
+import { AP_CC } from "@/lib/soa-doc";
 
 const SOA_STATUS = ["Open", "Closed"] as const;
 
@@ -65,8 +67,6 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
     </>
   );
 
-  const picked = staff.find((e) => e.id === empId);
-
   return (
     <>
       <div className="panel">
@@ -74,36 +74,13 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
           <h2>Statement of Account <span className="count">{rows.length}</span></h2>
         </div>
 
-        <form className="empsearch soafilter" action="/finance/soa" method="get">
-          <select name="bou" defaultValue={bou} aria-label="Filter by BOU">
-            <option value="">All BOUs</option>
-            {bous.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-          <select name="emp" defaultValue={empId} aria-label="Filter by employee">
-            <option value="">All employees</option>
-            {staff.map((e) => <option key={e.id} value={e.id}>{e.lastName}, {e.firstName}</option>)}
-          </select>
-          <button type="submit">Search</button>
-          {(bou || empId) && <a className="clear" href="/finance/soa">Clear</a>}
-        </form>
-
-        {/* A statement is raised against the employee currently picked, which
-            is why the button waits for one. */}
-        <form action={createSoa} className="addrow soaadd">
-          {carry}
-          <input type="hidden" name="employeeId" value={empId} />
-          <input name="periodFrom" type="date" title="Period from" aria-label="Period from" />
-          <input name="periodTo" type="date" title="Period to" aria-label="Period to" />
-          <button className="btn-primary" type="submit" disabled={!empId}
-            title={picked ? `Raise a statement for ${picked.firstName} ${picked.lastName}` : "Pick an employee first"}>
-            <IconPlus /> Create SOA
-          </button>
-        </form>
-        <p className="soahint">
-          {picked
-            ? `A new statement will be raised for ${picked.firstName} ${picked.lastName}.`
-            : "Pick an employee — a statement is always raised against one person."}
-        </p>
+        <SoaFilter
+          bou={bou}
+          emp={empId}
+          bous={bous}
+          staff={staff.map((e) => ({ id: e.id, name: `${e.lastName}, ${e.firstName}` }))}
+          action={createSoa}
+        />
       </div>
 
       {rows.length === 0 ? (
@@ -157,6 +134,24 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                   </div>
                 </dl>
 
+                <div className="soaacts">
+                  {/* Excel and PDF are downloads; the envelope sends the Excel
+                      to the employee and copies Accounts Payable. */}
+                  <a className="ghost icon" href={`/api/soa/${s.id}/xlsx`}
+                    title="Download Excel" aria-label="Download Excel"><IconExcel /></a>
+                  <a className="ghost icon" href={`/api/soa/${s.id}/pdf`}
+                    title="Download PDF" aria-label="Download PDF"><IconPdf /></a>
+                  <form action={emailSoa.bind(null, s.id)}>
+                    {carry}
+                    <button className="ghost icon" type="submit"
+                      title={s.employee.emailAdd
+                        ? `Email the Excel to ${s.employee.emailAdd}, cc ${AP_CC}`
+                        : "This employee has no email address on file"}
+                      disabled={!s.employee.emailAdd}
+                      aria-label="Email this statement"><IconMail /></button>
+                  </form>
+                </div>
+
                 <form action={setSoaStatus} className="soastatus">
                   {carry}
                   <input type="hidden" name="soaId" value={s.id} />
@@ -168,9 +163,10 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
               <div className="tablewrap">
                 <table className="utable">
                   <thead><tr>
-                    <th>Date</th><th>Description</th><th>Requestor</th>
-                    <th className="amt">Charges</th><th className="amt">Credits</th>
-                    <th className="amt">Line Total</th><th />
+                    <th>Date</th><th>Item Description</th>
+                    <th className="amt">Debit / Charges</th>
+                    <th className="amt">Credit / Payment</th>
+                    <th className="amt">Balance</th><th />
                   </tr></thead>
                   <tbody>
                     {s.lines.map((l) => {
@@ -178,8 +174,12 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                       return (
                         <tr key={l.id}>
                           <td className="muted nowrap">{day(l.date)}</td>
-                          <td>{l.particulars}</td>
-                          <td className="muted">{l.requestor ?? "—"}</td>
+                          <td>
+                            {l.particulars}
+                            {/* Requestor rides with the item rather than
+                                taking a column of its own. */}
+                            {l.requestor && <span className="tree-meta"> · {l.requestor}</span>}
+                          </td>
                           <td className="amt">{cell(Number(l.debit))}</td>
                           <td className="amt">{cell(Number(l.credit))}</td>
                           <td className={line < 0 ? "amt owed" : "amt"}>{running(line)}</td>
@@ -199,10 +199,10 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                       );
                     })}
                     {s.lines.length === 0 && (
-                      <tr><td colSpan={7} className="muted">No movements posted yet.</td></tr>
+                      <tr><td colSpan={6} className="muted">No movements posted yet.</td></tr>
                     )}
                     <tr className="soatotal">
-                      <td colSpan={3} />
+                      <td colSpan={2} />
                       <td className="amt">{cell(charges)}</td>
                       <td className="amt">{cell(credits)}</td>
                       <td className={balance < 0 ? "amt owed" : "amt"}>{running(balance)}</td>
@@ -224,8 +224,14 @@ export default async function SoaPanel({ bou = "", emp = "" }: { bou?: string; e
                   <input name="date" type="date" title="Date" aria-label="Date" />
                   <input name="particulars" required placeholder="Description" autoComplete="off" />
                   <input name="requestor" placeholder="Requestor" autoComplete="off" aria-label="Requestor" />
-                  <input name="debit" type="number" step="0.01" min="0" placeholder="Charges" aria-label="Charges" />
-                  <input name="credit" type="number" step="0.01" min="0" placeholder="Credits" aria-label="Credits" />
+                  {/* An expense is a debit, a payment is a credit. Named both
+                      ways so whoever posts it does not have to translate. */}
+                  <input name="debit" type="number" step="0.01" min="0"
+                    placeholder="Debit / Charges" title="Debit — an expense charged to this account"
+                    aria-label="Debit or charges" />
+                  <input name="credit" type="number" step="0.01" min="0"
+                    placeholder="Credit / Payment" title="Credit — a payment settling this account"
+                    aria-label="Credit or payment" />
                   <button className="save icon" type="submit" title="Post line" aria-label="Post line">
                     <IconPlus />
                   </button>

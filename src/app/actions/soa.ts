@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
+import { notify } from "@/lib/notify";
+import { loadSoa, soaWorkbook, soaFilename, AP_CC } from "@/lib/soa-doc";
 
 const PATH = "/finance/soa";
 
@@ -55,7 +57,8 @@ export async function createSoa(formData: FormData) {
   const me = await requireFinanceUser();
   const where = back(formData);
 
-  const employeeId = String(formData.get("employeeId") ?? "").trim();
+  // Same select that filters the list — one control, one meaning.
+  const employeeId = String(formData.get("emp") ?? "").trim();
   if (!employeeId) done(where, "Pick an employee first — a statement is always for someone.");
 
   const emp = await prisma.employee.findUnique({
@@ -114,8 +117,8 @@ export async function addSoaLine(formData: FormData) {
   const debit = money(formData, "debit");
   const credit = money(formData, "credit");
   // A movement is one side or the other. Both, or neither, is not a line.
-  if (debit === 0 && credit === 0) done(where, "Not added — enter a debit or a credit.");
-  if (debit > 0 && credit > 0) done(where, "Not added — a line is either a debit or a credit, not both.");
+  if (debit === 0 && credit === 0) done(where, "Not added — enter a debit (charge) or a credit (payment).");
+  if (debit > 0 && credit > 0) done(where, "Not added — a line is either a charge or a payment, not both.");
 
   await prisma.soaLine.create({
     data: {
@@ -169,6 +172,57 @@ export async function setSoaStatus(formData: FormData) {
   revalidatePath(PATH);
   await logHistory({ type: "update", module: "Finance > SOA", description: `${soa.ref} → ${status}`, user: me });
   done(where, `${soa.ref} is now ${status.toLowerCase()}.`);
+}
+
+/**
+ * Send the statement to the employee it was raised against, with the workbook
+ * attached and Accounts Payable copied.
+ *
+ * Excel by default because that is what Finance works in; the PDF stays a
+ * download. Attachments go over SMTP — the Mailgun path posts form fields and
+ * cannot carry a file.
+ */
+export async function emailSoa(id: string, formData: FormData) {
+  const me = await requireFinanceUser();
+  const where = back(formData);
+
+  const doc = await loadSoa(id);
+  if (!doc) return;
+
+  const to = doc.soa.employee.emailAdd?.trim();
+  if (!to) done(where, `No email address on file for ${doc.soa.employee.firstName} — nothing sent.`);
+
+  const book = await soaWorkbook(doc);
+  const who = `${doc.soa.employee.firstName} ${doc.soa.employee.lastName}`;
+  const owing = doc.balance < 0;
+
+  const sent = await notify({
+    to: to!,
+    cc: AP_CC,
+    subject: `Statement of Account ${doc.soa.ref}`,
+    body:
+      `Hello ${doc.soa.employee.firstName},\n\n` +
+      `Attached is your statement of account ${doc.soa.ref}.\n\n` +
+      `Total charges: PHP ${doc.charges.toFixed(2)}\n` +
+      `Total credits: PHP ${doc.credits.toFixed(2)}\n` +
+      `Balance: PHP ${Math.abs(doc.balance).toFixed(2)}${owing ? " due" : doc.balance === 0 ? " — settled" : " in your favour"}\n\n` +
+      `Please contact Accounts Payable with any questions about this statement.`,
+    kind: "soa",
+    attachments: [{ filename: soaFilename(doc.soa.ref, "xlsx"), content: book }],
+  });
+
+  revalidatePath(PATH);
+  await logHistory({
+    type: "update", module: "Finance > SOA",
+    description: `Emailed ${doc.soa.ref} to ${to} (cc ${AP_CC})`,
+    user: me,
+  });
+  done(
+    where,
+    sent
+      ? `${doc.soa.ref} sent to ${who} at ${to}, copied to ${AP_CC}.`
+      : `${doc.soa.ref} could not be sent — check the mail settings. Nothing was delivered.`,
+  );
 }
 
 /** Only an empty statement can go. Lines are the record — they do not vanish. */
