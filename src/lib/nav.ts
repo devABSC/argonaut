@@ -45,7 +45,23 @@ export const NAV: NavSection[] = [
   {
     key: "finance",
     label: "Finance",
-    tabs: [{ slug: "issue-cash-advance", label: "Issue Cash Advance" }],
+    // Like Workflow: sublinks in the left pane, with its own strip of tabs
+    // across the content area.
+    tabs: [
+      { slug: "bir", label: "BIR" },
+      { slug: "payroll", label: "Payroll" },
+      { slug: "payable", label: "Payable" },
+      { slug: "receivable", label: "Receivable" },
+      { slug: "expenses", label: "Expenses", hideInSubmenu: true },
+      { slug: "cash-advance", label: "Cash Adv", hideInSubmenu: true },
+      { slug: "bills", label: "Bills", hideInSubmenu: true },
+    ],
+    children: "submenu",
+    topTabs: [
+      { slug: "expenses", label: "Expenses" },
+      { slug: "cash-advance", label: "Cash Adv" },
+      { slug: "bills", label: "Bills" },
+    ],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {

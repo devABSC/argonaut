@@ -679,3 +679,16 @@ button{font-family:inherit}
 .app .statacts{grid-column:1/-1;display:flex;justify-content:flex-end;margin-top:4px}
 @media (max-width:900px){.app .statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.app .statgrid{grid-template-columns:1fr}}
+
+/* Money column — right-aligned, tabular so the digits line up */
+.app .utable th.amtcol,.app .utable td.amtcol{text-align:right;white-space:nowrap;
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.app .utable td.amtcol{font-weight:600;color:var(--text)}
+
+/* Editable table cells: one field per column, saved on change */
+.app .utable .cellsel{width:100%;min-width:120px;max-width:190px;font-family:var(--body);
+  font-size:.82rem;color:var(--text);background:var(--s4);border:1px solid var(--line);
+  border-radius:8px;padding:6px 8px;cursor:pointer}
+.app .utable .cellsel:hover{border-color:var(--muted)}
+.app .utable .cellsel:focus{outline:none;border-color:var(--cyan)}
+.app .utable td.rowacts{white-space:nowrap;text-align:right}

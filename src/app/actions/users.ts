@@ -84,12 +84,13 @@ export async function setUserRole(userId: string, role: RoleKey) {
  * Form-driven edit from the Settings -> Users table: applies role and
  * reporting line together. Each field is permission-checked separately.
  */
+/**
+ * Saves whichever fields the payload actually carries. Each cell on the Users
+ * table posts on its own, so a company change must not blank the reporting
+ * line simply by not mentioning it.
+ */
 export async function updateUserFromForm(formData: FormData) {
   const userId = String(formData.get("userId") ?? "");
-  const role = String(formData.get("role") ?? "") as RoleKey;
-  const managerRaw = String(formData.get("managerId") ?? "");
-  const managerId = managerRaw === "" ? null : managerRaw;
-  const company = String(formData.get("company") ?? "").trim() || null;
 
   const me = await actor();
   const target = await prisma.user.findUnique({
@@ -99,15 +100,35 @@ export async function updateUserFromForm(formData: FormData) {
   if (!target) deny();
   if (!canManageUser(me, { id: target.id, role: target.role.key as RoleKey })) deny();
 
-  if (role && role !== target.role.key) await setUserRole(userId, role);
-  if (managerId !== target.managerId) await setUserManager(userId, managerId);
-  if (company !== target.company) {
-    await prisma.user.update({ where: { id: userId }, data: { company, updatedById: me.id } });
+  const changed: string[] = [];
+
+  if (formData.has("role")) {
+    const role = String(formData.get("role") ?? "") as RoleKey;
+    if (role && role !== target.role.key) { await setUserRole(userId, role); changed.push("role"); }
   }
 
+  if (formData.has("managerId")) {
+    const raw = String(formData.get("managerId") ?? "");
+    const managerId = raw === "" ? null : raw;
+    if (managerId !== target.managerId) { await setUserManager(userId, managerId); changed.push("reporting line"); }
+  }
+
+  if (formData.has("company")) {
+    const company = String(formData.get("company") ?? "").trim() || null;
+    if (company !== target.company) {
+      await prisma.user.update({ where: { id: userId }, data: { company, updatedById: me.id } });
+      changed.push("company");
+    }
+  }
+
+  if (!changed.length) return;
+
   revalidatePath("/settings/users");
-  await logHistory({ type: "update", module: "Settings > Users", description: `Updated ${target.name}`, user: me });
-  done("/settings/users", `${target.name} updated.`);
+  await logHistory({
+    type: "update", module: "Settings > Users",
+    description: `Updated ${target.name} (${changed.join(", ")})`, user: me,
+  });
+  done("/settings/users", `${target.name} — ${changed.join(" and ")} saved.`);
 }
 
 /** Sets who this user reports to. Pass null to clear the reporting line. */

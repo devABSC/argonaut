@@ -9,7 +9,8 @@ import {
 } from "@/lib/rbac";
 import { approveRegistration, rejectRegistration, updateUserFromForm } from "../actions/users";
 import { requirePasswordChange } from "../actions/changepw";
-import { IconSave, IconCheck, IconX, IconEdit } from "../icons";
+import { IconCheck, IconX, IconEdit } from "../icons";
+import CellSelect from "./CellSelect";
 
 /** Manila time — the server runs UTC. */
 const fmtWhen = (d: Date) =>
@@ -110,7 +111,7 @@ export default async function UsersPanel({ me }: { me: Actor }) {
         <h2>All users <span className="count">{users.length}</span></h2>
         <p>
           {canEdit
-            ? "Change a role or reporting line, then Save that row. You cannot modify accounts at or above your own level."
+            ? "Company, role and reporting line save the moment you change them. You cannot modify accounts at or above your own level."
             : "You have read-only access to this list."}
         </p>
 
@@ -136,51 +137,75 @@ export default async function UsersPanel({ me }: { me: Actor }) {
                     </td>
                     <td className="muted">{u.email}</td>
 
-                    {/* All inputs live inside the row's own form — linking them
-                        by `form=` id drops the values under server actions. */}
-                    {editable ? (
-                      <td colSpan={4}>
-                        <form action={updateUserFromForm} className="rowform">
+{/* One field per cell, each in its own form, so the columns
+                        stay aligned with their headings. Linking inputs to a
+                        form by id drops their values under server actions. */}
+                    <td>
+                      {editable ? (
+                        <form action={updateUserFromForm}>
                           <input type="hidden" name="userId" value={u.id} />
-                          <select name="company" defaultValue={u.company ?? ""}>
-                            <option value="">— no company —</option>
-                            {companies.map((c) => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                          <select name="role" defaultValue={uKey}>
-                            {(roleChoices.includes(uKey) ? roleChoices : [uKey, ...roleChoices])
-                              .map((r) => (
-                                <option key={r} value={r}>{roleLabel(r)}</option>
-                              ))}
-                          </select>
-                          <select name="managerId" defaultValue={u.managerId ?? ""}>
-                            <option value="">— reports to nobody —</option>
-                            {managers.filter((m) => m.id !== u.id).map((m) => (
-                              <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                          </select>
-                          <span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span>
-                          <button className="save icon" type="submit" title="Save" aria-label="Save">
-                            <IconSave />
-                          </button>
-                          <button
-                            className="reject icon" type="submit"
-                            title="Require a password change at next sign-in"
-                            aria-label="Require password change"
-                            formAction={requirePasswordChange.bind(null, u.id)}
-                          ><IconEdit /></button>
+                          <CellSelect
+                            name="company"
+                            defaultValue={u.company ?? ""}
+                            placeholder="— none —"
+                            options={companies.map((c) => ({ value: c, label: c }))}
+                          />
                         </form>
-                      </td>
-                    ) : (
-                      <>
-                        <td className="muted">{u.company ?? "—"}</td>
-                        <td><span className={`pill r-${uKey}`}>{roleLabel(uKey)}</span></td>
-                        <td className="muted">{u.manager?.name ?? "—"}</td>
-                        <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
-                      </>
-                    )}
+                      ) : (
+                        <span className="muted">{u.company ?? "—"}</span>
+                      )}
+                    </td>
+
+                    <td>
+                      {editable ? (
+                        <form action={updateUserFromForm}>
+                          <input type="hidden" name="userId" value={u.id} />
+                          <CellSelect
+                            name="role"
+                            defaultValue={uKey}
+                            options={(roleChoices.includes(uKey) ? roleChoices : [uKey, ...roleChoices])
+                              .map((r) => ({ value: r, label: roleLabel(r) }))}
+                          />
+                        </form>
+                      ) : (
+                        <span className={`pill r-${uKey}`}>{roleLabel(uKey)}</span>
+                      )}
+                    </td>
+
+                    <td>
+                      {editable ? (
+                        <form action={updateUserFromForm}>
+                          <input type="hidden" name="userId" value={u.id} />
+                          <CellSelect
+                            name="managerId"
+                            defaultValue={u.managerId ?? ""}
+                            placeholder="— nobody —"
+                            options={managers.filter((m) => m.id !== u.id)
+                              .map((m) => ({ value: m.id, label: m.name }))}
+                          />
+                        </form>
+                      ) : (
+                        <span className="muted">{u.manager?.name ?? "—"}</span>
+                      )}
+                    </td>
+
+                    <td><span className={`pill s-${u.status}`}>{STATUS_LABEL[u.status]}</span></td>
+
                     <td className="muted nowrap">{fmtWhen(u.updatedAt)}</td>
                     <td className="muted">{u.updatedBy?.name ?? "—"}</td>
-                    {canEdit && !editable && <td />}
+                    {canEdit && (
+                      <td className="rowacts">
+                        {editable && (
+                          <form action={requirePasswordChange.bind(null, u.id)}>
+                            <button
+                              className="reject icon" type="submit"
+                              title="Require a password change at next sign-in"
+                              aria-label="Require password change"
+                            ><IconEdit /></button>
+                          </form>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })}

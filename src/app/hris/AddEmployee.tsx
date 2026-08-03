@@ -5,10 +5,7 @@ import { createEmployee } from "../actions/employees";
 import { IconPlus } from "../icons";
 import SubmitButton from "../SubmitButton";
 import CityRegion, { type CityOption } from "./CityRegion";
-
-const EMP_STATUS = ["Term-Based", "Probationary", "Regular", "Project-Based", "Consultant"];
-const EMP_TYPE = ["Rank & File", "Supervisory", "Managerial", "Executive"];
-const STATUS = ["Active", "Resigned", "Terminated", "On Leave"];
+import { EMP_STATUS, EMP_TYPE, EMPLOYMENT_STATUS, GENDER } from "@/lib/lists";
 
 /**
  * Add Employee, folded away until needed so it does not push the list down.
@@ -71,8 +68,7 @@ export default function AddEmployee({
             <label><span>Gender</span>
               <select name="gender" defaultValue="">
                 <option value="">—</option>
-                <option value="M">M</option>
-                <option value="F">F</option>
+                {GENDER.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </label>
 
@@ -90,7 +86,7 @@ export default function AddEmployee({
             </label>
             <label><span>Status</span>
               <select name="employmentStatus" defaultValue="Active">
-                {STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
+                {EMPLOYMENT_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </label>
           </div>
