@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import AppShell from "../AppShell";
 import { NAV } from "@/lib/nav";
 
@@ -7,6 +8,10 @@ import { NAV } from "@/lib/nav";
  * seen without signing in.
  */
 export default function UiTest() {
+  // Local only. It renders the shell without signing in, which is exactly why
+  // it must not exist in production.
+  if (process.env.NODE_ENV === "production") notFound();
+
   return (
     <AppShell
       user={{ name: "Test User", roleLabel: "Super User" }}
