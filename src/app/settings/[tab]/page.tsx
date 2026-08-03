@@ -34,6 +34,15 @@ export default async function SettingsTab({
       {active.slug === "bou" && <BouPanel showInactive={inactive === "1"} />}
       {active.slug === "email" && <EmailPanel />}
       {active.slug === "rbac" && <RbacPanel userId={u} bouId={bou} view={view} />}
+      {active.slug === "cron-jobs" && (
+        <div className="panel">
+          <h2>Cron Jobs</h2>
+          <p>
+            Nothing scheduled yet — this page is wired up and role-gated, ready
+            for the jobs and their run history.
+          </p>
+        </div>
+      )}
     </AppShell>
   );
 }
