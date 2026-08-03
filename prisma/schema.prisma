@@ -76,14 +76,123 @@ model Session {
 }
 
 model Project {
-  id        String   @id @default(cuid())
-  name      String
-  status    String   @default("Draft") // Draft | In progress | Shared
-  progress  Int      @default(0) // 0–100
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  /// When the work started, and when it finished. Closed is null while live.
+  launchedAt DateTime?
+  closedAt   DateTime?
+
+  /// Planning, Active, On Hold, Closed, Cancelled.
+  status   String @default("Planning")
+  progress Int    @default(0) // 0–100
+
+  /// Who owns it.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  members    ProjectMember[]
+  milestones Milestone[]
+  roadblocks Roadblock[]
+  risks      Risk[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+/// A dated checkpoint on a project.
+model Milestone {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  /// Pending, In Progress, Done, Missed.
+  status      String @default("Pending")
+
+  /// Who is carrying it.
+  ownerId String?
+  owner   Employee? @relation("MilestoneOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([projectId])
+}
+
+/// Something stopping the work now. A risk that has already happened.
+model Roadblock {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  description String
+  /// Low, Medium, High, Critical.
+  severity    String @default("Medium")
+  /// Open, Escalated, Resolved.
+  status      String @default("Open")
+  resolution  String?
+  raisedAt    DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  ownerId String?
+  owner   Employee? @relation("RoadblockOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([projectId])
+}
+
+/// Something that might go wrong. Kept apart from Roadblock because a risk is
+/// managed before it bites and a roadblock is already biting.
+model Risk {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  description String
+  /// Low, Medium, High.
+  likelihood  String @default("Medium")
+  impact      String @default("Medium")
+  mitigation  String?
+  /// Open, Mitigated, Accepted, Closed.
+  status      String @default("Open")
+  closedAt    DateTime?
+
+  ownerId String?
+  owner   Employee? @relation("RiskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([projectId])
+}
+
+/// One employee on one project. Carries the part they hold, so the same
+/// person can be a lead on one project and a contributor on another.
+model ProjectMember {
+  id String @id @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation("ProjectMemberships", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  /// Role held on this project — Lead, Member, Reviewer, Sponsor…
+  holder String @default("Member")
+
+  addedAt DateTime @default(now())
+
+  @@unique([projectId, employeeId])
+  @@index([employeeId])
 }
 
 /**
@@ -398,7 +507,11 @@ model Employee {
   candidate Candidate? @relation("HiredFrom")
 
   /// Work assigned to this person under PROJECT.
-  assignedTasks ProjectTask[] @relation("AssignedTasks")
+  assignedTasks  ProjectTask[]   @relation("AssignedTasks")
+  projects       ProjectMember[] @relation("ProjectMemberships")
+  milestonesOwned Milestone[]    @relation("MilestoneOwner")
+  roadblocksOwned Roadblock[]    @relation("RoadblockOwner")
+  risksOwned      Risk[]         @relation("RiskOwner")
 
   /// Optional link to a login account. Null for staff with no access.
   userId String? @unique

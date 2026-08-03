@@ -747,3 +747,14 @@ button{font-family:inherit}
 .app .frow.bourow select{width:100%;font-family:var(--body);font-size:.84rem;color:var(--text);
   background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:7px 8px;cursor:pointer}
 .app .frow.bourow select:focus{outline:none;border-color:var(--cyan)}
+
+/* Project members: one row per person, with the part they hold */
+.app .memberlist{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.app .memberrow{display:grid;grid-template-columns:1fr 150px 34px;align-items:center;gap:10px;
+  padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--s3)}
+.app .memberrow .mname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}
+.app .memberrow select{width:100%;font-family:var(--body);font-size:.82rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer}
+.app .memberrow select:focus{outline:none;border-color:var(--cyan)}
+@media (max-width:560px){.app .memberrow{grid-template-columns:1fr 34px;grid-template-areas:"n r" "h h"}
+  .app .memberrow .mname{grid-area:n}.app .memberrow select{grid-area:h}}
