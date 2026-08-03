@@ -416,6 +416,14 @@ button{font-family:inherit}
 .app .pager a.disabled{color:var(--faint);pointer-events:none;opacity:.5}
 .app .pager span{color:var(--muted);font-family:var(--mono);font-size:.74rem}
 
+.app .frow.rrow{grid-template-columns:minmax(110px,.8fr) minmax(120px,1fr) minmax(180px,1.8fr) 70px 84px auto auto;align-items:center}
+.app .frow.rrow.rhead{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px}
+.app .frow.rrow input[type=text],.app .frow.rrow input:not([type]),.app .frow.rrow input[type=number]{width:100%;font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+.app .frow.rrow input:focus{outline:none;border-color:var(--cyan)}
+.app .rkey{font-family:var(--mono);font-size:.62rem;color:var(--faint);overflow:hidden;text-overflow:ellipsis}
+.app button.icon:disabled{opacity:.32;cursor:not-allowed}
+@media (max-width:1000px){.app .frow.rrow{grid-template-columns:1fr 1fr}.app .frow.rrow.rhead{display:none}}
+
 /* RBAC matrix — collapsible tree */
 .app .treebar{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
 .app .treebar>button{font-family:var(--body);font-size:.82rem;font-weight:600;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:7px 14px;cursor:pointer}

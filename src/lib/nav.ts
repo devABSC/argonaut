@@ -95,6 +95,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "users", label: "Users" },
       { slug: "company", label: "Company" },
+      { slug: "roles", label: "Roles" },
       { slug: "rbac", label: "RBAC" },
     ],
     // HR Supervisor is included because registration approvals live here.

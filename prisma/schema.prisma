@@ -502,3 +502,24 @@ model Notification {
   @@index([kind, createdAt])
   @@index([requestId])
 }
+
+/**
+ * Editable metadata for each role. The Role enum stays the security primitive
+ * — it is referenced by User, MenuGrant and every permission check — while
+ * this table carries what the owner can safely change: the name shown, a
+ * description, ordering, and whether it may still be assigned.
+ */
+model RoleProfile {
+  /// Matches a Role enum member, e.g. "HR_SUPERVISOR".
+  key         String  @id
+  label       String
+  description String?
+  /// Higher outranks lower; mirrors the ranking used by the permission checks.
+  rank        Int     @default(0)
+  /// Deactivated roles cannot be assigned to anyone new.
+  isActive    Boolean @default(true)
+  /// Built in: cannot be deleted, only renamed or deactivated.
+  isSystem    Boolean @default(true)
+
+  updatedAt DateTime @default(now()) @updatedAt
+}
