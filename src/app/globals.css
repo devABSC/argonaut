@@ -883,6 +883,25 @@ button{font-family:inherit}
 .app .soabar .clear{font-size:.82rem;color:var(--muted)}
 .app .soaacts{display:flex;align-items:center;gap:7px}
 .app .soabrand{display:flex;align-items:center;gap:12px}
+
+/* ============================================================
+   CHART — plain SVG, no library and no client script
+   ============================================================ */
+.app .chartpanel{margin-bottom:14px}
+.app .chartwrap{margin-top:10px;overflow-x:auto}
+.app .chartwrap svg{width:100%;min-width:520px;height:auto;display:block}
+.app .chartwrap .grid{stroke:var(--line-2);stroke-width:1}
+.app .chartwrap .axis{fill:var(--faint);font-family:var(--mono);font-size:9px;letter-spacing:.06em}
+.app .chartswitch{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+.app .chartswitch a{padding:5px 10px;border-radius:8px;font-size:.79rem;color:var(--muted);
+  border:1px solid transparent;transition:background .16s,color .16s,border-color .16s}
+.app .chartswitch a:hover{color:var(--text);background:var(--s4)}
+.app .chartswitch a.on{color:var(--cyan);background:rgba(56,232,255,.1);border-color:rgba(56,232,255,.32)}
+.app .chartswitch .sep{width:1px;height:18px;background:var(--line);margin:0 5px}
+.app .chartkey{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px}
+.app .chartkey span{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted)}
+.app .chartkey i{width:10px;height:10px;border-radius:3px}
+.app .chartkey b{color:var(--text);font-variant-numeric:tabular-nums}
 /* The file input hides inside its icon label, so the upload control matches
    the download icons beside it instead of showing a browser file widget. */
 .app .soaimport{display:flex;align-items:center;gap:6px}

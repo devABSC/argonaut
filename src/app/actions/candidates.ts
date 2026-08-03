@@ -98,6 +98,7 @@ export async function uploadCV(formData: FormData) {
       parsedAt: parsed ? new Date() : null,
       aiData: parsed ?? undefined,
       cvData: bytes,
+      cvUploadedAt: new Date(),
       cvFileName: file.name,
       cvMime: file.type || "application/octet-stream",
       cvSize: file.size,
