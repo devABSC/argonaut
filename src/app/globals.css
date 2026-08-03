@@ -49,15 +49,20 @@ button{font-family:inherit}
 .login-page .visual__img{position:absolute;inset:0;background:url("/rocket-launch.png") center/cover no-repeat;transform:scale(1.03);animation:slowzoom 22s ease-in-out infinite alternate}
 @keyframes slowzoom{from{transform:scale(1.03)}to{transform:scale(1.12)}}
 .login-page .visual__grad{position:absolute;inset:0;background:
-  linear-gradient(180deg,rgba(6,7,11,.35) 0%,transparent 30%,rgba(6,7,11,.35) 62%,rgba(6,7,11,.92) 100%),
-  linear-gradient(90deg,transparent 60%,rgba(6,7,11,.6) 100%)}
+  linear-gradient(180deg,rgba(6,7,11,.42) 0%,rgba(6,7,11,.05) 26%,rgba(6,7,11,.45) 55%,rgba(6,7,11,.88) 78%,rgba(6,7,11,.97) 100%),
+  linear-gradient(90deg,transparent 55%,rgba(6,7,11,.6) 100%)}
 .login-page .visual__grid{position:absolute;inset:0;background-image:linear-gradient(var(--s5) 1px,transparent 1px),linear-gradient(90deg,var(--s5) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 70% at 40% 30%,#000,transparent 80%);opacity:.5}
-.login-page .visual__caption{position:absolute;left:38px;right:38px;bottom:40px;z-index:2}
+.login-page .visual__caption{position:absolute;left:38px;right:38px;bottom:40px;z-index:2;
+  text-shadow:0 2px 18px rgba(6,7,11,.9),0 1px 3px rgba(6,7,11,.8)}
+.login-page .visual__caption::before{content:"";position:absolute;left:-38px;right:-38px;bottom:-40px;top:-32px;
+  background:linear-gradient(180deg,transparent,rgba(6,7,11,.72) 45%,rgba(6,7,11,.9));z-index:-1;pointer-events:none}
 .login-page .visual__eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:9px;margin-bottom:14px}
 .login-page .visual__eyebrow .live{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 1.8s infinite}
 .login-page .visual__caption h2{font-family:var(--font);font-weight:600;font-size:clamp(1.9rem,2.6vw,2.7rem);line-height:1.08;letter-spacing:-.01em}
 .login-page .visual__caption h2 .grad{background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-.login-page .visual__caption p{color:rgba(233,237,246,.72);font-size:1rem;margin-top:12px;max-width:44ch}
+.login-page .visual__caption p{color:rgba(233,237,246,.88);font-size:1rem;margin-top:12px;max-width:44ch}
+.login-page .visual__caption p.tagline{font-family:var(--font);font-weight:600;color:#fff;
+  font-size:clamp(1.15rem,1.7vw,1.6rem);letter-spacing:-.01em;margin-top:14px}
 .login-page .visual::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1px;background:linear-gradient(180deg,transparent,var(--cyan),var(--violet),transparent);opacity:.6;z-index:3}
 
 .login-page .console{position:relative;display:grid;place-items:center;padding:40px 28px;overflow:hidden}
@@ -109,7 +114,37 @@ button{font-family:inherit}
 .login-page .toggle{margin-top:22px;text-align:center;color:var(--muted);font-size:.86rem}
 
 @media (prefers-reduced-motion:reduce){.login-page .orb,.login-page .card,.login-page .visual__img,.login-page .eyebrow .live,.login-page .visual__eyebrow .live{animation:none}}
-@media (max-width:900px){.login-page .split{grid-template-columns:1fr}.login-page .visual{display:none}}
+/* The photo gives way to the form as space tightens, and below 900px it
+   becomes a short banner rather than vanishing — the brand stays, the form
+   is always reachable, and nothing overflows. */
+@media (max-width:1180px){
+  .login-page .split{grid-template-columns:1fr 1fr}
+  .login-page .visual__caption{left:26px;right:26px;bottom:32px}
+  .login-page .visual__caption h2{font-size:clamp(1.5rem,2.4vw,2.1rem)}
+}
+@media (max-width:900px){
+  .login-page .split{grid-template-columns:1fr;grid-template-rows:auto 1fr;min-height:100dvh}
+  .login-page .visual{min-height:200px}
+  .login-page .visual::after{top:auto;left:0;right:0;bottom:0;width:auto;height:1px;
+    background:linear-gradient(90deg,transparent,var(--cyan),var(--violet),transparent)}
+  .login-page .visual__caption{bottom:20px}
+  .login-page .visual__caption h2{font-size:1.5rem}
+  .login-page .visual__caption p{font-size:.9rem;margin-top:6px}
+  .login-page .visual__caption p.tagline{font-size:1.05rem;margin-top:8px}
+  .login-page .console{padding:30px 20px}
+}
+@media (max-width:560px){
+  .login-page .visual{min-height:150px}
+  .login-page .visual__caption p{display:none}
+  .login-page .visual__caption p.tagline{display:block;font-size:.98rem}
+  .login-page .card{padding:26px 20px 22px;border-radius:16px}
+  .login-page h1{font-size:1.6rem}
+  .login-page .console{padding:22px 14px}
+}
+@media (max-height:620px){
+  .login-page .visual{display:none}
+  .login-page .split{grid-template-rows:1fr}
+}
 
 /* ============================================================
    APP / LANDING  (scoped under .app)
