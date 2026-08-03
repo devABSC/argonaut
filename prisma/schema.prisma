@@ -467,3 +467,38 @@ model Deal {
   @@index([stage])
   @@index([clientId])
 }
+
+/// Rotatable configuration. A value here overrides the matching env var, so
+/// keys can be changed from the UI without a redeploy — same as benta.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Outbox: every notification is recorded whether or not it was really sent.
+model Notification {
+  id      String @id @default(cuid())
+  channel String // email
+  to      String
+  subject String
+  body    String
+  /// What triggered it: ticket_submitted | step_awaiting | ticket_decided | registration
+  kind    String
+
+  /// Which transport actually carried it — mailgun | smtp | null when log-only.
+  provider   String?
+  providerId String?
+  status     String    @default("queued") // queued | sent | failed
+  sentAt     DateTime?
+  failedAt   DateTime?
+  failReason String?
+
+  /// The ticket this concerns, when it concerns one.
+  requestId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([kind, createdAt])
+  @@index([requestId])
+}

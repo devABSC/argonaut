@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { getStandardForm } from "@/lib/forms";
+import { noticeTicketRaised, noticeAwaitingApprover } from "@/lib/notices";
 
 const pad = (n: number, w: number) => String(n).padStart(w, "0");
 
@@ -135,6 +136,10 @@ export async function createRequest(formData: FormData) {
       approvals: { create: approvalRows },
     },
   });
+
+  // Confirm to the requester, and nudge whoever it now waits on.
+  await noticeTicketRaised(created.id);
+  await noticeAwaitingApprover(created.id);
 
   revalidatePath("/service-desk/my-requests");
   // Carries the reference so the list can confirm which ticket was raised.

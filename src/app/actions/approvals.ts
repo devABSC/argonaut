@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { noticeDecision, noticeAwaitingApprover } from "@/lib/notices";
 
 /**
  * Record one decision on a ticket. Only the person the step is assigned to may
@@ -57,6 +58,14 @@ export async function decide(approvalId: string, formData: FormData) {
         currentSequence: Math.min(...stillPending.map((a) => a.sequence)),
       },
     });
+  }
+
+  // Tell the requester what happened, then whoever is next in line.
+  await noticeDecision(
+    approval.requestId, user.name, decision, remarks, approval.stepName || "Approval",
+  );
+  if (decision === "APPROVED" && stillPending.length > 0) {
+    await noticeAwaitingApprover(approval.requestId);
   }
 
   revalidatePath(`/service-desk/ticket/${approval.request.reference}`);

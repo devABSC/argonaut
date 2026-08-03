@@ -28,3 +28,12 @@ npm-debug.log*
 next-env.d.ts
 .vercel
 .env*
+
+# Supplied source files — data handed over for import, never repo content
+*.xlsx
+*.xls
+*.csv
+*.docx
+*.doc
+*.pptx
+*.ppt
