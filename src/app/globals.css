@@ -851,3 +851,11 @@ button{font-family:inherit}
 .app .riskcard .cat-head{margin:0}
 .app .riskcard p{margin:6px 0 0;font-size:.88rem;line-height:1.55}
 .app .riskcard em{color:var(--cyan);font-style:normal}
+
+/* Progress while the assessment runs */
+.app .runbar{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin-top:4px}
+.app .runtrack{flex:1;height:6px;border-radius:999px;background:var(--s4);
+  border:1px solid var(--line);overflow:hidden}
+.app .runfill{height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--cyan),var(--violet));
+  transition:width .35s ease}
