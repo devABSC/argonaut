@@ -117,6 +117,18 @@ export const NAV: NavSection[] = [
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
+    // Ported from benta: stock on hand, and the two ways it moves.
+    key: "inventory",
+    label: "Inventory",
+    tabs: [
+      { slug: "stock", label: "Stock on Hand" },
+      { slug: "receiving", label: "Receiving" },
+      { slug: "issuance", label: "Issuance" },
+    ],
+    children: "submenu",
+    roles: ["SUPER_USER", "ADMINISTRATOR"],
+  },
+  {
     key: "workflow",
     label: "Workflow",
     tabs: [

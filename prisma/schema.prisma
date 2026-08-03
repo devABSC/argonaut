@@ -51,12 +51,13 @@ model User {
 
   sessions       Session[]
   projects       Project[]
-  milestoneTasks MilestoneTask[] @relation("MilestoneTaskAuthor")
-  soasCreated    Soa[]           @relation("SoaAuthor")
-  receiptReviews SoaLine[]       @relation("ReceiptReviewer")
-  billsEncoded   Bill[]          @relation("BillEncoder")
-  birForms       BirForm[]       @relation("BirFormUploader")
-  bir2307s       Bir2307[]       @relation("Bir2307Encoder")
+  milestoneTasks MilestoneTask[]     @relation("MilestoneTaskAuthor")
+  soasCreated    Soa[]               @relation("SoaAuthor")
+  receiptReviews SoaLine[]           @relation("ReceiptReviewer")
+  billsEncoded   Bill[]              @relation("BillEncoder")
+  birForms       BirForm[]           @relation("BirFormUploader")
+  bir2307s       Bir2307[]           @relation("Bir2307Encoder")
+  stockMovements InventoryMovement[] @relation("StockMovements")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -802,6 +803,69 @@ model Bir2307Line {
   @@index([certId])
 }
 
+/// Which way stock moved.
+enum MovementType {
+  /// Goods received in.
+  RECEIVING
+  /// Goods issued out or consumed.
+  ISSUANCE
+}
+
+/// Something held in stock. Kept apart from the CRM's Supplier catalogue: this
+/// is what the company has on hand, not what anyone sells.
+model InvItem {
+  id          String  @id @default(cuid())
+  sku         String  @unique
+  name        String
+  description String?
+  /// Unit of measurement — pc, box, ream.
+  unit        String  @default("pc")
+
+  /// Kept as a running figure so a stock list never has to re-add every
+  /// movement; the movements remain the record of how it got there.
+  stock      Int @default(0)
+  /// At or below this, the item is flagged as low.
+  lowStockAt Int @default(5)
+
+  unitCost Decimal? @db.Decimal(14, 2)
+
+  supplierId String?
+  supplier   Supplier? @relation("SupplierItems", fields: [supplierId], references: [id], onDelete: SetNull)
+
+  isActive  Boolean             @default(true)
+  movements InventoryMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([supplierId])
+}
+
+/// One movement of stock, in or out. Written in the same transaction as the
+/// running total it changes, so the two can never disagree.
+model InventoryMovement {
+  id     String       @id @default(cuid())
+  type   MovementType
+  itemId String
+  item   InvItem      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  quantity   Int
+  /// PO, requisition or document number.
+  reference  String @default("")
+  /// Issuance only: who received it.
+  assignedTo String @default("")
+  note       String @default("")
+
+  createdById   String
+  createdBy     User   @relation("StockMovements", fields: [createdById], references: [id], onDelete: Cascade)
+  createdByName String
+
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@index([createdAt])
+}
+
 /// One line of the Chart of Accounts — what a cost is booked against.
 /// Shaped to match QuickBooks Online, so the two charts can be reconciled.
 model CoaAccount {
@@ -905,6 +969,7 @@ model Supplier {
 
   bills    Bill[]    @relation("SupplierBills")
   bir2307s Bir2307[] @relation("Supplier2307")
+  items    InvItem[] @relation("SupplierItems")
 
   @@index([name])
 }
