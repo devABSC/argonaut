@@ -66,7 +66,6 @@ export default async function CandidateList() {
               <thead>
                 <tr>
                   <th className="numcol">No.</th>
-                  <th>Candidate ID</th>
                   <th>Name</th>
                   <th>Position</th>
                   <th>Email</th>
@@ -83,12 +82,11 @@ export default async function CandidateList() {
                   <tr key={c.id}>
                     <td className="numcol">{i + 1}</td>
                     <td>
+                      {/* The name is what a recruiter recognises; the id was
+                          only ever a stand-in for it. */}
                       <Link className="ticket" href={`/recruitment/candidate/${c.id}/personal-info`}>
-                        {c.id.slice(-8).toUpperCase()}
+                        {c.lastName}, {c.firstName}
                       </Link>
-                    </td>
-                    <td>
-                      <b>{c.lastName}, {c.firstName}</b>
                       {!c.parsedAt && <span className="you">unread</span>}
                     </td>
                     <td>{c.position ?? "—"}</td>
