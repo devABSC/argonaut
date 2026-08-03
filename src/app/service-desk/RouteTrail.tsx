@@ -1,4 +1,5 @@
 import { decide } from "../actions/approvals";
+import { slaState, HOURS_PER_SLA_DAY } from "@/lib/sla";
 import { IconCheck, IconX } from "../icons";
 
 type Approval = {
@@ -41,14 +42,18 @@ export default function RouteTrail({
   approvals,
   viewerId,
   requesterName,
+  startedAt,
   closed,
 }: {
   steps: Step[];
   approvals: Approval[];
   viewerId: string;
   requesterName: string;
+  /** When the clock starts for the first step. */
+  startedAt: Date;
   closed: boolean;
 }) {
+  const now = new Date();
   // Rows saved before step names were recorded carry an empty stepName. Those
   // are matched by who acted rather than by sequence: the old numbering
   // counted only steps that had an approver, so it points at the wrong step.
@@ -66,7 +71,10 @@ export default function RouteTrail({
         </p>
       ) : (
         <ol className="trail">
-          {steps.map((st) => {
+          {(() => {
+            // Each step's clock starts when the one before it was decided.
+            let clock = startedAt;
+            return steps.map((st) => {
             const assigned = new Set(st.approvers.map((a) => a.userId));
             const rows = approvals
               .filter((a) =>
@@ -83,6 +91,16 @@ export default function RouteTrail({
             // the snapshot — very different things to tell the reader.
             const noOne = st.actor === "APPROVER" && st.approvers.length === 0;
             const unrecorded = rows.length === 0 && !noOne;
+
+            // Measured to the last decision on the step, or to now while open.
+            const decidedTimes = rows.map((r) => r.decidedAt).filter((d): d is Date => !!d);
+            const endedAt = decidedTimes.length
+              ? new Date(Math.max(...decidedTimes.map((d) => d.getTime())))
+              : null;
+            const stepStart = clock;
+            const sla = slaState(stepStart, endedAt ?? now, st.slaDays);
+            const started = decided || isCurrent;
+            if (endedAt) clock = endedAt;
 
             const state = rejected
               ? "rejected"
@@ -107,7 +125,15 @@ export default function RouteTrail({
                         : st.approvers.map((a) => a.user.name).join(", ").toUpperCase() || "UNASSIGNED"}
                     </span>
                     <span className="spacer" />
-                    <span className="when">SLA {st.slaDays}d</span>
+                    <span
+                      className={`slachip ${
+                        !started ? "idle" : sla.breached ? "over" : sla.atRisk ? "risk" : "ok"
+                      }`}
+                      title={`Working hours only — ${HOURS_PER_SLA_DAY}h a day, Monday to Friday`}
+                    >
+                      {started ? `${sla.used} / ${sla.allowed}` : `SLA ${sla.allowed}`}
+                      {started && sla.breached && <b> over</b>}
+                    </span>
                     <span className={`pill ${
                       rejected ? "s-REJECTED"
                         : decided ? "s-ACTIVE"
@@ -164,7 +190,8 @@ export default function RouteTrail({
                 </div>
               </li>
             );
-          })}
+            });
+          })()}
         </ol>
       )}
     </div>

@@ -474,6 +474,11 @@ button{font-family:inherit}
 .app .trailtop .spacer{flex:1}
 .app .trailtop .when{font-family:var(--mono);font-size:.68rem;color:var(--faint);white-space:nowrap}
 .app .trailrow.waiting .trailtop .route,.app .trailrow.waiting .trailtop .who{opacity:.6}
+.app .slachip{font-family:var(--mono);font-size:.64rem;letter-spacing:.04em;white-space:nowrap;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--faint)}
+.app .slachip.ok{color:#37E8A0;border-color:rgba(55,232,160,.32);background:rgba(55,232,160,.08)}
+.app .slachip.risk{color:#FFD479;border-color:rgba(255,212,121,.34);background:rgba(255,212,121,.08)}
+.app .slachip.over{color:#FF8FA3;border-color:rgba(255,143,163,.36);background:rgba(255,143,163,.1)}
+.app .slachip b{font-weight:700}
 .app .reason{margin-top:6px;color:var(--muted);font-size:.9rem}
 .app .reason.dim{color:var(--faint);font-size:.86rem}
 .app .act{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--s2)}

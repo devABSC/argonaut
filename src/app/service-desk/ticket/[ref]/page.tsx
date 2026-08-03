@@ -110,6 +110,7 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
         approvals={t.approvals}
         viewerId={user.id}
         requesterName={t.requester.name}
+        startedAt={t.submittedAt ?? t.createdAt}
         closed={t.status === "APPROVED" || t.status === "REJECTED" || t.status === "CANCELLED"}
       />
     </AppShell>
