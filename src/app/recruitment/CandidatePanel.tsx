@@ -88,15 +88,34 @@ export default async function CandidatePanel({
       where: { candidateId },
       orderBy: [{ yearFrom: "desc" }, { createdAt: "desc" }],
     });
+    const thisYear = new Date().getFullYear();
     const span = (a: number | null, b: number | null) =>
       a || b ? `${a ?? "?"} – ${b ?? "present"}` : "—";
+
+    /** Years in one post. An open post runs to today. */
+    const yearsIn = (a: number | null, b: number | null) => {
+      if (!a) return null;
+      const end = b ?? thisYear;
+      return Math.max(0, end - a);
+    };
+
+    // Summed across posts, so overlapping dates would double-count — the CV's
+    // own stated figure is shown beside it rather than replaced by this.
+    const totalYears = rows.reduce((n, r) => n + (yearsIn(r.yearFrom, r.yearTo) ?? 0), 0);
 
     return (
       <div className="panel">
         <div className="cat-head">
           <h2>Work Experience <span className="count">{rows.length}</span></h2>
           <span className="spacer" />
-          <span className="tree-meta">most recent first</span>
+          {rows.length > 0 && (
+            <span className="tree-meta">
+              {totalYears} yr{totalYears === 1 ? "" : "s"} across {rows.length} post
+              {rows.length === 1 ? "" : "s"}
+              {c.yearsExperience != null && c.yearsExperience !== totalYears &&
+                ` · CV states ${c.yearsExperience}`}
+            </span>
+          )}
         </div>
 
         <form action={addExperience} className="addrow wxrow">
@@ -122,7 +141,8 @@ export default async function CandidatePanel({
             <table className="utable stacked">
               <thead>
                 <tr>
-                  <th className="numcol">No.</th><th>Years</th><th>Company</th><th>Position</th>
+                  <th className="numcol">No.</th><th>Years</th><th className="numcol">Tot Yrs Exp</th>
+                  <th>Company</th><th>Position</th>
                   <th>City</th><th>Country</th><th>Duties and responsibilities</th><th />
                 </tr>
               </thead>
@@ -131,6 +151,7 @@ export default async function CandidatePanel({
                   <tr key={r.id}>
                     <td className="numcol" data-label="No.">{i + 1}</td>
                     <td className="muted nowrap" data-label="Years">{span(r.yearFrom, r.yearTo)}</td>
+                    <td className="numcol" data-label="Tot Yrs Exp">{yearsIn(r.yearFrom, r.yearTo) ?? "—"}</td>
                     <td data-label="Company"><b>{r.companyName}</b></td>
                     <td data-label="Position">{r.position ?? "—"}</td>
                     <td className="muted" data-label="City">{r.city ?? "—"}</td>
