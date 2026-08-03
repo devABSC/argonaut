@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
-import { notifyProjectManager } from "@/lib/project-notify";
+import { notifyProjectManager, notifyMemberAdded } from "@/lib/project-notify";
 import { projectViewer, requireProjectMember, diff, display } from "@/lib/project-access";
 
 const PATH = "/project/projects";
@@ -155,7 +155,14 @@ export async function addProjectMember(formData: FormData) {
     "Someone was assigned to your project",
     `${me.name} assigned ${emp!.firstName} ${emp!.lastName} to your project as ${holder}.`,
   );
-  done(PATH, `${emp!.firstName} ${emp!.lastName} added.`);
+  // And the person themselves — being put on a project is something you need
+  // to know about your own week.
+  const told = await notifyMemberAdded(projectId, employeeId, holder, me.name);
+  done(
+    PATH,
+    `${emp!.firstName} ${emp!.lastName} added` +
+      (told ? " and emailed." : " — no email address on their record, so nothing was sent."),
+  );
 }
 
 export async function removeProjectMember(memberId: string) {

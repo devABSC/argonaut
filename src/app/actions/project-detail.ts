@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
-import { notifyProjectManager } from "@/lib/project-notify";
+import { notifyProjectManager, notifyTaskAssigned } from "@/lib/project-notify";
 import { requireProjectMember, diff, display } from "@/lib/project-access";
 
 const text = (f: FormData, k: string) => String(f.get(k) ?? "").trim() || null;
@@ -274,9 +274,11 @@ export async function addMilestoneTask(formData: FormData) {
 
   const status = String(formData.get("status") ?? "Open") === "Closed" ? "Closed" : "Open";
 
-  await prisma.milestoneTask.create({
+  const assigneeId = text(formData, "assigneeId");
+  const task = await prisma.milestoneTask.create({
     data: {
       milestoneId,
+      assigneeId,
       name,
       description: text(formData, "description"),
       startedAt,
@@ -286,7 +288,10 @@ export async function addMilestoneTask(formData: FormData) {
       status,
       createdById: me.userId,
     },
+    select: { id: true },
   });
+
+  const told = assigneeId ? await notifyTaskAssigned(task.id, me.name) : false;
 
   revalidatePath(where);
   await logHistory({ type: "create", module: "Project > Milestones", description: `Added task ${name} under ${m.name}`, user: { id: me.userId, name: me.name } });
@@ -295,7 +300,11 @@ export async function addMilestoneTask(formData: FormData) {
     "A task was added to your project",
     `${me.name} added the task "${name}" under the milestone ${m.name}.`,
   );
-  done(where, `Task "${name}" added under ${m.name}.`);
+  done(
+    where,
+    `Task "${name}" added under ${m.name}` +
+      (assigneeId ? (told ? " and the assignee was emailed." : " — the assignee has no email address on record.") : "."),
+  );
 }
 
 export async function setMilestoneTaskStatus(formData: FormData) {
@@ -322,21 +331,38 @@ export async function setMilestoneTaskStatus(formData: FormData) {
   done(where, `Task "${t.name}" is now ${status.toLowerCase()}.`);
 }
 
+/**
+ * Remove a task.
+ *
+ * A task belongs to whoever raised it: only its author may delete it, so one
+ * member cannot clear another's work off the board. The owner overrides that
+ * and may delete any task at any time.
+ */
 export async function deleteMilestoneTask(id: string) {
-  const owner = await prisma.milestoneTask.findUnique({
+  const task = await prisma.milestoneTask.findUnique({
     where: { id },
-    select: { milestone: { select: { projectId: true } } },
+    select: {
+      name: true, createdById: true,
+      createdBy: { select: { name: true } },
+      milestone: { select: { projectId: true } },
+    },
   });
-  if (!owner) return;
-  const me = await requireProjectMember(owner.milestone.projectId);
+  if (!task) return;
+  const me = await requireProjectMember(task.milestone.projectId);
+
+  const where = at(task.milestone.projectId, "milestone");
+  const isAuthor = task.createdById === me.userId;
+  const isOwner = me.role === "SUPER_USER";
+  if (!isAuthor && !isOwner) {
+    done(where, `Not deleted — "${task.name}" was raised by ${task.createdBy.name}, and only its author can remove it.`);
+  }
 
   const t = await prisma.milestoneTask.delete({
     where: { id },
     select: { name: true, milestone: { select: { projectId: true } } },
   });
-  const where = at(t.milestone.projectId, "milestone");
   revalidatePath(where);
-  await logHistory({ type: "delete", module: "Project > Milestones", description: `Deleted task ${t.name}`, user: { id: me.userId, name: me.name } });
+  await logHistory({ type: "delete", module: "Project > Milestones", description: `Deleted task ${t.name}${isOwner && !isAuthor ? " (owner override)" : ""}`, user: { id: me.userId, name: me.name } });
   done(where, `Task "${t.name}" deleted.`);
 }
 

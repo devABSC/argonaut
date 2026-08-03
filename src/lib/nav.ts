@@ -225,6 +225,9 @@ export const NAV: NavSection[] = [
       { slug: "rbac", label: "RBAC" },
       { slug: "cron-jobs", label: "Cron Jobs" },
     ],
+    // Sublinks in the left pane rather than one long tab strip — Settings has
+    // grown past what a strip reads well at.
+    children: "submenu",
     // HR Supervisor is included because registration approvals live here.
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },

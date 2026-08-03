@@ -70,7 +70,8 @@ export default async function ProjectView({
         </div>
       ))}
 
-      <ProjectDetail projectId={proj} view={view} edit={edit} />
+      <ProjectDetail projectId={proj} view={view} edit={edit}
+        viewer={{ userId: user.id, role: user.role }} />
     </AppShell>
   );
 }

@@ -48,9 +48,12 @@ export default async function ProjectDetail({
   projectId,
   view,
   edit,
+  viewer,
 }: {
   projectId: string;
   view: string;
+  /** Who is looking — a task's bin is only theirs if they raised it. */
+  viewer: { userId: string; role: string };
   /** Id of the milestone being renamed, from ?edit= — one row at a time. */
   edit?: string;
 }) {
@@ -62,7 +65,13 @@ export default async function ProjectDetail({
         orderBy: [{ seq: "asc" }, { createdAt: "asc" }],
         include: {
           owner: { select: { firstName: true, lastName: true } },
-          tasks: { orderBy: [{ status: "asc" }, { createdAt: "asc" }] },
+          tasks: {
+            orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+            include: {
+              assignee: { select: { firstName: true, lastName: true } },
+              createdBy: { select: { name: true } },
+            },
+          },
         },
       }),
       ownerOptions(projectId),
@@ -227,6 +236,9 @@ export default async function ProjectDetail({
                                   <span className="taskname">
                                     <b>{t.name}</b>
                                     {t.description && <span className="muted"> — {t.description}</span>}
+                                    {t.assignee && (
+                                      <span className="tree-meta"> · {t.assignee.firstName} {t.assignee.lastName}</span>
+                                    )}
                                   </span>
                                   <span className="muted nowrap" title="Started on">{day(t.startedAt)}</span>
                                   <span className="muted nowrap" title="Closed on">{day(t.closedAt)}</span>
@@ -235,9 +247,17 @@ export default async function ProjectDetail({
                                     <CellSelect name="status" defaultValue={t.status}
                                       options={TASK_STATUS.map((v) => ({ value: v, label: v }))} />
                                   </form>
-                                  <form action={deleteMilestoneTask.bind(null, t.id)}>
-                                    <button className="reject icon" type="submit" title="Delete task" aria-label="Delete task"><IconTrash /></button>
-                                  </form>
+                                  {/* A task belongs to whoever raised it — the
+                                      bin is only offered to them, or the owner. */}
+                                  {t.createdById === viewer.userId || viewer.role === "SUPER_USER" ? (
+                                    <form action={deleteMilestoneTask.bind(null, t.id)}>
+                                      <button className="reject icon" type="submit" title="Delete task" aria-label="Delete task"><IconTrash /></button>
+                                    </form>
+                                  ) : (
+                                    <button className="reject icon" type="button" disabled
+                                      title={`Raised by ${t.createdBy.name} — only its author can remove it`}
+                                      aria-label="Delete unavailable — you did not raise this task"><IconTrash /></button>
+                                  )}
                                 </div>
                               ))}
 
@@ -245,6 +265,15 @@ export default async function ProjectDetail({
                                 <input type="hidden" name="milestoneId" value={m.id} />
                                 <input name="name" required placeholder="Task" autoComplete="off" />
                                 <input name="description" placeholder="Description (optional)" autoComplete="off" />
+                                {/* Assigning tells the person by email, so the
+                                    picker is part of raising the task rather
+                                    than a step afterwards. */}
+                                <select name="assigneeId" defaultValue="" title="Assign to" aria-label="Assign to">
+                                  <option value="">{owners.length ? "— unassigned —" : "— add members first —"}</option>
+                                  {owners.map((o) => (
+                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                  ))}
+                                </select>
                                 <input name="startedAt" type="date" title="Started on" aria-label="Started on" />
                                 <input name="closedAt" type="date" title="Closed on" aria-label="Closed on" />
                                 <select name="status" defaultValue="Open" title="Status" aria-label="Status">

@@ -176,7 +176,13 @@ model MilestoneTask {
   /// still being worked on or it is not.
   status      String    @default("Open")
 
-  /// Who added it, so a task always traces back to a person.
+  /// Who the task is for. An employee rather than an account: the people on a
+  /// project are people in the org chart, whether or not they ever sign in.
+  assigneeId String?
+  assignee   Employee? @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  /// Who added it. Only the author may delete their own task, so this is the
+  /// permission as well as the trail.
   createdById String
   createdBy   User   @relation("MilestoneTaskAuthor", fields: [createdById], references: [id], onDelete: Cascade)
 
@@ -184,6 +190,7 @@ model MilestoneTask {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([milestoneId])
+  @@index([assigneeId])
 }
 
 /// A statement of account for one employee — what they owe the company and
@@ -658,8 +665,9 @@ model Employee {
   userId String? @unique
   user   User?   @relation("EmployeeAccount", fields: [userId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+  tasksAssigned MilestoneTask[] @relation("TaskAssignee")
 
   @@index([lastName, firstName])
   @@index([company])
