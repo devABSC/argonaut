@@ -124,6 +124,7 @@ export const NAV: NavSection[] = [
       { slug: "stock", label: "Stock on Hand" },
       { slug: "receiving", label: "Receiving" },
       { slug: "issuance", label: "Issuance" },
+      { slug: "asset", label: "Asset" },
     ],
     children: "submenu",
     roles: ["SUPER_USER", "ADMINISTRATOR"],

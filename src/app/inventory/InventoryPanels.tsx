@@ -36,6 +36,20 @@ export default async function InventoryPanels({ view }: { view: string }) {
   const value = items.reduce((t, i) => t + i.stock * Number(i.unitCost ?? 0), 0);
   const low = items.filter((i) => i.stock <= i.lowStockAt);
 
+  if (view === "asset") {
+    return (
+      <div className="panel">
+        <h2>Asset</h2>
+        <p>
+          Things the company owns rather than consumes — the ones worth tracking
+          by tag and custodian. This page is wired up and role-gated, but has no
+          fields yet: say what an asset record should hold (tag, description,
+          custodian, acquisition date, cost, condition) and it can be built.
+        </p>
+      </div>
+    );
+  }
+
   if (view === "receiving" || view === "issuance") {
     const isIn = view === "receiving";
     const rows = movements.filter((m) => m.type === (isIn ? "RECEIVING" : "ISSUANCE"));
