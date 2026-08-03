@@ -41,6 +41,8 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   const pending = users.filter((u) => u.status === "PENDING");
   const canApprove = canApproveRegistrations(me);
   const canEdit = canManageUsers(me);
+  // Row numbering is internal bookkeeping — the owner's view only.
+  const isOwner = me.role === "SUPER_USER";
   // Assignable roles come from the table so custom ones appear, then are
   // filtered by what this actor is permitted to grant.
   const roleRows = await prisma.role.findMany({
@@ -116,17 +118,18 @@ export default async function UsersPanel({ me }: { me: Actor }) {
           <table className="utable">
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Company</th><th>Role</th><th>Reports to</th><th>Status</th>
+                {isOwner && <th className="rownum">#</th>}<th>Name</th><th>Email</th><th>Company</th><th>Role</th><th>Reports to</th><th>Status</th>
                 <th>Last updated</th><th>Updated by</th>
                 {canEdit && <th />}
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => {
+              {users.map((u, i) => {
                 const uKey = u.role.key as keyof typeof ROLE_LABEL;
                 const editable = canEdit && canManageUser(me, { id: u.id, role: uKey });
                 return (
                   <tr key={u.id}>
+                    {isOwner && <td className="rownum">{i + 1}</td>}
                     <td>
                       <b>{u.name}</b>
                       {u.id === me.id && <span className="you">you</span>}

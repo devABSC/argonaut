@@ -53,7 +53,7 @@ export default async function EmployeeList({
       skip: (page - 1) * PAGE,
       take: PAGE,
       select: {
-        id: true, individ: true, lastName: true, firstName: true, middleName: true,
+        id: true, rowid: true, individ: true, lastName: true, firstName: true, middleName: true,
         jobTitle: true, emailAdd: true, mobile: true, city: true, company: true,
         subBou: true,
         bou: { select: { name: true } },
@@ -145,6 +145,7 @@ export default async function EmployeeList({
               <thead>
                 <tr>
                   <th className="numcol">No.</th>
+                  {isOwner && <th className="rownum">Row ID</th>}
                   <th>Employee</th><th>ID</th><th>Job Title</th>
                   <th>BOU</th><th>Department</th>
                   <th>Email</th><th>Mobile</th><th>City</th>
@@ -154,6 +155,9 @@ export default async function EmployeeList({
                 {rows.map((e, i) => (
                   <tr key={e.id}>
                     <td className="numcol" data-label="No.">{from + i}</td>
+                    {isOwner && (
+                      <td className="rownum" data-label="Row ID">{e.rowid}</td>
+                    )}
                     <td data-label="Employee">
                       <b>{e.lastName}, {e.firstName}</b>
                       {e.middleName && <span className="muted"> {e.middleName}</span>}

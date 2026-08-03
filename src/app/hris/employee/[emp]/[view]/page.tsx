@@ -5,6 +5,7 @@ import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
 import AppShell from "../../../../AppShell";
 import PersonalInfoPanel from "../../../PersonalInfoPanel";
+import StatutoryPanel from "../../../StatutoryPanel";
 import EmployeeTabs, { EMP_VIEWS, isEmpView } from "../../../EmployeeTabs";
 
 /**
@@ -49,6 +50,8 @@ export default async function EmployeeView({
 
       {view === "personal-info" ? (
         <PersonalInfoPanel empId={emp} />
+      ) : view === "statutory" ? (
+        <StatutoryPanel empId={emp} />
       ) : (
         <div className="panel">
           <h2>{label}</h2>

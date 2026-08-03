@@ -663,3 +663,19 @@ button{font-family:inherit}
 .app .switch input:checked+.track::after{transform:translateX(15px);background:var(--on-accent)}
 .app .switch input:focus-visible+.track{box-shadow:0 0 0 3px rgba(56,232,255,.18)}
 .app .switch .swlabel{font-size:.8rem;color:var(--muted)}
+
+/* Row counter column */
+.app .utable th.rownum,.app .utable td.rownum{width:44px;text-align:right;padding-right:12px;
+  font-family:var(--mono);font-size:.78rem;color:var(--faint)}
+
+/* Statutory identifiers form */
+.app .statgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 18px;margin-top:18px}
+.app .statfield{display:flex;flex-direction:column;gap:6px}
+.app .statfield span{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint)}
+.app .statfield input{width:100%;font-family:var(--body);font-size:.9rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.app .statfield input:focus{outline:none;border-color:var(--cyan)}
+.app .statacts{grid-column:1/-1;display:flex;justify-content:flex-end;margin-top:4px}
+@media (max-width:900px){.app .statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.app .statgrid{grid-template-columns:1fr}}

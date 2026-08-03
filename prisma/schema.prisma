@@ -380,6 +380,14 @@ model Employee {
   /// Active, Resigned, Terminated…
   employmentStatus String    @default("Active")
   remarks          String?
+  // --- statutory identifiers (Philippines) ---
+  compId    String?
+  tinId     String?
+  sssId     String?
+  philId    String?
+  pagibigId String?
+  hmoId     String?
+
   /// Can sign in to systems / may file expenses.
   hasAccess        Boolean   @default(false)
   hasExpense       Boolean   @default(false)

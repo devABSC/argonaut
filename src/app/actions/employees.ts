@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
+import { done } from "@/lib/flash";
+import { logHistory } from "@/lib/log";
 
 const PATH = "/hris/employees";
 
@@ -94,4 +96,39 @@ export async function createEmployee(formData: FormData) {
     `${PATH}?added=${encodeURIComponent(created.individ)}` +
       `&name=${encodeURIComponent(`${created.firstName} ${created.lastName}`)}`,
   );
+}
+
+/** Government and benefit identifiers, saved from the employee's Statutory tab. */
+export async function saveStatutory(formData: FormData) {
+  const me = await requireHrAdmin();
+
+  const empId = String(formData.get("empId") ?? "");
+  if (!empId) return;
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: empId },
+    select: { individ: true, firstName: true, lastName: true },
+  });
+  if (!employee) return;
+
+  await prisma.employee.update({
+    where: { id: empId },
+    data: {
+      compId: text(formData, "compId"),
+      tinId: text(formData, "tinId"),
+      sssId: text(formData, "sssId"),
+      philId: text(formData, "philId"),
+      pagibigId: text(formData, "pagibigId"),
+      hmoId: text(formData, "hmoId"),
+    },
+  });
+
+  const where = `/hris/employee/${empId}/statutory`;
+  revalidatePath(where);
+  await logHistory({
+    type: "update", module: "HRIS > Statutory",
+    description: `Saved statutory IDs for ${employee.firstName} ${employee.lastName} (${employee.individ})`,
+    user: me,
+  });
+  done(where, "Statutory details saved.");
 }
