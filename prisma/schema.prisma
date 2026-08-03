@@ -817,6 +817,9 @@ model LogHistory {
   description   String
   createdById   String?
   createdByName String   @default("System")
+  /// The actor's BOU at the time, snapshotted alongside their name. Resolving
+  /// it live would rewrite history every time someone transfers.
+  createdByBou  String?
   createdAt     DateTime @default(now())
 
   @@index([createdAt])

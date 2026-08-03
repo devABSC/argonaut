@@ -23,6 +23,7 @@ export default async function LogsPanel({ q = "", page = 1 }: { q?: string; page
           { description: { contains: term, mode: "insensitive" as const } },
           { module: { contains: term, mode: "insensitive" as const } },
           { createdByName: { contains: term, mode: "insensitive" as const } },
+          { createdByBou: { contains: term, mode: "insensitive" as const } },
           { type: { contains: term, mode: "insensitive" as const } },
         ],
       }
@@ -46,7 +47,7 @@ export default async function LogsPanel({ q = "", page = 1 }: { q?: string; page
         <h2>Log history <span className="count">{total}</span></h2>
         <span className="spacer" />
         <form className="empsearch" action="/reports-analytics/logs" method="get">
-          <input name="q" defaultValue={term} placeholder="Search action, module or person" />
+          <input name="q" defaultValue={term} placeholder="Search action, module, person or BOU" />
           <button type="submit">Search</button>
           {term && <a className="clear" href="/reports-analytics/logs">Clear</a>}
         </form>
@@ -61,7 +62,7 @@ export default async function LogsPanel({ q = "", page = 1 }: { q?: string; page
           <div className="tablewrap">
             <table className="utable stacked">
               <thead>
-                <tr><th>When</th><th>Type</th><th>Module</th><th>Description</th><th>By</th></tr>
+                <tr><th>When</th><th>Type</th><th>Module</th><th>Description</th><th>By</th><th>BOU</th></tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
@@ -72,7 +73,8 @@ export default async function LogsPanel({ q = "", page = 1 }: { q?: string; page
                     </td>
                     <td className="muted" data-label="Module">{r.module || "—"}</td>
                     <td data-label="Description">{r.description}</td>
-                    <td className="muted" data-label="By">{r.createdByName}</td>
+                    <td data-label="By">{r.createdByName}</td>
+                    <td className="muted nowrap" data-label="BOU">{r.createdByBou ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
