@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { saveCandidate, reparseCV, addExperience, deleteExperience } from "../actions/candidates";
+import {
+  saveCandidate, reparseCV, addExperience, deleteExperience,
+  addReference, markReferenceContacted, deleteReference,
+} from "../actions/candidates";
 import { IconSave, IconPlus, IconTrash } from "../icons";
 
 const fmtWhen = (d: Date | null) =>
@@ -143,6 +146,167 @@ export default async function CandidatePanel({
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "char-ref") {
+    const refs = await prisma.characterReference.findMany({
+      where: { candidateId },
+      orderBy: [{ contactedAt: "asc" }, { createdAt: "asc" }],
+    });
+    const checked = refs.filter((r) => r.contactedAt).length;
+
+    return (
+      <div className="panel">
+        <div className="cat-head">
+          <h2>Character References <span className="count">{refs.length}</span></h2>
+          <span className="spacer" />
+          {refs.length > 0 && <span className="tree-meta">{checked} of {refs.length} checked</span>}
+        </div>
+
+        <form action={addReference} className="addrow crrow">
+          <input type="hidden" name="candidateId" value={c.id} />
+          <input name="name" required placeholder="Name" autoComplete="off" />
+          <input name="relationship" placeholder="Relationship" autoComplete="off" />
+          <input name="company" placeholder="Company" autoComplete="off" />
+          <input name="position" placeholder="Position" autoComplete="off" />
+          <input name="contactNo" placeholder="Contact no." autoComplete="off" />
+          <input name="email" type="email" placeholder="Email" autoComplete="off" />
+          <button className="save icon" type="submit" title="Add reference" aria-label="Add reference">
+            <IconPlus />
+          </button>
+        </form>
+
+        {refs.length === 0 ? (
+          <p style={{ marginTop: 14 }}>No references on file.</p>
+        ) : (
+          <div className="tablewrap">
+            <table className="utable stacked">
+              <thead>
+                <tr>
+                  <th className="numcol">No.</th><th>Name</th><th>Relationship</th><th>Company</th>
+                  <th>Position</th><th>Contact</th><th>Email</th><th>Checked</th>
+                  <th>Remarks</th><th />
+                </tr>
+              </thead>
+              <tbody>
+                {refs.map((r, i) => (
+                  <tr key={r.id}>
+                    <td className="numcol" data-label="No.">{i + 1}</td>
+                    <td data-label="Name"><b>{r.name}</b></td>
+                    <td className="muted" data-label="Relationship">{r.relationship ?? "—"}</td>
+                    <td className="muted" data-label="Company">{r.company ?? "—"}</td>
+                    <td className="muted" data-label="Position">{r.position ?? "—"}</td>
+                    <td className="muted nowrap" data-label="Contact">{r.contactNo ?? "—"}</td>
+                    <td className="muted" data-label="Email">{r.email ?? "—"}</td>
+                    <td data-label="Checked">
+                      <span className={`pill ${r.contactedAt ? "s-ACTIVE" : "s-PENDING"}`}>
+                        {r.contactedAt ? fmtWhen(r.contactedAt).slice(0, 11) : "not yet"}
+                      </span>
+                    </td>
+                    <td data-label="Remarks">
+                      {/* Saving remarks is what marks the reference as checked —
+                          a recruiter records the call, not a tick box. */}
+                      <form action={markReferenceContacted} className="inline-form">
+                        <input type="hidden" name="referenceId" value={r.id} />
+                        <input name="remarks" defaultValue={r.remarks ?? ""} placeholder="What did they say?" />
+                        <button className="save icon" type="submit" title="Save remarks" aria-label="Save remarks">
+                          <IconSave />
+                        </button>
+                      </form>
+                    </td>
+                    <td className="rowacts">
+                      <form action={deleteReference.bind(null, r.id)}>
+                        <button className="reject icon" type="submit" title="Remove" aria-label="Remove"><IconTrash /></button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (view === "ai-data") {
+    const d = (c.aiData ?? {}) as Record<string, unknown>;
+    const list = (k: string) => (Array.isArray(d[k]) ? (d[k] as string[]) : []);
+
+    const findings: [string, string[]][] = [
+      ["Achievements", list("achievements")],
+      ["Certifications", list("certifications")],
+      ["Awards", list("awards")],
+      ["Languages", list("languages")],
+      ["Links on the CV", list("publicSites")],
+    ];
+    const flags: [string, string[]][] = [
+      ["Employment gaps", list("employmentGaps")],
+      ["Short tenures", list("shortTenures")],
+      ["Document inconsistencies", list("documentConcerns")],
+    ];
+    const anyFlags = flags.some(([, v]) => v.length);
+
+    return (
+      <div className="panel">
+        <div className="cat-head">
+          <h2>Other AI Data</h2>
+          <span className="spacer" />
+          <span className="tree-meta">
+            {c.parsedAt ? `read ${fmtWhen(c.parsedAt)}` : "CV not read yet"}
+          </span>
+        </div>
+        <p>
+          What the reader found in the document beyond the plain fields. All of
+          it comes off the CV the candidate submitted — nothing here is looked
+          up elsewhere.
+        </p>
+
+        {!c.parsedAt ? (
+          <p style={{ marginTop: 14 }}>Read the CV first — the CV tab has a Read again button.</p>
+        ) : (
+          <>
+            {findings.map(([label, values]) => (
+              <div key={label}>
+                <p className="secdiv">{label} <span className="count">{values.length}</span></p>
+                {values.length ? (
+                  <ul className="findings">{values.map((v) => <li key={v}>{v}</li>)}</ul>
+                ) : (
+                  <p className="tree-meta">Nothing stated.</p>
+                )}
+              </div>
+            ))}
+
+            {d.compensationNoted != null && String(d.compensationNoted).trim() !== "" && (
+              <>
+                <p className="secdiv">Compensation stated on the document</p>
+                <p>{String(d.compensationNoted)}</p>
+              </>
+            )}
+
+            <p className="secdiv">Worth checking at interview</p>
+            {anyFlags ? (
+              <>
+                <p className="tree-meta">
+                  Observations about the dates and internal consistency of this
+                  document — questions to ask, not conclusions about the person.
+                </p>
+                {flags.map(([label, values]) =>
+                  values.length ? (
+                    <div key={label}>
+                      <p className="secdiv">{label}</p>
+                      <ul className="findings flag">{values.map((v) => <li key={v}>{v}</li>)}</ul>
+                    </div>
+                  ) : null,
+                )}
+              </>
+            ) : (
+              <p className="tree-meta">Nothing stood out in the dates or internal consistency.</p>
+            )}
+          </>
         )}
       </div>
     );

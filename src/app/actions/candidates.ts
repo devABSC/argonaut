@@ -63,6 +63,7 @@ export async function uploadCV(formData: FormData) {
       currentEmployer: parsed?.currentEmployer ?? null,
       location: parsed?.location ?? null,
       parsedAt: parsed ? new Date() : null,
+      aiData: parsed ?? undefined,
       cvData: bytes,
       cvFileName: file.name,
       cvMime: file.type || "application/octet-stream",
@@ -109,10 +110,18 @@ export async function reparseCV(candidateId: string) {
       c!.cvFileName ?? "cv.pdf",
       c!.cvMime ?? "application/pdf",
     );
-    await prisma.candidate.update({
-      where: { id: candidateId },
-      data: { ...parsed, parsedAt: new Date() },
-    });
+    // history is written as its own rows; the rest lands on the candidate.
+    const { history, ...fields } = parsed;
+    await prisma.$transaction([
+      prisma.candidate.update({
+        where: { id: candidateId },
+        data: { ...fields, parsedAt: new Date(), aiData: parsed },
+      }),
+      prisma.workExperience.deleteMany({ where: { candidateId } }),
+      prisma.workExperience.createMany({
+        data: (history ?? []).map((h) => ({ ...h, candidateId })),
+      }),
+    ]);
     revalidatePath(where);
     await logHistory({ type: "update", module: "Recruitment > Candidates", description: `Re-read CV for ${parsed.firstName} ${parsed.lastName}`, user: me });
     done(where, "CV read again — details refreshed.");
@@ -227,4 +236,70 @@ export async function deleteExperience(experienceId: string) {
   revalidatePath(at(row.candidateId));
   await logHistory({ type: "delete", module: "Recruitment > Work Experience", description: `Removed ${row.companyName} from a candidate`, user: me });
   done(at(row.candidateId), `${row.companyName} removed.`);
+}
+
+/* ---------- character references ---------- */
+
+const refAt = (id: string) => `/recruitment/candidate/${id}/char-ref`;
+
+export async function addReference(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const candidateId = String(formData.get("candidateId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!candidateId) return;
+  if (!name) done(refAt(candidateId), "Not added — a reference needs a name.");
+
+  await prisma.characterReference.create({
+    data: {
+      candidateId, name,
+      relationship: text(formData, "relationship"),
+      company: text(formData, "company"),
+      position: text(formData, "position"),
+      contactNo: text(formData, "contactNo"),
+      email: text(formData, "email"),
+      remarks: text(formData, "remarks"),
+    },
+  });
+
+  revalidatePath(refAt(candidateId));
+  await logHistory({ type: "create", module: "Recruitment > Char Ref", description: `Added reference ${name} to a candidate`, user: me });
+  done(refAt(candidateId), `${name} added.`);
+}
+
+/** Records that the reference was reached, and what they said. */
+export async function markReferenceContacted(formData: FormData) {
+  const me = await requireRecruiter();
+
+  const id = String(formData.get("referenceId") ?? "");
+  if (!id) return;
+
+  const before = await prisma.characterReference.findUnique({
+    where: { id },
+    select: { candidateId: true, name: true, contactedAt: true },
+  });
+  if (!before) return;
+
+  const r = await prisma.characterReference.update({
+    where: { id },
+    data: {
+      remarks: text(formData, "remarks"),
+      contactedAt: before.contactedAt ?? new Date(),
+    },
+  });
+
+  revalidatePath(refAt(r.candidateId));
+  await logHistory({ type: "update", module: "Recruitment > Char Ref", description: `Recorded a check on ${before.name}`, user: me });
+  done(refAt(r.candidateId), `${before.name} — check recorded.`);
+}
+
+export async function deleteReference(referenceId: string) {
+  const me = await requireRecruiter();
+  const r = await prisma.characterReference.delete({
+    where: { id: referenceId },
+    select: { candidateId: true, name: true },
+  });
+  revalidatePath(refAt(r.candidateId));
+  await logHistory({ type: "delete", module: "Recruitment > Char Ref", description: `Removed reference ${r.name}`, user: me });
+  done(refAt(r.candidateId), `${r.name} removed.`);
 }

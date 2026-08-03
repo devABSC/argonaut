@@ -801,6 +801,9 @@ model Candidate {
   location        String?
   /// When the CV was last read, so a re-read can be told from a manual edit.
   parsedAt        DateTime?
+  /// Everything the reader returned, including anything with no field of its
+  /// own. Kept so a useful value is not thrown away before it has a column.
+  aiData          Json?
 
   /// Applied, Screening, Interview, Offer, Hired, Rejected, Withdrawn.
   stage  String  @default("Applied")
@@ -817,6 +820,7 @@ model Candidate {
   recruiter   User?   @relation("Recruiting", fields: [recruiterId], references: [id], onDelete: SetNull)
 
   experience WorkExperience[]
+  references CharacterReference[]
 
   /// Set when the candidate is hired and becomes staff.
   employeeId String?   @unique
@@ -899,6 +903,31 @@ model WorkExperience {
 
   /// What they actually did.
   duties String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([candidateId])
+}
+
+/// A character reference given by a candidate. Rows rather than free text so
+/// a recruiter can record who was called and what came back.
+model CharacterReference {
+  id String @id @default(cuid())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  name         String
+  relationship String?
+  company      String?
+  position     String?
+  contactNo    String?
+  email        String?
+
+  /// What the reference said, and when they were reached.
+  remarks    String?
+  contactedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

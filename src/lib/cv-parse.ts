@@ -24,6 +24,25 @@ export type ParsedCV = {
   education: string | null;
   currentEmployer: string | null;
   location: string | null;
+  /// Assessment signal, all of it read off the document the candidate sent.
+  achievements: string[];
+  certifications: string[];
+  languages: string[];
+  awards: string[];
+  publicSites: string[];
+  compensationNoted: string | null;
+  employmentGaps: string[];
+  shortTenures: string[];
+  documentConcerns: string[];
+  history: {
+    yearFrom: number | null;
+    yearTo: number | null;
+    companyName: string;
+    position: string | null;
+    city: string | null;
+    country: string | null;
+    duties: string | null;
+  }[];
 };
 
 const SCHEMA = {
@@ -41,20 +60,61 @@ const SCHEMA = {
     education: { type: ["string", "null"], description: "Highest qualification and institution." },
     currentEmployer: { type: ["string", "null"] },
     location: { type: ["string", "null"], description: "City or province." },
+
+    achievements: { type: "array", items: { type: "string" }, description: "Concrete accomplishments the CV claims — targets hit, systems delivered, teams led. Quote the substance, not the adjectives." },
+    certifications: { type: "array", items: { type: "string" }, description: "Named certifications and licences, with the issuing body where given." },
+    languages: { type: "array", items: { type: "string" }, description: "Languages the CV says they speak." },
+    awards: { type: "array", items: { type: "string" } },
+    publicSites: { type: "array", items: { type: "string" }, description: "Links the candidate themselves put on the CV — LinkedIn, portfolio, GitHub. Only what is printed on the document." },
+    compensationNoted: { type: ["string", "null"], description: "Any salary or rate the document states. Null if it says none." },
+
+    employmentGaps: { type: "array", items: { type: "string" }, description: "Unexplained breaks of a year or more between dated posts, as 'YYYY–YYYY'. Empty if the dates are continuous or too vague to tell." },
+    shortTenures: { type: "array", items: { type: "string" }, description: "Posts held under a year, as 'Company (YYYY–YYYY)'. State them plainly; do not editorialise." },
+    documentConcerns: { type: "array", items: { type: "string" }, description: "Internal contradictions in the document itself — overlapping dates, a claimed degree with no institution, a role that predates the stated career start. Only what the document contradicts about itself." },
+
+    history: {
+      type: "array",
+      description: "Every post in the employment history, most recent first.",
+      items: {
+        type: "object",
+        properties: {
+          yearFrom: { type: ["integer", "null"] },
+          yearTo: { type: ["integer", "null"], description: "Null if the post is current." },
+          companyName: { type: "string" },
+          position: { type: ["string", "null"] },
+          city: { type: ["string", "null"] },
+          country: { type: ["string", "null"] },
+          duties: { type: ["string", "null"], description: "Duties and responsibilities, condensed to a sentence or two." },
+        },
+        required: ["yearFrom", "yearTo", "companyName", "position", "city", "country", "duties"],
+        additionalProperties: false,
+      },
+    },
   },
   required: [
     "firstName", "lastName", "middleName", "email", "mobile", "position",
     "summary", "skills", "yearsExperience", "education", "currentEmployer", "location",
+    "achievements", "certifications", "languages", "awards", "publicSites",
+    "compensationNoted", "employmentGaps", "shortTenures", "documentConcerns", "history",
   ],
   additionalProperties: false,
 } as const;
 
 const PROMPT = `Read this CV and record what it says about the candidate.
 
-Report only what the document states. Where a field is absent, return null rather
-than inferring it — a guessed email or an estimated salary is worse than a blank,
-because someone downstream will treat it as fact. yearsExperience may be worked
-out from dated employment history; leave it null if the dates don't support it.`;
+Report only what the document states. Where a field is absent, return null or an
+empty array rather than inferring it — a guessed email or an estimated salary is
+worse than a blank, because someone downstream will treat it as fact.
+yearsExperience may be worked out from dated employment history; leave it null if
+the dates don't support it.
+
+The assessment fields exist so a recruiter can see what the document actually
+supports, so keep them factual: achievements are what the CV claims, quoted for
+substance rather than adjectives; employmentGaps, shortTenures and
+documentConcerns are observations about the dates and internal consistency of
+this document, not judgements about the person. Do not infer character, ability
+or risk. Do not guess at anything the document does not say — you are reading one
+file, not researching a person.`;
 
 /** The key lives in the Setting table so it can be rotated without a redeploy. */
 async function apiKey(): Promise<string | undefined> {

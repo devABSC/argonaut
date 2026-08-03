@@ -822,3 +822,16 @@ button{font-family:inherit}
 
 /* Work-experience add row */
 .app .wxrow{grid-template-columns:78px 78px minmax(120px,1.1fr) minmax(120px,1.1fr) 110px 110px minmax(150px,1.6fr) 36px}
+
+/* Character-reference add row */
+.app .crrow{grid-template-columns:repeat(6,minmax(110px,1fr)) 36px}
+.app .utable .inline-form{display:flex;gap:6px;align-items:center}
+.app .utable .inline-form input{width:100%;min-width:120px;font-family:var(--body);font-size:.82rem;
+  color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.app .utable .inline-form input:focus{outline:none;border-color:var(--cyan)}
+
+/* Findings lists on a candidate's AI data */
+.app .findings{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.app .findings li{font-size:.88rem;color:var(--text);line-height:1.5}
+.app .findings.flag li{color:var(--muted)}
+.app .findings.flag li::marker{color:var(--red,#ff6b6b)}
