@@ -915,6 +915,30 @@ button{font-family:inherit}
 .app .soaimport label.ghost.icon:focus-within{border-color:var(--cyan)}
 .app .soaimport input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .app .soaimport label.ghost.icon svg{width:15px;height:15px}
+
+/* Receipt column, and the viewer that opens over the page. Server-rendered,
+   so it needs no client script and survives a reload. */
+.app .receiptcell{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.app .modalwrap{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:18px}
+.app .modalveil{position:absolute;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(2px)}
+.app .modalbox{position:relative;width:min(860px,100%);max-height:88vh;overflow:auto;
+  background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+  box-shadow:0 30px 90px -20px rgba(0,0,0,.8)}
+.app .modalview{margin-top:12px;border:1px solid var(--line-2);border-radius:10px;
+  background:var(--s2);display:grid;place-items:center;padding:10px;min-height:220px}
+.app .modalview img{max-width:100%;max-height:56vh;object-fit:contain;border-radius:6px}
+.app .modalview object{width:100%;height:56vh;border:0}
+.app .modalfoot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.app .reviewbar{display:flex;align-items:center;gap:7px}
+.app .reviewbar input{font-family:var(--body);font-size:.84rem;color:var(--text);background:var(--s4);
+  border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:190px}
+.app .reviewbar input:focus{outline:none;border-color:var(--cyan)}
+@media (max-width:640px){
+  .app .modalbox{padding:13px}
+  .app .modalview img,.app .modalview object{max-height:44vh;height:44vh}
+  .app .reviewbar{width:100%}
+  .app .reviewbar input{flex:1;min-width:0}
+}
 .app .soalogo{width:44px;height:44px;object-fit:contain;border-radius:8px}
 .app .logorow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;
   padding:9px 11px;border:1px dashed var(--line);border-radius:11px;background:var(--s3)}

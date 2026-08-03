@@ -55,9 +55,14 @@ function money(f: FormData, k: string): number {
 function back(f: FormData): string {
   const bou = String(f.get("bou") ?? "").trim();
   const emp = String(f.get("emp") ?? "").trim();
+  const ref = String(f.get("ref") ?? "").trim();
+  const receipt = String(f.get("receipt") ?? "").trim();
   const q = new URLSearchParams();
   if (bou) q.set("bou", bou);
   if (emp) q.set("emp", emp);
+  // Keep the open statement, and the receipt being reviewed, in view.
+  if (ref) q.set("ref", ref);
+  if (receipt) q.set("receipt", receipt);
   const s = q.toString();
   return s ? `${PATH}?${s}` : PATH;
 }

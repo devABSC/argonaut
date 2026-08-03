@@ -1,13 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { IconTrash, IconPlus, IconSave, IconEdit, IconX, IconUpload, IconExcel, IconPdf, IconMail } from "../icons";
+import { IconTrash, IconPlus, IconSave, IconEdit, IconX, IconCheck, IconUpload, IconExcel, IconPdf, IconMail } from "../icons";
 import CellSelect from "../settings/CellSelect";
 import SoaFilter from "./SoaFilter";
 import { soaViewer, soaWhere } from "@/lib/soa-scope";
 import type { RoleKey } from "@/lib/roles";
-import { createSoa, addSoaLine, editSoaLine, deleteSoaLine, setSoaStatus, deleteSoa, emailSoa, importSoaLines } from "../actions/soa";
+import { createSoa, addSoaLine, editSoaLine, deleteSoaLine, setSoaStatus, deleteSoa, emailSoa, importSoaLines, uploadReceipt, reviewReceipt, deleteReceipt } from "../actions/soa";
 import { AP_CC } from "@/lib/soa-doc";
 
 const SOA_STATUS = ["Open", "Closed"] as const;
+
+/** A receipt is unreviewed until Finance says otherwise. */
+const RECEIPT_PILL: Record<string, string> = {
+  Pending: "s-PENDING", Approved: "s-ACTIVE", Rejected: "s-REJECTED",
+};
 
 const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "—");
 
@@ -39,6 +44,7 @@ export default async function SoaPanel({
   emp = "",
   soaRef = "",
   editLine = "",
+  receipt = "",
   viewer,
 }: {
   bou?: string;
@@ -50,6 +56,8 @@ export default async function SoaPanel({
   soaRef?: string;
   /** Which line is being corrected. One at a time. */
   editLine?: string;
+  /** Which receipt is open in the viewer, by line id. */
+  receipt?: string;
   viewer: { id: string; role: RoleKey; email: string };
 }) {
   // Finance sees every statement; everyone else sees their own and nothing
@@ -95,11 +103,18 @@ export default async function SoaPanel({
   // One statement is open at a time; the rest stay a row in the list.
   const open = totals.find((t) => t.s.ref === soaRef) ?? null;
 
-  const href = (r: string) => {
+  // The receipt being looked at, found only among lines this viewer can see —
+  // an id from elsewhere simply opens nothing.
+  const shown = receipt
+    ? rows.flatMap((r) => r.lines.map((l) => ({ l, ref: r.ref }))).find((x) => x.l.id === receipt) ?? null
+    : null;
+
+  const href = (r: string, extra: Record<string, string> = {}) => {
     const q = new URLSearchParams();
     if (bou) q.set("bou", bou);
     if (empId) q.set("emp", empId);
     if (r) q.set("ref", r);
+    for (const [k, v] of Object.entries(extra)) if (v) q.set(k, v);
     const qs = q.toString();
     return qs ? `/finance/soa?${qs}` : "/finance/soa";
   };
@@ -110,6 +125,7 @@ export default async function SoaPanel({
       <input type="hidden" name="bou" value={bou} />
       <input type="hidden" name="emp" value={empId} />
       <input type="hidden" name="ref" value={soaRef} />
+      <input type="hidden" name="receipt" value={receipt} />
     </>
   );
 
@@ -292,7 +308,8 @@ export default async function SoaPanel({
                     <th>Date</th><th>Item Description</th>
                     <th className="amt">Debit / Charges</th>
                     <th className="amt">Credit / Payment</th>
-                    <th className="amt">Balance</th><th />
+                    <th className="amt">Balance</th>
+                    <th>Receipt</th><th />
                   </tr></thead>
                   <tbody>
                     {s.lines.map((l) => {
@@ -303,7 +320,7 @@ export default async function SoaPanel({
                             // The correction form lives inside the row it is
                             // correcting; a form cannot span table cells, so
                             // it takes the whole row.
-                            <td colSpan={5}>
+                            <td colSpan={6}>
                               <form action={editSoaLine.bind(null, l.id)} className="addrow soaline">
                                 {carry}
                                 <input name="date" type="date" defaultValue={day(l.date)} aria-label="Date" />
@@ -328,6 +345,34 @@ export default async function SoaPanel({
                               <td className="amt">{cell(Number(l.debit))}</td>
                               <td className="amt">{cell(Number(l.credit))}</td>
                               <td className={line < 0 ? "amt owed" : "amt"}>{running(line)}</td>
+                              <td data-label="Receipt">
+                                {l.receiptData ? (
+                                  <span className="receiptcell">
+                                    <a className="ticket" href={href(s.ref, { receipt: l.id })}
+                                      title={l.receiptName ?? "View receipt"}>View</a>
+                                    <span className={`pill ${RECEIPT_PILL[l.receiptStatus ?? "Pending"]}`}>
+                                      {l.receiptStatus ?? "Pending"}
+                                    </span>
+                                  </span>
+                                ) : Number(l.debit) > 0 && !closed ? (
+                                  // Only a charge needs proving; a payment does not.
+                                  <form action={uploadReceipt.bind(null, l.id)} className="soaimport">
+                                    {carry}
+                                    <label className="ghost icon" title="Attach the receipt for this charge">
+                                      <IconUpload />
+                                      <input type="file" name="receipt"
+                                        accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+                                        aria-label="Receipt file" />
+                                    </label>
+                                    <button className="save icon" type="submit"
+                                      title="Upload the chosen receipt" aria-label="Upload the chosen receipt">
+                                      <IconSave />
+                                    </button>
+                                  </form>
+                                ) : (
+                                  <span className="muted">—</span>
+                                )}
+                              </td>
                             </>
                           )}
                           <td className="rowacts">
@@ -352,14 +397,14 @@ export default async function SoaPanel({
                       );
                     })}
                     {s.lines.length === 0 && (
-                      <tr><td colSpan={6} className="muted">No movements posted yet.</td></tr>
+                      <tr><td colSpan={7} className="muted">No movements posted yet.</td></tr>
                     )}
                     <tr className="soatotal">
                       <td colSpan={2} />
                       <td className="amt">{cell(charges)}</td>
                       <td className="amt">{cell(credits)}</td>
                       <td className={balance < 0 ? "amt owed" : "amt"}>{running(balance)}</td>
-                      <td />
+                      <td /><td />
                     </tr>
                   </tbody>
                 </table>
@@ -412,6 +457,84 @@ export default async function SoaPanel({
             </div>
           );
         })()
+      )}
+
+      {shown && (
+        // A plain overlay rather than a dialog element: it is server-rendered,
+        // so it works with no client script and survives a reload.
+        <div className="modalwrap">
+          <a className="modalveil" href={href(shown.ref)} aria-label="Close the receipt" />
+          <div className="modalbox" role="dialog" aria-label="Receipt">
+            <div className="cat-head">
+              <h2>Receipt</h2>
+              <span className="tree-meta">{shown.l.particulars}</span>
+              <span className={`pill ${RECEIPT_PILL[shown.l.receiptStatus ?? "Pending"]}`}>
+                {shown.l.receiptStatus ?? "Pending"}
+              </span>
+              <span className="spacer" />
+              <a className="ghost icon" href={href(shown.ref)} title="Close" aria-label="Close"><IconX /></a>
+            </div>
+
+            <div className="modalview">
+              {shown.l.receiptMime === "application/pdf" ? (
+                <object data={`/api/soa-receipt/${shown.l.id}`} type="application/pdf">
+                  <p className="muted">
+                    This browser will not display the PDF inline.{" "}
+                    <a className="ticket" href={`/api/soa-receipt/${shown.l.id}`}>Open it in a tab</a>.
+                  </p>
+                </object>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={`/api/soa-receipt/${shown.l.id}`} alt={shown.l.receiptName ?? "Receipt"} />
+              )}
+            </div>
+
+            <div className="modalfoot">
+              <span className="tree-meta">
+                {shown.l.receiptName}
+                {shown.l.receiptSize ? ` · ${Math.round(shown.l.receiptSize / 1024)} KB` : ""}
+                {shown.l.reviewedByName && shown.l.reviewedAt
+                  ? ` · ${shown.l.receiptStatus?.toLowerCase()} by ${shown.l.reviewedByName} on ${day(shown.l.reviewedAt)}`
+                  : ""}
+              </span>
+              <span className="spacer" />
+
+              {v.admin ? (
+                // Finance decides. Remarks are optional on approval and worth
+                // giving on rejection, so the same box serves both.
+                <form action={reviewReceipt.bind(null, shown.l.id, "Approved")} className="reviewbar">
+                  {carry}
+                  <input name="remarks" placeholder="Remarks (optional)" aria-label="Review remarks" />
+                  <button className="approve icon" type="submit" title="Approve" aria-label="Approve">
+                    <IconCheck />
+                  </button>
+                  <button className="reject icon" type="submit" title="Reject" aria-label="Reject"
+                    formAction={reviewReceipt.bind(null, shown.l.id, "Rejected")}>
+                    <IconX />
+                  </button>
+                </form>
+              ) : (
+                <span className="muted">
+                  {shown.l.receiptStatus === "Pending"
+                    ? "Waiting for Finance to review this."
+                    : shown.l.reviewRemarks || "Reviewed by Finance."}
+                </span>
+              )}
+
+              {!v.admin && shown.l.receiptStatus !== "Approved" && (
+                <form action={deleteReceipt.bind(null, shown.l.id)}>
+                  {carry}
+                  <button className="reject icon" type="submit"
+                    title="Remove this receipt" aria-label="Remove this receipt"><IconTrash /></button>
+                </form>
+              )}
+            </div>
+
+            {shown.l.reviewRemarks && v.admin && (
+              <p className="muted" style={{ marginTop: 8 }}>Remarks: {shown.l.reviewRemarks}</p>
+            )}
+          </div>
+        </div>
       )}
     </>
   );
