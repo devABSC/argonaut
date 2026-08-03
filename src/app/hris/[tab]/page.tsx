@@ -2,16 +2,17 @@ import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
 import AppShell from "../../AppShell";
 import EmployeeList from "../EmployeeList";
+import PersonalInfoPanel from "../PersonalInfoPanel";
 
 export default async function HrisTab({
   params,
   searchParams,
 }: {
   params: Promise<{ tab: string }>;
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; bou?: string; company?: string; emp?: string }>;
 }) {
   const { tab } = await params;
-  const { q, page } = await searchParams;
+  const { q, page, bou, company, emp } = await searchParams;
 
   const { user, nav, section, tab: active } = await requireAccess("hris", tab);
 
@@ -23,7 +24,14 @@ export default async function HrisTab({
       activeTab={active.slug}
     >
       {active.slug === "employees" ? (
-        <EmployeeList q={q ?? ""} page={Math.max(1, Number(page) || 1)} />
+        <EmployeeList
+          q={q ?? ""}
+          bou={bou ?? ""}
+          company={company ?? ""}
+          page={Math.max(1, Number(page) || 1)}
+        />
+      ) : active.slug === "personal-info" ? (
+        <PersonalInfoPanel empId={emp} />
       ) : (
         <div className="panel">
           <h2>{active.label}</h2>

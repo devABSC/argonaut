@@ -405,6 +405,8 @@ button{font-family:inherit}
 .app .empsearch{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .app .empsearch input{font-family:var(--body);font-size:.88rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 12px;min-width:230px}
 .app .empsearch input:focus{outline:none;border-color:var(--cyan)}
+.app .empsearch select{font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+.app .empsearch select:focus{outline:none;border-color:var(--cyan)}
 .app .empsearch button{font-family:var(--body);font-size:.85rem;font-weight:600;color:var(--on-accent);background:linear-gradient(135deg,var(--cyan),var(--blue));border:0;border-radius:9px;padding:8px 15px;cursor:pointer}
 .app .empsearch .clear{font-size:.82rem;color:var(--muted)}
 .app .empsearch .clear:hover{color:var(--cyan)}
