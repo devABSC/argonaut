@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
 import { CAND_VIEWS, isCandView, STAGE_PILL } from "@/lib/candidate-views";
+import { canSeeCandidate } from "@/lib/candidate-scope";
 import AppShell from "../../../../AppShell";
 import CandidatePanel from "../../../CandidatePanel";
 
@@ -20,9 +21,11 @@ export default async function CandidateView({
 
   const c = await prisma.candidate.findUnique({
     where: { id: cand },
-    select: { id: true, firstName: true, lastName: true, stage: true },
+    select: { id: true, firstName: true, lastName: true, stage: true, recruiterId: true },
   });
-  if (!c) notFound();
+  // Someone else's candidate is not found rather than forbidden — a 403 would
+  // confirm the record exists.
+  if (!c || !canSeeCandidate(user, c)) notFound();
 
   return (
     <AppShell

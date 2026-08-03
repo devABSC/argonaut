@@ -1,17 +1,18 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAccess } from "@/lib/guard";
+import { canSeeCandidate } from "@/lib/candidate-scope";
 
 /** Serves a stored CV. Gated the same way the Candidates page is. */
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  await requireAccess("recruitment", "candidates");
+  const { user } = await requireAccess("recruitment", "candidates");
 
   const c = await prisma.candidate.findUnique({
     where: { id },
-    select: { cvData: true, cvFileName: true, cvMime: true },
+    select: { cvData: true, cvFileName: true, cvMime: true, recruiterId: true },
   });
-  if (!c?.cvData) return new Response("Not found", { status: 404 });
+  if (!c?.cvData || !canSeeCandidate(user, c)) return new Response("Not found", { status: 404 });
 
   return new Response(new Uint8Array(c.cvData), {
     headers: {

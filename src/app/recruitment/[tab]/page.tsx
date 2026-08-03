@@ -14,7 +14,7 @@ export default async function RecruitmentTab({ params }: { params: Promise<{ tab
       activeSection={section.key}
       activeTab={active.slug}
     >
-      <CandidateList />
+      <CandidateList viewer={{ id: user.id, role: user.role }} />
     </AppShell>
   );
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { candidateScope } from "@/lib/candidate-scope";
+import type { RoleKey } from "@/lib/roles";
 import { cvParsingConfigured } from "@/lib/cv-parse";
 import { uploadCV, setCandidateStage, deleteCandidate } from "../actions/candidates";
 import { STAGES, STAGE_PILL } from "@/lib/candidate-views";
@@ -13,9 +15,15 @@ const fmt = (d: Date) =>
     day: "2-digit", month: "short", year: "numeric",
   });
 
-export default async function CandidateList() {
+export default async function CandidateList({
+  viewer,
+}: {
+  viewer: { id: string; role: RoleKey };
+}) {
+  const scope = candidateScope(viewer);
   const [rows, ready] = await Promise.all([
     prisma.candidate.findMany({
+      where: scope,
       orderBy: { appliedAt: "desc" },
       select: {
         id: true, firstName: true, lastName: true, email: true, mobile: true,
@@ -56,6 +64,9 @@ export default async function CandidateList() {
           <h2>Candidates <span className="count">{rows.length}</span></h2>
           <span className="spacer" />
           {unread > 0 && <span className="pill s-PENDING">{unread} unread</span>}
+          {viewer.role !== "SUPER_USER" && (
+            <span className="tree-meta">yours only</span>
+          )}
         </div>
 
         {rows.length === 0 ? (

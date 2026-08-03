@@ -70,6 +70,27 @@ export async function uploadCV(formData: FormData) {
     failure = (e as Error).message;
   }
 
+  // First to file owns the candidate. A second recruiter uploading the same
+  // person is turned away rather than creating a duplicate pipeline — and is
+  // not told whose it is, since that would leak another recruiter's list.
+  if (parsed?.firstName?.trim() && parsed?.lastName?.trim()) {
+    const taken = await prisma.candidate.findFirst({
+      where: {
+        firstName: { equals: parsed.firstName.trim(), mode: "insensitive" },
+        lastName: { equals: parsed.lastName.trim(), mode: "insensitive" },
+      },
+      select: { id: true, recruiterId: true, recruiter: { select: { name: true } } },
+    });
+    if (taken) {
+      done(
+        PATH,
+        taken.recruiterId === me.id
+          ? `${parsed.firstName} ${parsed.lastName} is already on your list — open the record and use Read again to refresh it.`
+          : `${parsed.firstName} ${parsed.lastName} is already filed by another recruiter. First to file keeps the candidate.`,
+      );
+    }
+  }
+
   const candidate = await prisma.candidate.create({
     data: {
       ...(parsed ? candidateColumns(parsed) : { firstName: "Unnamed", lastName: "Candidate" }),
