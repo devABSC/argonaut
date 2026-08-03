@@ -66,7 +66,13 @@ export const NAV: NavSection[] = [
     // Personal Info, Contract, Report To, Statutory, Medical, NTE-CAR, VLSL and
     // 201 Logs are per-employee views — they live inside a person's record at
     // /hris/employee/{id}/{view}, not in this strip.
-    tabs: [{ slug: "employees", label: "Employees" }],
+    tabs: [
+      { slug: "employees", label: "Employees" },
+      { slug: "hc2contract", label: "HC 2 Contract", title: "Headcount to Contract" },
+    ],
+    // Sublinks in the left pane rather than a strip, so HRIS reads the same
+    // way Finance and Workflow do.
+    children: "submenu",
   },
   {
     key: "finance",

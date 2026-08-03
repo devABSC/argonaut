@@ -29,16 +29,26 @@ export default async function HrisTab({
       activeSection={section.key}
       activeTab={active.slug}
     >
-      <EmployeeList
-        q={q ?? ""}
-        bou={bou ?? ""}
-        dept={dept ?? ""}
-        company={company ?? ""}
-        page={Math.max(1, Number(page) || 1)}
-        viewer={{ role: user.role, company: user.company }}
-        added={added}
-        addedName={name}
-      />
+      {active.slug === "employees" ? (
+        <EmployeeList
+          q={q ?? ""}
+          bou={bou ?? ""}
+          dept={dept ?? ""}
+          company={company ?? ""}
+          page={Math.max(1, Number(page) || 1)}
+          viewer={{ role: user.role, company: user.company }}
+          added={added}
+          addedName={name}
+        />
+      ) : (
+        <div className="panel">
+          <h2>{active.label}</h2>
+          <p>
+            This page is wired up and role-gated, but has no fields yet — say
+            what {active.label} should hold and it can be built.
+          </p>
+        </div>
+      )}
     </AppShell>
   );
 }
