@@ -24,59 +24,86 @@ export async function saveRoleMatrix(formData: FormData) {
   await requireOwner();
 
   const nodes = allNodes();
-  const writes: Promise<unknown>[] = [];
 
+  // Only deviations from the code default are stored.
+  const desired = new Map<string, boolean>(); // "ROLE|node" -> allowed
   for (const role of ROLES) {
     for (const n of nodes) {
       const checked = formData.get(`m|${role}|${n.key}`) === "on";
-      const isDefault = checked === defaultAllows(role, n.key);
-
-      writes.push(
-        isDefault
-          ? prisma.menuGrant.deleteMany({ where: { nodeKey: n.key, role } })
-          : prisma.menuGrant.upsert({
-              where: { nodeKey_role: { nodeKey: n.key, role } },
-              update: { allowed: checked },
-              create: { nodeKey: n.key, role, allowed: checked },
-            }),
-      );
+      if (checked !== defaultAllows(role, n.key)) desired.set(`${role}|${n.key}`, checked);
     }
   }
 
-  await Promise.all(writes);
+  const existing = await prisma.menuGrant.findMany({ where: { role: { not: null } } });
+
+  const staleIds: string[] = [];
+  const changed: { id: string; allowed: boolean }[] = [];
+  const seen = new Set<string>();
+
+  for (const row of existing) {
+    const k = `${row.role}|${row.nodeKey}`;
+    seen.add(k);
+    const want = desired.get(k);
+    if (want === undefined) staleIds.push(row.id);
+    else if (want !== row.allowed) changed.push({ id: row.id, allowed: want });
+  }
+
+  const fresh = [...desired.entries()]
+    .filter(([k]) => !seen.has(k))
+    .map(([k, allowed]) => {
+      const [role, ...rest] = k.split("|");
+      return { role: role as Role, nodeKey: rest.join("|"), allowed };
+    });
+
+  // Three statements rather than one per cell: the pooler allows a single
+  // connection, so a hundred round trips ran past the function timeout.
+  await prisma.$transaction([
+    ...(staleIds.length ? [prisma.menuGrant.deleteMany({ where: { id: { in: staleIds } } })] : []),
+    ...changed.map((c) => prisma.menuGrant.update({ where: { id: c.id }, data: { allowed: c.allowed } })),
+    ...(fresh.length ? [prisma.menuGrant.createMany({ data: fresh })] : []),
+  ]);
+
   revalidatePath(PATH, "layout");
 }
 
-/**
- * Saves per-user overrides. The baseline is what the user's role already gives
- * them, so an override is only stored where the owner differs from it.
- */
 export async function saveUserOverrides(userId: string, formData: FormData) {
   await requireOwner();
 
   const target = await prisma.user.findUnique({ where: { id: userId } });
   if (!target) throw new Error("NOT_FOUND");
 
-  // Baseline without this user's own overrides.
+  // Baseline is what the role already grants, without this user's overrides.
   const roleLevel = await effectiveAccess({ id: "__none__", role: target.role });
 
-  const writes: Promise<unknown>[] = [];
+  const desired = new Map<string, boolean>();
   for (const n of allNodes()) {
     const checked = formData.get(`u|${n.key}`) === "on";
-    const matchesRole = checked === (roleLevel.get(n.key) ?? false);
-
-    writes.push(
-      matchesRole
-        ? prisma.menuGrant.deleteMany({ where: { nodeKey: n.key, userId } })
-        : prisma.menuGrant.upsert({
-            where: { nodeKey_userId: { nodeKey: n.key, userId } },
-            update: { allowed: checked },
-            create: { nodeKey: n.key, userId, allowed: checked },
-          }),
-    );
+    if (checked !== (roleLevel.get(n.key) ?? false)) desired.set(n.key, checked);
   }
 
-  await Promise.all(writes);
+  const existing = await prisma.menuGrant.findMany({ where: { userId } });
+
+  const staleIds: string[] = [];
+  const changed: { id: string; allowed: boolean }[] = [];
+  const seen = new Set<string>();
+
+  for (const row of existing) {
+    seen.add(row.nodeKey);
+    const want = desired.get(row.nodeKey);
+    if (want === undefined) staleIds.push(row.id);
+    else if (want !== row.allowed) changed.push({ id: row.id, allowed: want });
+  }
+
+  const fresh = [...desired.entries()]
+    .filter(([k]) => !seen.has(k))
+    .map(([nodeKey, allowed]) => ({ userId, nodeKey, allowed }));
+
+  await prisma.$transaction([
+    ...(staleIds.length ? [prisma.menuGrant.deleteMany({ where: { id: { in: staleIds } } })] : []),
+    ...changed.map((c) => prisma.menuGrant.update({ where: { id: c.id }, data: { allowed: c.allowed } })),
+    ...(fresh.length ? [prisma.menuGrant.createMany({ data: fresh })] : []),
+  ]);
+
   revalidatePath(PATH, "layout");
 }
 

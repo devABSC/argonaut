@@ -335,6 +335,19 @@ button{font-family:inherit}
 .app .utable a.save.icon{text-decoration:none}
 .app .numcol{width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
 
+/* RBAC matrix — collapsible tree */
+.app .treebar{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.app .treebar>button{font-family:var(--body);font-size:.82rem;font-weight:600;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:7px 14px;cursor:pointer}
+.app .treebar>button:hover{border-color:rgba(56,232,255,.45);color:var(--cyan)}
+.app .treehint{font-size:.8rem;color:var(--faint)}
+.app .twist{display:inline-flex;align-items:center;gap:9px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;font-weight:700}
+.app .twist svg{flex:0 0 12px;color:var(--muted);transition:transform .18s}
+.app .twist.open svg{transform:rotate(90deg);color:var(--cyan)}
+.app .twist:hover svg{color:var(--cyan)}
+.app .pagecount{font-family:var(--mono);font-size:.58rem;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.app .minicount{display:block;margin-top:3px;font-family:var(--mono);font-size:.56rem;color:var(--faint)}
+.app tr.pagerow.hidden{display:none}
+
 /* RBAC matrix */
 .app .utable.matrix th.rolecol{text-align:center;white-space:nowrap}
 .app .utable.matrix th.rolecol span{display:block}
