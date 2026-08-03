@@ -52,6 +52,7 @@ model User {
   sessions       Session[]
   projects       Project[]
   milestoneTasks MilestoneTask[] @relation("MilestoneTaskAuthor")
+  soasCreated    Soa[]           @relation("SoaAuthor")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -177,6 +178,57 @@ model MilestoneTask {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([milestoneId])
+}
+
+/// A statement of account for one employee — what they owe the company and
+/// what the company owes them, as dated debit and credit lines.
+model Soa {
+  id  String @id @default(cuid())
+  /// Human reference, e.g. SOA-2026-0001. What people quote to each other.
+  ref String @unique
+
+  employeeId String
+  employee   Employee @relation("SoaEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  /// The employee's BOU when the statement was raised. Snapshotted, so a
+  /// transfer does not silently re-file old statements.
+  bouName String?
+
+  periodFrom DateTime?
+  periodTo   DateTime?
+  /// Open or Closed.
+  status     String    @default("Open")
+
+  lines SoaLine[]
+
+  createdById String
+  createdBy   User   @relation("SoaAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([employeeId])
+}
+
+/// One dated movement on a statement. A line is a debit or a credit, never
+/// both — the other side stays zero rather than being left null.
+model SoaLine {
+  id    String @id @default(cuid())
+  soaId String
+  soa   Soa    @relation(fields: [soaId], references: [id], onDelete: Cascade)
+
+  date        DateTime
+  /// "Description" on the statement.
+  particulars String
+  /// Who asked for the spend. Free text — often someone with no account.
+  requestor   String?
+  /// "Charges" and "Credits" on the statement. A line is one or the other.
+  debit       Decimal  @default(0) @db.Decimal(14, 2)
+  credit      Decimal  @default(0) @db.Decimal(14, 2)
+
+  createdAt DateTime @default(now())
+
+  @@index([soaId])
 }
 
 /// Something stopping the work now. A risk that has already happened.
@@ -570,6 +622,7 @@ model Employee {
   managesProjects Project[]       @relation("ProjectManager")
   oicProjects     Project[]       @relation("ProjectOic")
   milestonesOwned Milestone[]     @relation("MilestoneOwner")
+  soas            Soa[]           @relation("SoaEmployee")
   roadblocksOwned Roadblock[]     @relation("RoadblockOwner")
   risksOwned      Risk[]          @relation("RiskOwner")
 

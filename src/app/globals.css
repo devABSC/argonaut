@@ -861,6 +861,56 @@ button{font-family:inherit}
 .app .taskadd{grid-template-columns:minmax(120px,1.2fr) minmax(120px,1.6fr) 140px 140px 110px 36px;
   margin:8px 0 0;background:transparent}
 
+/* ============================================================
+   FINANCE — Statement of Account
+   Laid out to read like the workbook Finance already uses.
+   ============================================================ */
+.app .soafilter select{font-family:var(--body);font-size:.86rem;color:var(--text);
+  background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px;cursor:pointer}
+.app .soafilter select:focus{outline:none;border-color:var(--cyan)}
+.app .soaadd{grid-template-columns:160px 160px auto;justify-content:start;margin-top:10px}
+.app .soaadd .btn-primary{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.app .soaadd .btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.app .soahint{margin-top:6px;font-size:.84rem;color:var(--muted)}
+
+.app .soahead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+.app .soaco{font-size:1.05rem;letter-spacing:.01em}
+.app .soaaddr{margin-top:4px;font-size:.82rem;color:var(--muted);max-width:44ch}
+.app .soatitle{display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}
+.app .soaword{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
+
+.app .soameta{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;
+  flex-wrap:wrap;margin:16px 0 4px;padding:14px 0;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
+.app .soabill dt{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.app .soabill dd{margin-top:5px;display:flex;flex-direction:column;gap:2px;font-size:.92rem}
+.app .soasum{display:grid;gap:5px;min-width:210px}
+.app .soasum>div{display:flex;justify-content:space-between;gap:16px;font-size:.88rem}
+.app .soasum dt{color:var(--muted)}
+.app .soasum dd{font-variant-numeric:tabular-nums}
+.app .soasum .due{padding-top:6px;border-top:1px solid var(--line);font-weight:700}
+
+/* Money reads down the column, so it is right-aligned and tabular. */
+.app .utable th.amt,.app .utable td.amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.app .utable td.owed,.app .soabal b.owed{color:#FF8FA3}
+.app .utable tr.soatotal td{border-top:1px solid var(--line);font-weight:700;background:var(--s2)}
+
+.app .soabal{display:flex;justify-content:flex-end;align-items:baseline;gap:14px;
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.app .soabal span{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.app .soabal b{font-size:1.08rem;font-variant-numeric:tabular-nums}
+
+.app .soaline{grid-template-columns:140px minmax(140px,1.8fr) minmax(110px,1fr) 120px 120px 36px}
+.app .soafoot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line-2);
+  font-size:.84rem;color:var(--muted);display:grid;gap:3px}
+.app .soadrop{margin-top:10px;display:flex;justify-content:flex-end}
+
+@media (max-width:900px){
+  .app .soaadd{grid-template-columns:1fr 1fr!important}
+  .app .soameta{flex-direction:column}
+  .app .soasum{width:100%}
+  .app .soatitle{align-items:flex-start;text-align:left}
+}
+
 /* Tasks under their milestone: indented, quieter, and clearly a child of the
    row above rather than a table of its own. */
 .app .utable tr.subrow td{border-bottom:1px solid var(--line-2);padding:0 14px 12px}

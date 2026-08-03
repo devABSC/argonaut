@@ -3,9 +3,17 @@ import { requireAccess } from "@/lib/guard";
 import { findSection, FINANCE_CONFIG_TABS } from "@/lib/nav";
 import AppShell, { type TopTab } from "../../AppShell";
 import CashAdvanceList from "../CashAdvanceList";
+import SoaPanel from "../SoaPanel";
 
-export default async function FinanceTab({ params }: { params: Promise<{ tab: string }> }) {
+export default async function FinanceTab({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ tab: string }>;
+  searchParams: Promise<{ bou?: string; emp?: string }>;
+}) {
   const { tab } = await params;
+  const { bou, emp } = await searchParams;
   const { user, nav, section, tab: active } = await requireAccess("finance", tab);
 
   // The strip belongs to Expenses / Cash Adv / Bills only. BIR, Payroll,
@@ -25,7 +33,7 @@ export default async function FinanceTab({ params }: { params: Promise<{ tab: st
         on: t.slug === active.slug || (active.slug === "config" && t.slug === FINANCE_CONFIG_TABS[0].slug),
       }))
     : onStrip
-      ? strip.map((t) => ({ href: `/finance/${t.slug}`, label: t.label, on: t.slug === active.slug }))
+      ? strip.map((t) => ({ href: `/finance/${t.slug}`, label: t.label, title: t.title, on: t.slug === active.slug }))
       : [];
 
   return (
@@ -38,6 +46,8 @@ export default async function FinanceTab({ params }: { params: Promise<{ tab: st
     >
       {active.slug === "cash-advance" ? (
         <CashAdvanceList />
+      ) : active.slug === "soa" ? (
+        <SoaPanel bou={bou} emp={emp} />
       ) : inConfig ? (
         <div className="panel">
           <h2>Chart of Accounts</h2>
