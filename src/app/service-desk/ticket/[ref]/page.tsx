@@ -30,7 +30,7 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
           formType: { include: { fields: { orderBy: { sortOrder: "asc" } } } },
           steps: {
             orderBy: { sequence: "asc" },
-            include: { approvers: { include: { user: { select: { name: true } } } } },
+            include: { approvers: { select: { userId: true, user: { select: { name: true } } } } },
           },
         },
       },
@@ -109,6 +109,7 @@ export default async function TicketPage({ params }: { params: Promise<{ ref: st
         steps={t.subcategory.steps}
         approvals={t.approvals}
         viewerId={user.id}
+        requesterName={t.requester.name}
         closed={t.status === "APPROVED" || t.status === "REJECTED" || t.status === "CANCELLED"}
       />
     </AppShell>

@@ -20,7 +20,7 @@ type Step = {
   description: string | null;
   slaDays: number;
   actor: string;
-  approvers: { user: { name: string } }[];
+  approvers: { userId: string; user: { name: string } }[];
 };
 
 const fmt = (d: Date) =>
@@ -40,19 +40,25 @@ export default function RouteTrail({
   steps,
   approvals,
   viewerId,
+  requesterName,
   closed,
 }: {
   steps: Step[];
   approvals: Approval[];
   viewerId: string;
+  requesterName: string;
   closed: boolean;
 }) {
+  // Rows saved before step names were recorded carry an empty stepName. Those
+  // are matched by who acted rather than by sequence: the old numbering
+  // counted only steps that had an approver, so it points at the wrong step.
+  const legacy = approvals.length > 0 && approvals.every((a) => !a.stepName);
   const pending = approvals.filter((a) => a.decision === "PENDING");
   const currentSeq = pending.length ? Math.min(...pending.map((a) => a.sequence)) : null;
 
   return (
     <div className="panel" style={{ marginTop: 18 }}>
-      <h2>Routes <span className="count">{steps.length} step{steps.length === 1 ? "" : "s"}</span></h2>
+      <h2>Workflow <span className="count">{steps.length} step{steps.length === 1 ? "" : "s"}</span></h2>
 
       {steps.length === 0 ? (
         <p style={{ marginTop: 14 }}>
@@ -60,20 +66,23 @@ export default function RouteTrail({
         </p>
       ) : (
         <ol className="trail">
-          {steps.map((st, idx) => {
-            // Matched on the snapshotted step name. Rows saved before names were
-            // recorded fall back to the sequence band the snapshot used.
-            const band = (idx + 1) * 100;
+          {steps.map((st) => {
+            const assigned = new Set(st.approvers.map((a) => a.userId));
             const rows = approvals
               .filter((a) =>
-                a.stepName ? a.stepName === st.name : a.sequence >= band && a.sequence < band + 100,
+                legacy
+                  ? st.actor === "APPROVER" && assigned.has(a.approverId)
+                  : a.stepName === st.name,
               )
               .sort((a, b) => a.sequence - b.sequence);
 
             const decided = rows.length > 0 && rows.every((r) => r.decision !== "PENDING");
             const rejected = rows.some((r) => r.decision === "REJECTED");
             const isCurrent = currentSeq !== null && rows.some((r) => r.sequence === currentSeq);
-            const unassigned = rows.length === 0;
+            // Nobody is on the step at all, versus the ticket simply predating
+            // the snapshot — very different things to tell the reader.
+            const noOne = st.actor === "APPROVER" && st.approvers.length === 0;
+            const unrecorded = rows.length === 0 && !noOne;
 
             const state = rejected
               ? "rejected"
@@ -81,7 +90,7 @@ export default function RouteTrail({
                 ? "approved"
                 : isCurrent
                   ? "current"
-                  : unassigned
+                  : rows.length === 0
                     ? "skipped"
                     : "waiting";
 
@@ -94,7 +103,7 @@ export default function RouteTrail({
                     <b className="route">{st.name}</b>
                     <span className="who">
                       {st.actor === "REQUESTOR"
-                        ? "REQUESTOR"
+                        ? requesterName.toUpperCase()
                         : st.approvers.map((a) => a.user.name).join(", ").toUpperCase() || "UNASSIGNED"}
                     </span>
                     <span className="spacer" />
@@ -105,7 +114,12 @@ export default function RouteTrail({
                         : isCurrent ? "s-PENDING"
                         : "s-SUSPENDED"
                     }`}>
-                      {rejected ? "REJECTED" : decided ? "APPROVED" : isCurrent ? "AWAITING" : unassigned ? "NO ONE ASSIGNED" : "QUEUED"}
+                      {rejected ? "REJECTED"
+                        : decided ? "APPROVED"
+                        : isCurrent ? "AWAITING"
+                        : noOne ? "NO ONE ASSIGNED"
+                        : unrecorded ? "NOT RECORDED"
+                        : "QUEUED"}
                     </span>
                   </div>
 
@@ -137,9 +151,14 @@ export default function RouteTrail({
                     );
                   })}
 
-                  {unassigned && (
+                  {noOne && (
                     <p className="reason dim">
-                      No approver was assigned to this step when the ticket was raised, so it is not awaiting anyone.
+                      No approver is set on this step, so nothing waits here. Assign one under Workflow → Routes.
+                    </p>
+                  )}
+                  {unrecorded && (
+                    <p className="reason dim">
+                      This ticket was raised before the step was captured, so no decision is recorded against it.
                     </p>
                   )}
                 </div>
