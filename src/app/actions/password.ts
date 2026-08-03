@@ -69,6 +69,17 @@ export async function requestReset(_prev: ResetState, formData: FormData): Promi
       type: "request", module: "Sign in > Forgot password",
       description: `Reset code issued for ${email}`, user: null,
     });
+  } else {
+    // The requester is told nothing — otherwise this becomes an account
+    // enumerator. The audit log is where it shows up, so someone waiting on a
+    // code that was never generated can actually be found.
+    await logHistory({
+      type: "request", module: "Sign in > Forgot password",
+      description: user
+        ? `Reset refused for ${email} — account is ${user.status.toLowerCase()}, no code sent`
+        : `Reset requested for ${email} — no such account, no code sent`,
+      user: null,
+    });
   }
 
   return {
