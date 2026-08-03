@@ -56,6 +56,7 @@ model User {
   // Service desk
   workflowSteps  WorkflowStepApprover[] @relation("StepActorOf")
   menuGrants     MenuGrant[]            @relation("MenuGrants")
+  employee       Employee?              @relation("EmployeeAccount")
   requests       ServiceRequest[]       @relation("RequestedBy")
   approvalsGiven RequestApproval[]      @relation("ApprovalsGiven")
 }
@@ -295,4 +296,72 @@ model MenuGrant {
   @@unique([nodeKey, role])
   @@unique([nodeKey, userId])
   @@index([userId])
+}
+
+/**
+ * ============================================================== HRIS ======
+ * The person record. Deliberately separate from `User`: HR data is more
+ * sensitive than a login row and has a different audience, so a breach or a
+ * broad query against one must not expose the other. An employee may have no
+ * account and an account need not be an employee — hence the nullable link.
+ */
+model Employee {
+  id String @id @default(cuid())
+
+  // --- identity, as supplied by the source system ---
+  /// Primary key from the system this was imported from.
+  rowid      Int     @unique
+  /// The source system's own person identifier.
+  individ    String  @unique
+  lastName   String
+  firstName  String
+  middleName String?
+
+  typeName  Int?
+  roleName  String?
+  company   String?
+  jobTitle  String?
+  emailAdd  String?
+  birthDate DateTime?
+
+  // --- contact ---
+  street   String?
+  city     String?
+  state    String?
+  country  String?
+  zipCode  String?
+  language String?
+  timeZone String?
+  hobbies  String?
+  landline String?
+  mobile   String?
+  fax      String?
+
+  // --- source-system bookkeeping, kept verbatim ---
+  status             Int?
+  biometricID        String?
+  accountType        Int?
+  companyAccountCode String?
+  isSenior           Boolean?
+  isPWD              Boolean?
+  lastmemo           String?
+  bstdate            DateTime?
+  departmentID       String?
+  retailerName       String?
+  department         String?
+  emailAddref        String?
+  bouID              String?
+  encodedBy          String?
+  sourceCreatedAt    DateTime?
+  sourceUpdatedAt    DateTime?
+
+  /// Optional link to a login account. Null for staff with no access.
+  userId String? @unique
+  user   User?   @relation("EmployeeAccount", fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([lastName, firstName])
+  @@index([company])
 }
