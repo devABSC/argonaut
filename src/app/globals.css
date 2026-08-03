@@ -190,6 +190,10 @@ button{font-family:inherit}
 .app .subnav a{display:block;padding:7px 10px;border-radius:8px;font-size:.86rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:background .16s,color .16s}
 .app .subnav a:hover{background:var(--s4);color:var(--text)}
 .app .subnav a.subactive{color:var(--cyan);background:rgba(56,232,255,.09)}
+/* A page that belongs to the page above it, nested one level in the rail. */
+.app .subnav a.subchild{margin-left:11px;padding-left:14px;font-size:.82rem;
+  border-left:1px solid var(--line)}
+.app .subnav a.subchild::before{content:"";position:absolute}
 .app.nav-rail .subnav{display:none}
 
 /* Section tab strip (HRIS tabs, Finance tabs) */

@@ -905,10 +905,14 @@ model Candidate {
 
   /// The CV itself. Held in the database rather than object storage: it needs
   /// no extra credentials, and a CV is a few hundred kilobytes.
-  cvData     Bytes?
-  cvFileName String?
-  cvMime     String?
-  cvSize     Int?
+  cvData       Bytes?
+  /// When the CV was last put on the record. Kept apart from createdAt: a
+  /// candidate can be entered first and their CV attached later, and the
+  /// upload analysis counts the upload, not the record.
+  cvUploadedAt DateTime?
+  cvFileName   String?
+  cvMime       String?
+  cvSize       Int?
 
   // --- read off the CV ---
   summary         String?

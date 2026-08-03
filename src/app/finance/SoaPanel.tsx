@@ -37,14 +37,17 @@ const running = (n: number) => (n === 0 ? "-" : n < 0 ? `(${amt(-n)})` : amt(n))
 export default async function SoaPanel({
   bou = "",
   emp = "",
-  ref = "",
+  soaRef = "",
   editLine = "",
   viewer,
 }: {
   bou?: string;
   emp?: string;
-  /** Which statement is open, by its reference. Human-readable, not an id. */
-  ref?: string;
+  /**
+   * Which statement is open, by its reference. Not called `ref` — React
+   * reserves that name and never passes it to the component.
+   */
+  soaRef?: string;
   /** Which line is being corrected. One at a time. */
   editLine?: string;
   viewer: { id: string; role: RoleKey; email: string };
@@ -90,7 +93,7 @@ export default async function SoaPanel({
   });
 
   // One statement is open at a time; the rest stay a row in the list.
-  const open = totals.find((t) => t.s.ref === ref) ?? null;
+  const open = totals.find((t) => t.s.ref === soaRef) ?? null;
 
   const href = (r: string) => {
     const q = new URLSearchParams();
@@ -106,7 +109,7 @@ export default async function SoaPanel({
     <>
       <input type="hidden" name="bou" value={bou} />
       <input type="hidden" name="emp" value={empId} />
-      <input type="hidden" name="ref" value={ref} />
+      <input type="hidden" name="ref" value={soaRef} />
     </>
   );
 
@@ -158,7 +161,7 @@ export default async function SoaPanel({
               </tr></thead>
               <tbody>
                 {totals.map((t) => (
-                  <tr key={t.s.id} className={t.s.ref === ref ? "iscurrent" : undefined}>
+                  <tr key={t.s.id} className={t.s.ref === soaRef ? "iscurrent" : undefined}>
                     <td data-label="SOA No.">
                       {/* The reference opens the statement — readable, and it
                           keeps record ids out of the address bar. */}

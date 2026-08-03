@@ -9,6 +9,12 @@ export type NavTab = {
   hideInSubmenu?: boolean;
   /** Spelt-out name, shown on hover where the label is an abbreviation. */
   title?: string;
+  /**
+   * Slug of the tab this one sits under. Nested one level in the rail, so a
+   * page that belongs to another page reads that way instead of appearing
+   * beside it.
+   */
+  parent?: string;
 };
 export type NavSection = {
   key: string;
@@ -79,8 +85,8 @@ export const NAV: NavSection[] = [
       { slug: "receivable", label: "Receivable" },
       { slug: "config", label: "Config" },
       // Reachable, but reached through their parent rather than listed beside it.
-      { slug: "coa", label: "COA", title: "Chart of Accounts", hideInSubmenu: true },
-      { slug: "ageing", label: "Ageing", hideInSubmenu: true },
+      { slug: "coa", label: "COA", title: "Chart of Accounts", parent: "config" },
+      { slug: "ageing", label: "Ageing", parent: "receivable" },
     ],
     children: "submenu",
     topTabs: [

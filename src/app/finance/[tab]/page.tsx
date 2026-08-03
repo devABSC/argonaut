@@ -55,7 +55,7 @@ export default async function FinanceTab({
       {active.slug === "cash-advance" ? (
         <CashAdvanceList />
       ) : active.slug === "soa" ? (
-        <SoaPanel bou={bou} emp={emp} ref={ref} editLine={editLine}
+        <SoaPanel bou={bou} emp={emp} soaRef={ref} editLine={editLine}
           viewer={{ id: user.id, role: user.role, email: user.email }} />
       ) : inReceivable ? (
         <div className="panel">

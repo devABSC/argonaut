@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, type ReactNode } from "react";
+import { Fragment, Suspense, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "./actions/auth";
 import ThemeToggle from "./ThemeToggle";
@@ -182,16 +182,31 @@ export default function AppShell({
               {/* Sublinks in the rail — only for sections that use a submenu. */}
               {s.key === activeSection && s.children === "submenu" && s.tabs.length > 1 && (
                 <div className="subnav navtext">
-                  {s.tabs.filter((t) => !t.hideInSubmenu).map((t) => (
-                    <Link
-                      key={t.slug}
-                      href={`/${s.key}/${t.slug}`}
-                      className={t.slug === activeTab ? "subactive" : undefined}
-                      title={t.title}
-                      onClick={() => setOpen(false)}
-                    >
-                      {t.label}
-                    </Link>
+                  {s.tabs.filter((t) => !t.hideInSubmenu && !t.parent).map((t) => (
+                    <Fragment key={t.slug}>
+                      <Link
+                        href={`/${s.key}/${t.slug}`}
+                        className={t.slug === activeTab ? "subactive" : undefined}
+                        title={t.title}
+                        onClick={() => setOpen(false)}
+                      >
+                        {t.label}
+                      </Link>
+                      {/* Pages that belong to this one, nested a level in. */}
+                      {s.tabs
+                        .filter((c) => c.parent === t.slug && !c.hideInSubmenu)
+                        .map((c) => (
+                          <Link
+                            key={c.slug}
+                            href={`/${s.key}/${c.slug}`}
+                            className={c.slug === activeTab ? "subchild subactive" : "subchild"}
+                            title={c.title}
+                            onClick={() => setOpen(false)}
+                          >
+                            {c.label}
+                          </Link>
+                        ))}
+                    </Fragment>
                   ))}
                 </div>
               )}
