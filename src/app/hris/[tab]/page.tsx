@@ -29,6 +29,7 @@ export default async function HrisTab({
           bou={bou ?? ""}
           company={company ?? ""}
           page={Math.max(1, Number(page) || 1)}
+          viewer={{ role: user.role, company: user.company }}
         />
       ) : active.slug === "personal-info" ? (
         <PersonalInfoPanel empId={emp} />

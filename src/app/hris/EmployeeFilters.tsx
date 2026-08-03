@@ -5,13 +5,15 @@
  * filtered view can be shared or bookmarked.
  */
 export default function EmployeeFilters({
-  q, bou, company, bous, companies,
+  q, bou, company, bous, companies, showCompany,
 }: {
   q: string;
   bou: string;
   company: string;
   bous: string[];
   companies: string[];
+  /** The company filter is the owner's tool; others are pinned to their own. */
+  showCompany: boolean;
 }) {
   return (
     <form className="empsearch" action="/hris/employees" method="get">
@@ -24,13 +26,15 @@ export default function EmployeeFilters({
         {bous.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
 
-      <select name="company" defaultValue={company} aria-label="Filter by company">
-        <option value="">All companies</option>
-        {companies.map((c) => <option key={c} value={c}>{c}</option>)}
-      </select>
+      {showCompany && (
+        <select name="company" defaultValue={company} aria-label="Filter by company">
+          <option value="">All companies</option>
+          {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      )}
 
       <button type="submit">Filter</button>
-      {(q || bou || company) && <a className="clear" href="/hris/employees">Clear</a>}
+      {(q || bou || (showCompany && company)) && <a className="clear" href="/hris/employees">Clear</a>}
     </form>
   );
 }
