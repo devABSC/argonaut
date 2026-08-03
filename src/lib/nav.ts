@@ -2,7 +2,14 @@
 // AppShell renders it and the route pages validate against it.
 import type { RoleKey } from "./roles.ts";
 
-export type NavTab = { slug: string; label: string; /** Reachable route, but not listed in the left-pane submenu. */ hideInSubmenu?: boolean };
+export type NavTab = {
+  slug: string;
+  label: string;
+  /** Reachable route, but not listed in the left-pane submenu. */
+  hideInSubmenu?: boolean;
+  /** Spelt-out name, shown on hover where the label is an abbreviation. */
+  title?: string;
+};
 export type NavSection = {
   key: string;
   label: string;
@@ -69,6 +76,9 @@ export const NAV: NavSection[] = [
       { slug: "payroll", label: "Payroll" },
       { slug: "payable", label: "Payable" },
       { slug: "receivable", label: "Receivable" },
+      { slug: "config", label: "Config" },
+      // Reachable, but reached through Config rather than listed beside it.
+      { slug: "coa", label: "COA", title: "Chart of Accounts", hideInSubmenu: true },
     ],
     children: "submenu",
     topTabs: [
@@ -182,3 +192,8 @@ export function canViewSection(role: RoleKey, key: string): boolean {
   const s = findSection(key);
   return !!s && (!s.roles || s.roles.includes(role));
 }
+
+/** The tab strip shown when a Finance sublink is open. Config has its own. */
+export const FINANCE_CONFIG_TABS: NavTab[] = [
+  { slug: "coa", label: "COA", title: "Chart of Accounts" },
+];

@@ -100,7 +100,7 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
-export type TopTab = { href: string; label: string; on: boolean };
+export type TopTab = { href: string; label: string; on: boolean; title?: string };
 
 export default function AppShell({
   user,
@@ -177,6 +177,7 @@ export default function AppShell({
                       key={t.slug}
                       href={`/${s.key}/${t.slug}`}
                       className={t.slug === activeTab ? "subactive" : undefined}
+                      title={t.title}
                       onClick={() => setOpen(false)}
                     >
                       {t.label}
@@ -219,6 +220,7 @@ export default function AppShell({
                 role="tab"
                 aria-selected={t.on}
                 className={t.on ? "tab active" : "tab"}
+                title={t.title}
               >
                 {t.label}
               </Link>

@@ -1,6 +1,6 @@
 import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
-import { findSection } from "@/lib/nav";
+import { findSection, FINANCE_CONFIG_TABS } from "@/lib/nav";
 import AppShell, { type TopTab } from "../../AppShell";
 import CashAdvanceList from "../CashAdvanceList";
 
@@ -13,9 +13,20 @@ export default async function FinanceTab({ params }: { params: Promise<{ tab: st
   // carry a copy of it.
   const strip = findSection("finance")?.topTabs ?? [];
   const onStrip = strip.some((t) => t.slug === active.slug);
-  const topTabs: TopTab[] = onStrip
-    ? strip.map((t) => ({ href: `/finance/${t.slug}`, label: t.label, on: t.slug === active.slug }))
-    : [];
+  // Config carries its own strip; Chart of Accounts sits under it rather than
+  // beside Payroll and Payable in the left pane.
+  const inConfig = active.slug === "config" || FINANCE_CONFIG_TABS.some((t) => t.slug === active.slug);
+
+  const topTabs: TopTab[] = inConfig
+    ? FINANCE_CONFIG_TABS.map((t) => ({
+        href: `/finance/${t.slug}`,
+        label: t.label,
+        title: t.title,
+        on: t.slug === active.slug || (active.slug === "config" && t.slug === FINANCE_CONFIG_TABS[0].slug),
+      }))
+    : onStrip
+      ? strip.map((t) => ({ href: `/finance/${t.slug}`, label: t.label, on: t.slug === active.slug }))
+      : [];
 
   return (
     <AppShell
@@ -27,6 +38,14 @@ export default async function FinanceTab({ params }: { params: Promise<{ tab: st
     >
       {active.slug === "cash-advance" ? (
         <CashAdvanceList />
+      ) : inConfig ? (
+        <div className="panel">
+          <h2>Chart of Accounts</h2>
+          <p>
+            The account codes everything in Finance posts against. Not built
+            yet — say what the code structure should look like and it can be.
+          </p>
+        </div>
       ) : (
         <div className="panel">
           <h2>{active.label}</h2>
