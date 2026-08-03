@@ -1,15 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import EmployeeFilters from "./EmployeeFilters";
+import AddEmployee from "./AddEmployee";
 
 const PAGE = 50;
 
 /** All employees, searchable. The HRIS landing page. */
 export default async function EmployeeList({
-  q = "", bou = "", company = "", page = 1, viewer,
+  q = "", bou = "", dept = "", company = "", page = 1, viewer,
 }: {
   q?: string;
   bou?: string;
+  dept?: string;
   company?: string;
   page?: number;
   viewer: { role: string; company: string | null };
@@ -35,10 +37,11 @@ export default async function EmployeeList({
         }
       : {}),
     ...(bou ? { bouID: bou } : {}),
+    ...(dept ? { subBou: dept } : {}),
     ...(scopedCompany ? { company: scopedCompany } : {}),
   };
 
-  const [total, all, rows, bouRows, companyRows] = await Promise.all([
+  const [total, all, rows, bouRows, companyRows, deptRows] = await Promise.all([
     prisma.employee.count({ where }),
     prisma.employee.count(),
     prisma.employee.findMany({
@@ -49,6 +52,7 @@ export default async function EmployeeList({
       select: {
         id: true, individ: true, lastName: true, firstName: true, middleName: true,
         jobTitle: true, emailAdd: true, mobile: true, city: true, company: true,
+        bouID: true, subBou: true,
       },
     }),
     prisma.employee.findMany({
@@ -59,14 +63,20 @@ export default async function EmployeeList({
       where: { NOT: { company: null } },
       distinct: ["company"], select: { company: true }, orderBy: { company: "asc" },
     }),
+    prisma.employee.findMany({
+      where: { AND: [{ NOT: { subBou: null } }, { NOT: { subBou: "" } }] },
+      distinct: ["subBou"], select: { subBou: true }, orderBy: { subBou: "asc" },
+    }),
   ]);
 
   const bous = bouRows.map((b) => b.bouID!).filter(Boolean);
   const companies = companyRows.map((c) => c.company!).filter(Boolean);
+  const depts = deptRows.map((d) => d.subBou!).filter(Boolean);
   const qs = (extra: Record<string, string | number>) => {
     const p = new URLSearchParams();
     if (term) p.set("q", term);
     if (bou) p.set("bou", bou);
+    if (dept) p.set("dept", dept);
     if (isOwner && company) p.set("company", company);
     for (const [k, v] of Object.entries(extra)) p.set(k, String(v));
     return p.toString();
@@ -83,12 +93,16 @@ export default async function EmployeeList({
         <EmployeeFilters
           q={term}
           bou={bou}
+          dept={dept}
           company={company}
           bous={bous}
+          depts={depts}
           companies={isOwner ? companies : []}
           showCompany={isOwner}
         />
       </div>
+
+      <AddEmployee bous={bous} companies={companies} />
 
       {!isOwner && viewer.company && (
         <p className="pvhelp" style={{ marginTop: 10 }}>
@@ -113,6 +127,7 @@ export default async function EmployeeList({
                 <tr>
                   <th className="numcol">No.</th>
                   <th>Employee</th><th>ID</th><th>Job Title</th>
+                  <th>BOU</th><th>Department</th>
                   <th>Email</th><th>Mobile</th><th>City</th>
                 </tr>
               </thead>
@@ -128,6 +143,8 @@ export default async function EmployeeList({
                       <Link className="ticket" href={`/hris/personal-info?emp=${e.id}`}>{e.individ}</Link>
                     </td>
                     <td data-label="Job Title">{e.jobTitle ?? "—"}</td>
+                    <td className="muted" data-label="BOU">{e.bouID ?? "—"}</td>
+                    <td className="muted" data-label="Department">{e.subBou ?? "—"}</td>
                     <td className="muted" data-label="Email">{e.emailAdd ?? "—"}</td>
                     <td className="muted nowrap" data-label="Mobile">{e.mobile ?? "—"}</td>
                     <td className="muted" data-label="City">{e.city ?? "—"}</td>

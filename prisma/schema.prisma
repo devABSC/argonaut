@@ -353,6 +353,26 @@ model Employee {
   sourceCreatedAt    DateTime?
   sourceUpdatedAt    DateTime?
 
+  // --- fields captured by the HRIS form ---
+  /// Sub-BOU or department under the BOU.
+  subBou           String?
+  gender           String?
+  mobile2          String?
+  startDate        DateTime?
+  /// Term-Based, Probationary, Regular…
+  empStatus        String?
+  /// Rank & File, Supervisory, Managerial…
+  empType          String?
+  endOfContract    DateTime?
+  lastWorkingDate  DateTime?
+  terminationDate  DateTime?
+  /// Active, Resigned, Terminated…
+  employmentStatus String    @default("Active")
+  remarks          String?
+  /// Can sign in to systems / may file expenses.
+  hasAccess        Boolean   @default(false)
+  hasExpense       Boolean   @default(false)
+
   /// Optional link to a login account. Null for staff with no access.
   userId String? @unique
   user   User?   @relation("EmployeeAccount", fields: [userId], references: [id], onDelete: SetNull)

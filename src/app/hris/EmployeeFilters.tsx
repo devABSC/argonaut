@@ -5,12 +5,14 @@
  * filtered view can be shared or bookmarked.
  */
 export default function EmployeeFilters({
-  q, bou, company, bous, companies, showCompany,
+  q, bou, dept, company, bous, depts, companies, showCompany,
 }: {
   q: string;
   bou: string;
+  dept: string;
   company: string;
   bous: string[];
+  depts: string[];
   companies: string[];
   /** The company filter is the owner's tool; others are pinned to their own. */
   showCompany: boolean;
@@ -26,6 +28,11 @@ export default function EmployeeFilters({
         {bous.map((b) => <option key={b} value={b}>{b}</option>)}
       </select>
 
+      <select name="dept" defaultValue={dept} aria-label="Filter by department">
+        <option value="">{depts.length ? "All departments" : "No department data"}</option>
+        {depts.map((d) => <option key={d} value={d}>{d}</option>)}
+      </select>
+
       {showCompany && (
         <select name="company" defaultValue={company} aria-label="Filter by company">
           <option value="">All companies</option>
@@ -34,7 +41,7 @@ export default function EmployeeFilters({
       )}
 
       <button type="submit">Filter</button>
-      {(q || bou || (showCompany && company)) && <a className="clear" href="/hris/employees">Clear</a>}
+      {(q || bou || dept || (showCompany && company)) && <a className="clear" href="/hris/employees">Clear</a>}
     </form>
   );
 }
