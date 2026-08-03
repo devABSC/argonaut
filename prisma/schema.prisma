@@ -49,8 +49,9 @@ model User {
   manager   User?   @relation("Reports", fields: [managerId], references: [id], onDelete: SetNull)
   reports   User[]  @relation("Reports")
 
-  sessions Session[]
-  projects Project[]
+  sessions       Session[]
+  projects       Project[]
+  milestoneTasks MilestoneTask[] @relation("MilestoneTaskAuthor")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -132,16 +133,50 @@ model Milestone {
   dueDate     DateTime?
   completedAt DateTime?
   /// Pending, In Progress, Done, Missed.
-  status      String @default("Pending")
+  status      String    @default("Pending")
+
+  /// Position in the run. Milestones are sequential, so the order is set by
+  /// hand rather than inferred from dates — a checkpoint can be re-dated
+  /// without silently jumping the queue.
+  seq Int @default(0)
 
   /// Who is carrying it.
   ownerId String?
   owner   Employee? @relation("MilestoneOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
+  tasks MilestoneTask[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([projectId])
+}
+
+/// A unit of work under a milestone, added by the people carrying it.
+/// Deliberately not the `Task` model — that one is the master list of step
+/// names a workflow route picks from. This is real work on one project, and it
+/// belongs to exactly one milestone.
+model MilestoneTask {
+  id          String    @id @default(cuid())
+  milestoneId String
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  startedAt   DateTime?
+  closedAt    DateTime?
+  /// Open or Closed. Simpler than its milestone on purpose — a task is either
+  /// still being worked on or it is not.
+  status      String    @default("Open")
+
+  /// Who added it, so a task always traces back to a person.
+  createdById String
+  createdBy   User   @relation("MilestoneTaskAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([milestoneId])
 }
 
 /// Something stopping the work now. A risk that has already happened.
@@ -152,9 +187,9 @@ model Roadblock {
 
   description String
   /// Low, Medium, High, Critical.
-  severity    String @default("Medium")
+  severity    String    @default("Medium")
   /// Open, Escalated, Resolved.
-  status      String @default("Open")
+  status      String    @default("Open")
   resolution  String?
   raisedAt    DateTime  @default(now())
   resolvedAt  DateTime?
@@ -177,11 +212,11 @@ model Risk {
 
   description String
   /// Low, Medium, High.
-  likelihood  String @default("Medium")
-  impact      String @default("Medium")
+  likelihood  String    @default("Medium")
+  impact      String    @default("Medium")
   mitigation  String?
   /// Open, Mitigated, Accepted, Closed.
-  status      String @default("Open")
+  status      String    @default("Open")
   closedAt    DateTime?
 
   ownerId String?
@@ -469,7 +504,7 @@ model Employee {
   state    String?
   /// Region of the chosen city, copied at save time.
   region   String?
-  country  String   @default("Philippines")
+  country  String  @default("Philippines")
   zipCode  String?
   language String?
   timeZone String?
@@ -516,16 +551,16 @@ model Employee {
   employmentStatus String    @default("Active")
   remarks          String?
   // --- statutory identifiers (Philippines) ---
-  compId    String?
-  tinId     String?
-  sssId     String?
-  philId    String?
-  pagibigId String?
-  hmoId     String?
+  compId           String?
+  tinId            String?
+  sssId            String?
+  philId           String?
+  pagibigId        String?
+  hmoId            String?
 
   /// Can sign in to systems / may file expenses.
-  hasAccess        Boolean   @default(false)
-  hasExpense       Boolean   @default(false)
+  hasAccess  Boolean @default(false)
+  hasExpense Boolean @default(false)
 
   /// Set when this employee was hired through Recruitment.
   candidate Candidate? @relation("HiredFrom")
@@ -534,9 +569,9 @@ model Employee {
   projects        ProjectMember[] @relation("ProjectMemberships")
   managesProjects Project[]       @relation("ProjectManager")
   oicProjects     Project[]       @relation("ProjectOic")
-  milestonesOwned Milestone[]    @relation("MilestoneOwner")
-  roadblocksOwned Roadblock[]    @relation("RoadblockOwner")
-  risksOwned      Risk[]         @relation("RiskOwner")
+  milestonesOwned Milestone[]     @relation("MilestoneOwner")
+  roadblocksOwned Roadblock[]     @relation("RoadblockOwner")
+  risksOwned      Risk[]          @relation("RiskOwner")
 
   /// Optional link to a login account. Null for staff with no access.
   userId String? @unique
@@ -760,9 +795,9 @@ model Bou {
   managerEmail String?
   isActive     Boolean @default(true)
 
-  employees    Employee[]
-  candidates   Candidate[]
-  bouAccess    BouAccess[]   @relation("BouAccess")
+  employees  Employee[]
+  candidates Candidate[]
+  bouAccess  BouAccess[] @relation("BouAccess")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -827,14 +862,14 @@ model Candidate {
   aiData          Json?
   /// The assessment, when it has been run. Held whole so the tab renders it
   /// without a second call, and so a re-run can be compared against the last.
-  assessment    Json?
-  assessedAt    DateTime?
+  assessment      Json?
+  assessedAt      DateTime?
   /// Input + output tokens of the last run, so the cost is visible.
-  assessTokens  Int?
+  assessTokens    Int?
 
   /// A recruiter's own notes against the AI findings — kept apart from the
   /// general notes so a judgement is never mistaken for something the CV said.
-  aiNotes         String?
+  aiNotes String?
 
   // --- money ---
   /// What they are on now and what they want, as figures rather than a note,
@@ -862,9 +897,9 @@ model Candidate {
   recruiterId String?
   recruiter   User?   @relation("Recruiting", fields: [recruiterId], references: [id], onDelete: SetNull)
 
-  experience WorkExperience[]
-  references CharacterReference[]
-  preJoDocs  PreJoDoc[]
+  experience  WorkExperience[]
+  references  CharacterReference[]
+  preJoDocs   PreJoDoc[]
   assessments AssessmentRun[]
   verifyItems VerifyItem[]
   invites     CandidateInvite[]
@@ -910,8 +945,8 @@ model ProjectChange {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   /// What was touched — the project itself, or a milestone/roadblock/risk.
-  entity   String  @default("Project")
-  entityId String?
+  entity     String  @default("Project")
+  entityId   String?
   /// A readable name for the thing changed, kept even if the row is deleted.
   entityName String?
 
@@ -973,7 +1008,7 @@ model CharacterReference {
   email        String?
 
   /// What the reference said, and when they were reached.
-  remarks    String?
+  remarks     String?
   contactedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -1011,7 +1046,7 @@ model PreJoDoc {
   fileSize Int?
 
   verifiedById String?
-  verifiedBy   User?   @relation("PreJoVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedBy   User?     @relation("PreJoVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
   verifiedAt   DateTime?
 
   createdAt DateTime @default(now())
@@ -1130,7 +1165,7 @@ model MenuLabel {
   title   String?
 
   updatedById String?
-  updatedBy   User?   @relation("MenuRenames", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedBy   User?    @relation("MenuRenames", fields: [updatedById], references: [id], onDelete: SetNull)
   updatedAt   DateTime @default(now()) @updatedAt
 }
 

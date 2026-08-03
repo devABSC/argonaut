@@ -312,6 +312,12 @@ button{font-family:inherit}
 .app button.icon.save:hover,.app .inline-form button.icon:hover,.app button.approve.icon:hover{filter:brightness(1.08)}
 .app button.reject.icon{color:#FF8FA3;background:transparent;border-color:rgba(255,143,163,.32)}
 .app button.reject.icon:hover{background:rgba(255,143,163,.12)}
+/* Neutral icon button — reordering is not a destructive act, so it should not
+   wear the delete colour. Disabled at the ends of the run rather than hidden. */
+.app button.ghost.icon{color:var(--muted);background:transparent;border-color:var(--line);width:30px;height:30px;flex:0 0 30px}
+.app button.ghost.icon:hover:not(:disabled){color:var(--cyan);border-color:rgba(56,232,255,.42);background:rgba(56,232,255,.08)}
+.app button.ghost.icon:disabled{opacity:.3;cursor:default}
+.app button.ghost.icon svg{width:15px;height:15px}
 .app .rowform{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .app .rowform select{font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
 .app .rowform select:focus{outline:none;border-color:var(--cyan)}
@@ -830,6 +836,24 @@ button{font-family:inherit}
 .app .addrow input:focus,.app .addrow select:focus{outline:none;border-color:var(--cyan)}
 .app .addrow select{cursor:pointer}
 .app .msrow{grid-template-columns:minmax(140px,1.3fr) minmax(140px,1.6fr) 150px 150px 130px 36px}
+.app .taskadd{grid-template-columns:minmax(120px,1.2fr) minmax(120px,1.6fr) 140px 140px 110px 36px;
+  margin:8px 0 0;background:transparent}
+
+/* Tasks under their milestone: indented, quieter, and clearly a child of the
+   row above rather than a table of its own. */
+.app .utable tr.subrow td{border-bottom:1px solid var(--line-2);padding:0 14px 12px}
+.app .utable tr.subrow:hover td{background:transparent}
+.app .subtasks{border-left:2px solid var(--line);padding-left:12px}
+.app .subhead{display:flex;align-items:center;gap:8px;padding:2px 0 4px}
+.app .taskline{display:grid;gap:8px;align-items:center;padding:6px 0;
+  grid-template-columns:minmax(0,1fr) 110px 110px 110px 36px;border-top:1px solid var(--line-2)}
+.app .taskline:first-of-type{border-top:0}
+.app .taskname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}
+.app .taskline .cellsel{min-width:0}
+@media (max-width:900px){
+  .app .taskline{grid-template-columns:1fr 1fr;gap:6px}
+  .app .taskname{grid-column:1/-1;white-space:normal}
+}
 @media (max-width:900px){.app .addrow{grid-template-columns:1fr 1fr!important}
   .app .addrow button{grid-column:1/-1}}
 

@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
+import { notifyProjectManager } from "@/lib/project-notify";
 import { requireProjectMember, diff, display } from "@/lib/project-access";
 
 const text = (f: FormData, k: string) => String(f.get(k) ?? "").trim() || null;
@@ -82,6 +83,15 @@ export async function saveProjectInfo(formData: FormData) {
 
   revalidatePath(where);
   await logHistory({ type: "update", module: "Project > Projects", description: `Saved project ${name}`, user: { id: me.userId, name: me.name } });
+  // Handing the project to someone new is itself an assignment worth telling
+  // them about. Re-saving the same manager is not.
+  if (after.managerId && after.managerId !== before.managerId) {
+    await notifyProjectManager(
+      id,
+      "You were assigned as project manager",
+      `${me.name} assigned you as the project manager.`,
+    );
+  }
   done(where, changes.length ? `Project saved — ${changes.length} field${changes.length === 1 ? "" : "s"} changed.` : "Nothing changed.");
 }
 
@@ -92,9 +102,17 @@ export async function addMilestone(formData: FormData) {
   const where = at(projectId, "milestone");
   if (!projectId || !name) done(where, "Not added — a milestone needs a name.");
 
+  // New milestones go at the end of the run; the arrows move them from there.
+  const last = await prisma.milestone.findFirst({
+    where: { projectId },
+    orderBy: { seq: "desc" },
+    select: { seq: true },
+  });
+
   await prisma.milestone.create({
     data: {
       projectId,
+      seq: (last?.seq ?? 0) + 1,
       name,
       description: text(formData, "description"),
       dueDate: date(formData, "dueDate"),
@@ -138,6 +156,137 @@ export async function deleteMilestone(id: string) {
   revalidatePath(where);
   await logHistory({ type: "delete", module: "Project > Milestones", description: `Deleted milestone ${m.name}`, user: { id: me.userId, name: me.name } });
   done(where, `Milestone "${m.name}" deleted.`);
+}
+
+/**
+ * A task under a milestone. Adding one only needs project membership — the
+ * person carrying a milestone is picked from the project's members, so the
+ * membership check already covers "the member who received the milestone",
+ * without locking out the manager who needs to add on their behalf.
+ */
+/**
+ * Move a milestone one place up or down the run. Swaps positions with its
+ * neighbour in a transaction, so two people reordering at once can never leave
+ * a project with two milestones claiming the same spot.
+ */
+export async function moveMilestone(id: string, dir: "up" | "down") {
+  const me_ = await prisma.milestone.findUnique({
+    where: { id },
+    select: { projectId: true, seq: true, name: true },
+  });
+  if (!me_) return;
+  const me = await requireProjectMember(me_.projectId);
+
+  const neighbour = await prisma.milestone.findFirst({
+    where:
+      dir === "up"
+        ? { projectId: me_.projectId, seq: { lt: me_.seq } }
+        : { projectId: me_.projectId, seq: { gt: me_.seq } },
+    orderBy: { seq: dir === "up" ? "desc" : "asc" },
+    select: { id: true, seq: true },
+  });
+
+  const where = at(me_.projectId, "milestone");
+  // Already at the end of the run — nothing to swap with.
+  if (!neighbour) done(where, `"${me_.name}" is already ${dir === "up" ? "first" : "last"}.`);
+
+  await prisma.$transaction([
+    prisma.milestone.update({ where: { id }, data: { seq: neighbour.seq } }),
+    prisma.milestone.update({ where: { id: neighbour.id }, data: { seq: me_.seq } }),
+  ]);
+
+  revalidatePath(where);
+  await logHistory({ type: "update", module: "Project > Milestones", description: `Moved ${me_.name} ${dir}`, user: { id: me.userId, name: me.name } });
+  done(where, `"${me_.name}" moved ${dir}.`);
+}
+
+export async function addMilestoneTask(formData: FormData) {
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  if (!milestoneId) return;
+
+  const m = await prisma.milestone.findUnique({
+    where: { id: milestoneId },
+    select: { projectId: true, name: true },
+  });
+  if (!m) return;
+  const me = await requireProjectMember(m.projectId);
+
+  const where = at(m.projectId, "milestone");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) done(where, "Not added — a task needs a name.");
+
+  const startedAt = date(formData, "startedAt");
+  const closedAt = date(formData, "closedAt");
+  if (startedAt && closedAt && closedAt < startedAt) {
+    done(where, "Not added — the close date is before the start date.");
+  }
+
+  const status = String(formData.get("status") ?? "Open") === "Closed" ? "Closed" : "Open";
+
+  await prisma.milestoneTask.create({
+    data: {
+      milestoneId,
+      name,
+      description: text(formData, "description"),
+      startedAt,
+      // Closing a task without saying when stamps now, so a closed task always
+      // carries a date.
+      closedAt: status === "Closed" ? (closedAt ?? new Date()) : closedAt,
+      status,
+      createdById: me.userId,
+    },
+  });
+
+  revalidatePath(where);
+  await logHistory({ type: "create", module: "Project > Milestones", description: `Added task ${name} under ${m.name}`, user: { id: me.userId, name: me.name } });
+  await notifyProjectManager(
+    m.projectId,
+    "A task was added to your project",
+    `${me.name} added the task "${name}" under the milestone ${m.name}.`,
+  );
+  done(where, `Task "${name}" added under ${m.name}.`);
+}
+
+export async function setMilestoneTaskStatus(formData: FormData) {
+  const id = String(formData.get("taskId") ?? "");
+  const status = String(formData.get("status") ?? "").trim();
+  if (!id || (status !== "Open" && status !== "Closed")) return;
+
+  const prev = await prisma.milestoneTask.findUnique({
+    where: { id },
+    select: { milestone: { select: { projectId: true } } },
+  });
+  if (!prev) return;
+  const me = await requireProjectMember(prev.milestone.projectId);
+
+  const t = await prisma.milestoneTask.update({
+    where: { id },
+    data: { status, closedAt: status === "Closed" ? new Date() : null },
+    select: { name: true, milestone: { select: { projectId: true } } },
+  });
+
+  const where = at(t.milestone.projectId, "milestone");
+  revalidatePath(where);
+  await logHistory({ type: "update", module: "Project > Milestones", description: `Task ${t.name} → ${status}`, user: { id: me.userId, name: me.name } });
+  done(where, `Task "${t.name}" is now ${status.toLowerCase()}.`);
+}
+
+export async function deleteMilestoneTask(id: string) {
+  const owner = await prisma.milestoneTask.findUnique({
+    where: { id },
+    select: { milestone: { select: { projectId: true } } },
+  });
+  if (!owner) return;
+  const me = await requireProjectMember(owner.milestone.projectId);
+
+  const t = await prisma.milestoneTask.delete({
+    where: { id },
+    select: { name: true, milestone: { select: { projectId: true } } },
+  });
+  const where = at(t.milestone.projectId, "milestone");
+  revalidatePath(where);
+  await logHistory({ type: "delete", module: "Project > Milestones", description: `Deleted task ${t.name}`, user: { id: me.userId, name: me.name } });
+  done(where, `Task "${t.name}" deleted.`);
 }
 
 export async function addRoadblock(formData: FormData) {

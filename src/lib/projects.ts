@@ -26,6 +26,10 @@ export function isProjectView(slug: string): slug is ProjectView {
   return PROJECT_VIEWS.some((v) => v.slug === slug);
 }
 
+/// A task is either still being worked on or it is not. Kept simpler than
+/// its milestone on purpose.
+export const TASK_STATUS = ["Open", "Closed"] as const;
+
 export const MILESTONE_STATUS = ["Pending", "In Progress", "Done", "Missed"] as const;
 export const ROADBLOCK_STATUS = ["Open", "Escalated", "Resolved"] as const;
 export const RISK_STATUS = ["Open", "Mitigated", "Accepted", "Closed"] as const;

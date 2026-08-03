@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
+import { notifyProjectManager } from "@/lib/project-notify";
 import { projectViewer, requireProjectMember, diff, display } from "@/lib/project-access";
 
 const PATH = "/project/projects";
@@ -149,6 +150,11 @@ export async function addProjectMember(formData: FormData) {
 
   revalidatePath(PATH);
   await logHistory({ type: "create", module: "Project > Projects", description: `Added ${emp!.firstName} ${emp!.lastName} to a project`, user: { id: me.userId, name: me.name } });
+  await notifyProjectManager(
+    projectId,
+    "Someone was assigned to your project",
+    `${me.name} assigned ${emp!.firstName} ${emp!.lastName} to your project as ${holder}.`,
+  );
   done(PATH, `${emp!.firstName} ${emp!.lastName} added.`);
 }
 

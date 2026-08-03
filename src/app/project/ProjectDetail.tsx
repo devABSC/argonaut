@@ -1,15 +1,17 @@
+import { Fragment } from "react";
 import { prisma } from "@/lib/prisma";
 import {
   PROJECT_STATUS, MILESTONE_STATUS, ROADBLOCK_STATUS, RISK_STATUS,
-  SEVERITY, LIKELIHOOD, SUB_PILL,
+  SEVERITY, LIKELIHOOD, SUB_PILL, TASK_STATUS,
 } from "@/lib/projects";
 import {
   saveProjectInfo,
-  addMilestone, setMilestoneStatus, deleteMilestone,
+  addMilestone, setMilestoneStatus, deleteMilestone, moveMilestone,
+  addMilestoneTask, setMilestoneTaskStatus, deleteMilestoneTask,
   addRoadblock, setRoadblockStatus, deleteRoadblock,
   addRisk, setRiskStatus, deleteRisk,
 } from "../actions/project-detail";
-import { IconSave, IconTrash, IconPlus } from "../icons";
+import { IconSave, IconTrash, IconPlus, IconUp, IconDown } from "../icons";
 import CellSelect from "../settings/CellSelect";
 import LeadPicker from "./LeadPicker";
 
@@ -52,8 +54,12 @@ export default async function ProjectDetail({
     const [rows, owners] = await Promise.all([
       prisma.milestone.findMany({
         where: { projectId },
-        orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
-        include: { owner: { select: { firstName: true, lastName: true } } },
+        // The run is the order the user set, not the order the dates imply.
+        orderBy: [{ seq: "asc" }, { createdAt: "asc" }],
+        include: {
+          owner: { select: { firstName: true, lastName: true } },
+          tasks: { orderBy: [{ status: "asc" }, { createdAt: "asc" }] },
+        },
       }),
       ownerOptions(projectId),
     ]);
@@ -62,18 +68,12 @@ export default async function ProjectDetail({
     // The current milestone: the next one still to be reached, soonest first.
     // Undated ones fall behind dated ones rather than jumping the queue.
     const outstanding = rows.filter((r) => r.status !== "Done" && r.status !== "Missed");
-    const current =
-      outstanding.find((r) => r.status === "In Progress") ??
-      outstanding.find((r) => r.dueDate) ??
-      outstanding[0] ??
-      null;
+    // Sequential, so the current one is simply the first still to be reached.
+    const current = outstanding.find((r) => r.status === "In Progress") ?? outstanding[0] ?? null;
 
-    // Current first, then the rest of the outstanding ones, then what is closed.
-    const ordered = [
-      ...(current ? [current] : []),
-      ...outstanding.filter((r) => r.id !== current?.id),
-      ...rows.filter((r) => r.status === "Done" || r.status === "Missed"),
-    ];
+    // The table shows the run in order. Pulling the current one to the top
+    // would fight the arrows the user just pressed.
+    const ordered = rows;
 
     return (
       <>
@@ -97,7 +97,7 @@ export default async function ProjectDetail({
                 <dt>Owner</dt>
                 <dd>{current.owner ? `${current.owner.firstName} ${current.owner.lastName}` : "—"}</dd>
               </div>
-              <div><dt>Position</dt><dd>{doneCount + 1} of {rows.length}</dd></div>
+              <div><dt>Position</dt><dd>{rows.findIndex((r) => r.id === current.id) + 1} of {rows.length}</dd></div>
             </dl>
           </div>
         )}
@@ -136,31 +136,93 @@ export default async function ProjectDetail({
                 <tbody>
                   {ordered.map((m, i) => {
                     const late = m.dueDate && m.dueDate < new Date() && m.status !== "Done";
+                    const open = m.tasks.filter((t) => t.status !== "Closed").length;
                     return (
-                      <tr key={m.id} className={m.id === current?.id ? "iscurrent" : undefined}>
-                        <td className="numcol">{i + 1}</td>
-                        <td>
-                          <b>{m.name}</b>
-                          {m.description && <span className="muted"> — {m.description}</span>}
-                        </td>
-                        <td className={late ? "nowrap" : "muted nowrap"}>
-                          {day(m.dueDate)}{late && <span className="you">overdue</span>}
-                        </td>
-                        <td><Owner o={m.owner} /></td>
-                        <td>
-                          <form action={setMilestoneStatus}>
-                            <input type="hidden" name="milestoneId" value={m.id} />
-                            <CellSelect name="status" defaultValue={m.status}
-                              options={MILESTONE_STATUS.map((s) => ({ value: s, label: s }))} />
-                          </form>
-                        </td>
-                        <td className="muted nowrap">{day(m.completedAt)}</td>
-                        <td className="rowacts">
-                          <form action={deleteMilestone.bind(null, m.id)}>
-                            <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
-                          </form>
-                        </td>
-                      </tr>
+                      <Fragment key={m.id}>
+                        <tr className={m.id === current?.id ? "iscurrent" : undefined}>
+                          <td className="numcol">{i + 1}</td>
+                          <td>
+                            <b>{m.name}</b>
+                            {m.description && <span className="muted"> — {m.description}</span>}
+                          </td>
+                          <td className={late ? "nowrap" : "muted nowrap"}>
+                            {day(m.dueDate)}{late && <span className="you">overdue</span>}
+                          </td>
+                          <td><Owner o={m.owner} /></td>
+                          <td>
+                            <form action={setMilestoneStatus}>
+                              <input type="hidden" name="milestoneId" value={m.id} />
+                              <CellSelect name="status" defaultValue={m.status}
+                                options={MILESTONE_STATUS.map((s) => ({ value: s, label: s }))} />
+                            </form>
+                          </td>
+                          <td className="muted nowrap">{day(m.completedAt)}</td>
+                          <td className="rowacts">
+                            {/* Sequential, so the run is reordered by hand.
+                                Disabled at the ends rather than hidden, so the
+                                buttons do not shift as rows move. */}
+                            <form action={moveMilestone.bind(null, m.id, "up")}>
+                              <button className="ghost icon" type="submit" disabled={i === 0}
+                                title="Move up" aria-label="Move up"><IconUp /></button>
+                            </form>
+                            <form action={moveMilestone.bind(null, m.id, "down")}>
+                              <button className="ghost icon" type="submit" disabled={i === ordered.length - 1}
+                                title="Move down" aria-label="Move down"><IconDown /></button>
+                            </form>
+                            <form action={deleteMilestone.bind(null, m.id)}>
+                              <button className="reject icon" type="submit" title="Delete" aria-label="Delete"><IconTrash /></button>
+                            </form>
+                          </td>
+                        </tr>
+
+                        {/* Tasks belong to the milestone above, so they sit in
+                            its row rather than in a table of their own. */}
+                        <tr className="subrow">
+                          <td />
+                          <td colSpan={6}>
+                            <div className="subtasks">
+                              <div className="subhead">
+                                <span className="tree-meta">Tasks</span>
+                                <span className="count">{m.tasks.length}</span>
+                                {open > 0 && <span className="tree-meta">{open} open</span>}
+                              </div>
+
+                              {m.tasks.map((t) => (
+                                <div className="taskline" key={t.id}>
+                                  <span className="taskname">
+                                    <b>{t.name}</b>
+                                    {t.description && <span className="muted"> — {t.description}</span>}
+                                  </span>
+                                  <span className="muted nowrap" title="Started on">{day(t.startedAt)}</span>
+                                  <span className="muted nowrap" title="Closed on">{day(t.closedAt)}</span>
+                                  <form action={setMilestoneTaskStatus}>
+                                    <input type="hidden" name="taskId" value={t.id} />
+                                    <CellSelect name="status" defaultValue={t.status}
+                                      options={TASK_STATUS.map((v) => ({ value: v, label: v }))} />
+                                  </form>
+                                  <form action={deleteMilestoneTask.bind(null, t.id)}>
+                                    <button className="reject icon" type="submit" title="Delete task" aria-label="Delete task"><IconTrash /></button>
+                                  </form>
+                                </div>
+                              ))}
+
+                              <form action={addMilestoneTask} className="addrow taskadd">
+                                <input type="hidden" name="milestoneId" value={m.id} />
+                                <input name="name" required placeholder="Task" autoComplete="off" />
+                                <input name="description" placeholder="Description (optional)" autoComplete="off" />
+                                <input name="startedAt" type="date" title="Started on" aria-label="Started on" />
+                                <input name="closedAt" type="date" title="Closed on" aria-label="Closed on" />
+                                <select name="status" defaultValue="Open" title="Status" aria-label="Status">
+                                  {TASK_STATUS.map((v) => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                                <button className="save icon" type="submit" title="Add task" aria-label="Add task">
+                                  <IconPlus />
+                                </button>
+                              </form>
+                            </div>
+                          </td>
+                        </tr>
+                      </Fragment>
                     );
                   })}
                 </tbody>
