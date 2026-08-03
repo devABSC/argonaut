@@ -69,7 +69,7 @@ export default async function FinanceTab({
         <SoaPanel bou={bou} emp={emp} soaRef={ref} editLine={editLine} receipt={receipt}
           viewer={{ id: user.id, role: user.role, email: user.email }} />
       ) : active.slug === "bir-2307" ? (
-        <Bir2307Panel />
+        <Bir2307Panel isOwner={user.role === "SUPER_USER"} />
       ) : inBir ? (
         <BirFormsPanel />
       ) : inReceivable ? (

@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { canManageUsers } from "@/lib/rbac";
 import { done } from "@/lib/flash";
 import { logHistory } from "@/lib/log";
+import { quarterRange } from "@/lib/quarters";
 
 const PATH = "/finance/bir-forms";
 
@@ -73,22 +74,59 @@ function date(f: FormData, k: string): Date | null {
 const P2307 = "/finance/bir-2307";
 
 /**
- * Raise a 2307 for a supplier. The supplier may be picked from the register or
- * typed in; either way the name is stored on the certificate, so it still
- * reads if the supplier record changes later.
+ * The withholding agent block on the 2307 — who is doing the withholding.
+ *
+ * Owner only. It is the company's own registered details, printed on every
+ * certificate that leaves the building, so it is not something any Finance
+ * user should be able to change in passing.
+ */
+export async function saveWithholdingAgent(formData: FormData) {
+  const u = await requireUser();
+  if (u.role !== "SUPER_USER") throw new Error("FORBIDDEN");
+
+  const id = String(formData.get("companyId") ?? "").trim();
+  if (!id) return;
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) done(P2307, "Not saved — the withholding agent needs a name.");
+
+  await prisma.company.update({
+    where: { id },
+    data: {
+      name,
+      tin: String(formData.get("tin") ?? "").trim() || null,
+      address: String(formData.get("address") ?? "").trim() || null,
+      city: String(formData.get("city") ?? "").trim() || null,
+      zipCode: String(formData.get("zipCode") ?? "").trim() || null,
+    },
+  });
+
+  revalidatePath(P2307);
+  revalidatePath("/settings/company");
+  await logHistory({ type: "update", module: "Finance > BIR", description: `Saved the withholding agent details for ${name}`, user: u });
+  done(P2307, `Withholding agent saved — ${name}.`);
+}
+
+/**
+ * Raise a 2307 for a supplier, for one quarter of one year.
+ *
+ * The supplier may be picked from the register or typed in; either way the
+ * name is stored on the certificate, so it still reads if the supplier record
+ * changes later.
  */
 export async function addBir2307(formData: FormData) {
   const me = await requireFinanceUser();
 
-  const periodFrom = date(formData, "periodFrom");
-  const periodTo = date(formData, "periodTo");
-  if (!periodFrom || !periodTo) done(P2307, "Not added — give the period this covers.");
-  if (periodTo < periodFrom) done(P2307, "Not added — the period ends before it starts.");
+  const year = Number(String(formData.get("year") ?? "").trim());
+  const quarter = Number(String(formData.get("quarter") ?? "").trim());
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) done(P2307, "Not added — give the year.");
+  if (![1, 2, 3, 4].includes(quarter)) done(P2307, "Not added — pick a quarter.");
 
   const supplierId = String(formData.get("supplierId") ?? "").trim() || null;
   let supplierName = String(formData.get("supplierName") ?? "").trim();
   let supplierTin = String(formData.get("supplierTin") ?? "").trim() || null;
   let address = String(formData.get("address") ?? "").trim() || null;
+  const zipCode = String(formData.get("zipCode") ?? "").trim() || null;
 
   if (supplierId) {
     const sup = await prisma.supplier.findUnique({
@@ -96,24 +134,31 @@ export async function addBir2307(formData: FormData) {
       select: { name: true, tin: true, address: true },
     });
     if (!sup) done(P2307, "Not added — that supplier no longer exists.");
-    // The register fills what the form was left blank on, rather than
-    // overwriting anything typed by hand.
+    // The register fills what was left blank; anything typed by hand wins.
     supplierName = supplierName || sup!.name;
     supplierTin = supplierTin ?? sup!.tin;
     address = address ?? sup!.address;
   }
-  if (!supplierName) done(P2307, "Not added — a 2307 needs a supplier.");
+  if (!supplierName) done(P2307, "Not added — a 2307 needs an income recipient.");
 
+  const clash = await prisma.bir2307.findFirst({
+    where: { supplierName, year, quarter },
+    select: { id: true },
+  });
+  if (clash) done(P2307, `Not added — ${supplierName} already has a Q${quarter} ${year} certificate.`);
+
+  const { from, to } = quarterRange(year, quarter);
   await prisma.bir2307.create({
     data: {
-      periodFrom, periodTo, supplierId, supplierName, supplierTin, address,
+      year, quarter, periodFrom: from, periodTo: to,
+      supplierId, supplierName, supplierTin, address, zipCode,
       encodedById: me.id, encodedByName: me.name,
     },
   });
 
   revalidatePath(P2307);
-  await logHistory({ type: "create", module: "Finance > BIR", description: `Raised a 2307 for ${supplierName}`, user: me });
-  done(P2307, `2307 for ${supplierName} added.`);
+  await logHistory({ type: "create", module: "Finance > BIR", description: `Raised a Q${quarter} ${year} 2307 for ${supplierName}`, user: me });
+  done(P2307, `Q${quarter} ${year} 2307 for ${supplierName} added.`);
 }
 
 export async function deleteBir2307(id: string) {

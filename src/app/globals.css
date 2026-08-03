@@ -921,6 +921,8 @@ button{font-family:inherit}
 /* Chart of Accounts: a fuller record, so a grid rather than a strip. */
 .app .birrow{grid-template-columns:130px minmax(160px,1.5fr) minmax(150px,1fr) minmax(140px,1fr) 36px}
 .app .birnote{margin-top:10px;font-size:.86rem;color:var(--muted);max-width:none}
+.app .yeargroup{margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)}
+.app .yeargroup:first-of-type{border-top:0;padding-top:0}
 /* A full address in a table cell wraps rather than stretching the column. */
 .app .urlcell{max-width:34ch;white-space:normal;overflow-wrap:anywhere;line-height:1.35;
   text-align:left;align-items:flex-start}

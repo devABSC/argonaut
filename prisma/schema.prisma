@@ -671,6 +671,9 @@ model Company {
   name      String
   tin       String?
   address   String?
+  /// Split out from the address because the BIR forms ask for them apart.
+  city      String?
+  zipCode   String?
   pocEmail  String?
   /// Brand mark as a data URL, shown on documents the company sends out.
   /// Held inline rather than in object storage — one small image per company,
@@ -731,6 +734,11 @@ model BirForm {
 model Bir2307 {
   id String @id @default(cuid())
 
+  /// Certificates are filed by quarter, and read by year — both are held
+  /// rather than derived, so a period that runs off-calendar still works.
+  year    Int
+  quarter Int
+
   periodFrom DateTime
   periodTo   DateTime
 
@@ -742,6 +750,7 @@ model Bir2307 {
   supplierName String
   supplierTin  String?
   address      String?
+  zipCode      String?
 
   encodedById   String
   encodedBy     User   @relation("Bir2307Encoder", fields: [encodedById], references: [id], onDelete: Cascade)
@@ -750,7 +759,10 @@ model Bir2307 {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  /// One certificate per payee per quarter.
+  @@unique([supplierName, year, quarter])
   @@index([supplierId])
+  @@index([year])
 }
 
 /// One line of the Chart of Accounts — what a cost is booked against.
