@@ -1,6 +1,6 @@
 import { decide } from "../actions/approvals";
+import DecideButtons from "./DecideButtons";
 import { slaState, HOURS_PER_SLA_DAY } from "@/lib/sla";
-import { IconCheck, IconX } from "../icons";
 
 type Approval = {
   id: string;
@@ -165,12 +165,7 @@ export default function RouteTrail({
                         {mine && (
                           <form className="decide" action={decide.bind(null, r.id)}>
                             <input name="remarks" placeholder="Remarks or reason (optional)" />
-                            <button className="approve icon" type="submit" name="decision" value="APPROVED" title="Approve" aria-label="Approve">
-                              <IconCheck />
-                            </button>
-                            <button className="reject icon" type="submit" name="decision" value="REJECTED" title="Reject" aria-label="Reject">
-                              <IconX />
-                            </button>
+                            <DecideButtons />
                           </form>
                         )}
                       </div>

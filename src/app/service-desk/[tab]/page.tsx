@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { requireAccess } from "@/lib/guard";
 import { ROLE_LABEL } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import AppShell from "../../AppShell";
+import AppShell, { type TopTab } from "../../AppShell";
 import NewRequestPanel from "../NewRequestPanel";
 import RequestList from "../RequestList";
 
@@ -17,6 +17,28 @@ export default async function ServiceDeskTab({
   const { sub, new: created } = await searchParams;
 
   const { user, nav, section, tab: active } = await requireAccess("service-desk", tab);
+
+  // Counted on every tab, not just the one being viewed — the point is to see
+  // there is something waiting before you go looking for it.
+  const [mineCount, approvalCount] = await Promise.all([
+    prisma.serviceRequest.count({ where: { requesterId: user.id } }),
+    prisma.serviceRequest.count({
+      where: {
+        status: { in: ["SUBMITTED", "IN_REVIEW"] },
+        approvals: { some: { approverId: user.id, decision: "PENDING" } },
+      },
+    }),
+  ]);
+
+  const counts: Record<string, number> = {
+    "my-requests": mineCount,
+    approvals: approvalCount,
+  };
+  const topTabs: TopTab[] = section.tabs.map((t) => ({
+    href: `/service-desk/${t.slug}`,
+    label: counts[t.slug] ? `${t.label} (${counts[t.slug]})` : t.label,
+    on: t.slug === active.slug,
+  }));
 
   const mine =
     active.slug === "my-requests"
@@ -58,6 +80,7 @@ export default async function ServiceDeskTab({
       nav={nav}
       activeSection="service-desk"
       activeTab={active.slug}
+      topTabs={topTabs}
     >
       {active.slug === "new-request" && <NewRequestPanel subId={sub} requesterName={user.name} />}
 

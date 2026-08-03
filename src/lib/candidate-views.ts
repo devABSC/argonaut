@@ -1,0 +1,27 @@
+/** Tabs inside one candidate's record. */
+export const CAND_VIEWS = [
+  { slug: "personal-info", label: "Personal Info" },
+  { slug: "cv", label: "CV" },
+  { slug: "experience", label: "Experience" },
+  { slug: "notes", label: "Notes" },
+] as const;
+
+export type CandView = (typeof CAND_VIEWS)[number]["slug"];
+
+export function isCandView(slug: string): slug is CandView {
+  return CAND_VIEWS.some((v) => v.slug === slug);
+}
+
+export const STAGES = [
+  "Applied", "Screening", "Interview", "Offer", "Hired", "Rejected", "Withdrawn",
+] as const;
+
+export const STAGE_PILL: Record<string, string> = {
+  Applied: "s-PENDING",
+  Screening: "s-PENDING",
+  Interview: "s-PENDING",
+  Offer: "s-PENDING",
+  Hired: "s-ACTIVE",
+  Rejected: "s-REJECTED",
+  Withdrawn: "s-SUSPENDED",
+};

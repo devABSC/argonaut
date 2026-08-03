@@ -84,6 +84,7 @@ export async function createEmployee(formData: FormData) {
       terminationDate: date(formData, "terminationDate"),
       employmentStatus: text(formData, "employmentStatus") ?? "Active",
       remarks: text(formData, "remarks"),
+      status: 0, // active
       hasAccess: formData.get("hasAccess") === "on",
       hasExpense: formData.get("hasExpense") === "on",
       company: text(formData, "company"),

@@ -65,6 +65,32 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M6 9.6v4.8M18 9.6v4.8" />
     </svg>
   ),
+  recruitment: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <circle cx="10" cy="8" r="3.2" />
+      <path d="M3.8 19.4c.6-3 2.9-4.8 6.2-4.8 1.1 0 2.1.2 3 .6" />
+      <path d="M18 14.4v5.4M15.3 17.1h5.4" />
+    </svg>
+  ),
+  edoc: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M14 3v5h5M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" />
+      <path d="M8.6 13h6.8M8.6 16.4h4.4" />
+    </svg>
+  ),
+  project: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <rect x="3" y="5.4" width="18" height="14.2" rx="2" />
+      <path d="M3 9.6h18M8 3.4v3.6M16 3.4v3.6" />
+      <path d="M7.4 13.4h4M7.4 16.4h7" />
+    </svg>
+  ),
+  car: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path d="M12 3.2l8.4 3.5v5c0 4.6-3.4 8-8.4 9.1-5-1.1-8.4-4.5-8.4-9.1v-5z" />
+      <path d="M12 8.4v4.2M12 15.6v.1" />
+    </svg>
+  ),
 };
 
 export type TopTab = { href: string; label: string; on: boolean };

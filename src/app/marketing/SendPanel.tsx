@@ -3,13 +3,40 @@ import { sendCampaign, addSuppression, removeSuppression } from "../actions/mark
 import { IconTrash, IconPlus } from "../icons";
 import SubmitButton from "../SubmitButton";
 import TemplatePicker from "./TemplatePicker";
+import AudiencePicker from "./AudiencePicker";
 
 export default async function SendPanel() {
-  const [templates, suppressed, sentCount] = await Promise.all([
+  const [templates, suppressed, sentCount, staffRows] = await Promise.all([
     prisma.emailTemplate.findMany({ orderBy: { name: "asc" } }),
     prisma.suppression.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
     prisma.notification.count({ where: { kind: "marketing" } }),
+    prisma.employee.findMany({
+      where: { emailAdd: { not: null }, employmentStatus: "Active" },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select: {
+        id: true, firstName: true, lastName: true, emailAdd: true,
+        bouId: true, bou: { select: { name: true } },
+      },
+    }),
   ]);
+
+  const staff = staffRows.map((e) => ({
+    id: e.id,
+    name: `${e.firstName} ${e.lastName}`.trim(),
+    email: e.emailAdd!.trim(),
+    bouId: e.bouId,
+    bouName: e.bou?.name ?? null,
+  }));
+
+  // Only BOUs with someone reachable are worth offering.
+  const bouCounts = new Map<string, { id: string; name: string; count: number }>();
+  for (const s of staff) {
+    if (!s.bouId || !s.bouName) continue;
+    const row = bouCounts.get(s.bouId) ?? { id: s.bouId, name: s.bouName, count: 0 };
+    row.count += 1;
+    bouCounts.set(s.bouId, row);
+  }
+  const bous = [...bouCounts.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <>
@@ -29,11 +56,13 @@ export default async function SendPanel() {
         <form action={sendCampaign} className="empform" style={{ marginTop: 4 }}>
           <TemplatePicker templates={templates} />
 
+          <AudiencePicker staff={staff} bous={bous} />
+
           <label className="full">
-            <span>Recipients</span>
+            <span>Other recipients</span>
             <textarea
-              name="recipients" rows={3} required
-              placeholder="one@example.com, two@example.com — commas, semicolons or new lines"
+              name="recipients" rows={2}
+              placeholder="Anyone not on the staff list — commas, semicolons or new lines"
             />
           </label>
 

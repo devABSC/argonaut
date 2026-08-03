@@ -96,7 +96,10 @@ export async function sendCampaign(formData: FormData) {
   const templateId = String(formData.get("templateId") ?? "").trim();
   const resend = formData.get("resend") === "on";
 
-  const parsed = splitEmails(String(formData.get("recipients") ?? ""));
+  // Ticked staff and typed addresses are one audience.
+  const picked = formData.getAll("emp").map((v) => String(v).trim().toLowerCase()).filter(Boolean);
+  const typed = splitEmails(String(formData.get("recipients") ?? ""));
+  const parsed = [...new Set([...picked, ...typed])];
   if (!subject || !body || parsed.length === 0) {
     done(SEND, "Nothing sent — a subject, a body and at least one valid address are required.");
   }

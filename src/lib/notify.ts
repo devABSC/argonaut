@@ -123,14 +123,21 @@ export async function notify(input: NotifyInput): Promise<void> {
     const preferMailgun = (await mailgunConfigured()) && (await routeToMailgun(input.to));
 
     if (preferMailgun) {
-      const { id } = await sendViaMailgun({
-        to: input.to, subject: input.subject, text, html, fromName: input.fromName,
-      });
-      await prisma.notification.update({
-        where: { id: note.id },
-        data: { provider: "mailgun", providerId: id || null, status: "sent", sentAt: new Date() },
-      });
-      return;
+      try {
+        const { id } = await sendViaMailgun({
+          to: input.to, subject: input.subject, text, html, fromName: input.fromName,
+        });
+        await prisma.notification.update({
+          where: { id: note.id },
+          data: { provider: "mailgun", providerId: id || null, status: "sent", sentAt: new Date() },
+        });
+        return;
+      } catch (e) {
+        // A rejected key or an unverified domain must not swallow the message —
+        // SMTP reaches every recipient Mailgun would have, just with less
+        // reporting. Fall through rather than fail.
+        console.error("mailgun failed, falling back to SMTP:", (e as Error).message);
+      }
     }
 
     const tx = await getTransport();

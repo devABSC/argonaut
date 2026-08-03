@@ -26,7 +26,10 @@ export default async function EmployeeList({
   const isOwner = viewer.role === "SUPER_USER";
   const scopedCompany = isOwner ? company : (viewer.company ?? "");
   const lockedOut = !isOwner && !viewer.company;
+  // Only active staff. status is the source system's own flag: 0 active,
+  // 1 and above are leavers and disabled accounts.
   const where = {
+    status: 0,
     ...(term
       ? {
           OR: [

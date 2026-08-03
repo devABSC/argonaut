@@ -112,6 +112,12 @@ export const NAV: NavSection[] = [
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },
   {
+    key: "recruitment",
+    label: "RECRUITMENT",
+    tabs: [{ slug: "candidates", label: "Candidates" }],
+    roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
+  },
+  {
     key: "edoc",
     label: "eDOC",
     tabs: [{ slug: "documents", label: "Documents" }],

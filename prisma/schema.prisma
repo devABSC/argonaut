@@ -55,6 +55,7 @@ model User {
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
   menuGrants      MenuGrant[]            @relation("MenuGrants")
+  candidates      Candidate[]            @relation("Recruiting")
   passwordResets  PasswordReset[]        @relation("PasswordResets")
   passwordHistory PasswordHistory[]      @relation("PasswordHistory")
   employee        Employee?              @relation("EmployeeAccount")
@@ -392,6 +393,9 @@ model Employee {
   hasAccess        Boolean   @default(false)
   hasExpense       Boolean   @default(false)
 
+  /// Set when this employee was hired through Recruitment.
+  candidate Candidate? @relation("HiredFrom")
+
   /// Optional link to a login account. Null for staff with no access.
   userId String? @unique
   user   User?   @relation("EmployeeAccount", fields: [userId], references: [id], onDelete: SetNull)
@@ -579,7 +583,8 @@ model Bou {
   managerEmail String?
   isActive     Boolean @default(true)
 
-  employees Employee[]
+  employees  Employee[]
+  candidates Candidate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -607,6 +612,66 @@ model LogHistory {
 
 /// Cities employees can be based in, with the province and region they sit in
 /// so choosing a city settles the region rather than asking twice.
+/// Someone applying for a role. Kept apart from Employee: a candidate is not
+/// staff, and most never become staff. Hiring links the two rather than
+/// copying one into the other.
+model Candidate {
+  id String @id @default(cuid())
+
+  firstName  String
+  lastName   String
+  middleName String?
+  email      String?
+  mobile     String?
+
+  /// Role applied for, and where the application came from.
+  position String?
+  source   String?
+
+  /// The CV itself. Held in the database rather than object storage: it needs
+  /// no extra credentials, and a CV is a few hundred kilobytes.
+  cvData     Bytes?
+  cvFileName String?
+  cvMime     String?
+  cvSize     Int?
+
+  // --- read off the CV ---
+  summary         String?
+  skills          String[]
+  yearsExperience Int?
+  education       String?
+  currentEmployer String?
+  location        String?
+  /// When the CV was last read, so a re-read can be told from a manual edit.
+  parsedAt        DateTime?
+
+  /// Applied, Screening, Interview, Offer, Hired, Rejected, Withdrawn.
+  stage  String  @default("Applied")
+  rating Int?
+  notes  String?
+
+  /// Which part of the business is hiring.
+  bouId       String?
+  bou         Bou?    @relation(fields: [bouId], references: [id], onDelete: SetNull)
+  companyCode String?
+
+  /// Who is handling the application.
+  recruiterId String?
+  recruiter   User?   @relation("Recruiting", fields: [recruiterId], references: [id], onDelete: SetNull)
+
+  /// Set when the candidate is hired and becomes staff.
+  employeeId String?   @unique
+  employee   Employee? @relation("HiredFrom", fields: [employeeId], references: [id], onDelete: SetNull)
+  hiredAt    DateTime?
+
+  appliedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([stage])
+  @@index([lastName, firstName])
+}
+
 model City {
   id       String  @id @default(cuid())
   name     String  @unique

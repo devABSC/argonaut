@@ -703,3 +703,36 @@ button{font-family:inherit}
   border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .app .statgrid .cityset input:focus,.app .statgrid .cityset select:focus,
 .app .statfield select:focus{outline:none;border-color:var(--cyan)}
+
+/* Campaign audience: BOU filter plus a scrollable tick list */
+.app .audience{display:flex;flex-direction:column;gap:10px}
+.app .audbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.app .audbar button{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+.app .audbar button:hover:not(:disabled){border-color:var(--cyan)}
+.app .audbar button:disabled{opacity:.45;cursor:default}
+.app .audbar .clearall{margin-left:auto}
+.app .audlist{max-height:270px;overflow-y:auto;padding:10px 12px;
+  border:1px solid var(--line);border-radius:12px;background:var(--s3)}
+.app .audlist .tickrow{gap:10px}
+
+/* Spinner inside an icon-only button (approve / reject) */
+.app .icon .spinner{display:block;width:15px;height:15px;border:2px solid rgba(255,255,255,.28);
+  border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite}
+.app .icon:disabled{opacity:.75;cursor:default}
+
+/* CV upload */
+.app .cvupload{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px}
+.app .cvdrop{flex:1 1 320px;display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;
+  border:1px dashed var(--line);border-radius:14px;background:var(--s3);transition:border-color .16s,background .16s}
+.app .cvdrop:hover{border-color:var(--cyan);background:var(--s4)}
+.app .cvdrop input[type=file]{position:absolute;opacity:0;width:0;height:0}
+.app .cvicon{display:grid;place-items:center;width:42px;height:42px;flex:0 0 auto;
+  border-radius:11px;background:var(--s4);border:1px solid var(--line);color:var(--cyan)}
+.app .cvtext{display:flex;flex-direction:column;gap:3px;min-width:0}
+.app .cvtext b{font-size:.92rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Skill chips on a candidate record */
+.app .skillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.app .skill{font-size:.8rem;color:var(--text);background:var(--s4);
+  border:1px solid var(--line);border-radius:999px;padding:5px 12px}
