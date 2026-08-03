@@ -5,6 +5,7 @@ import { ROLE_LABEL } from "@/lib/rbac";
 import { requireAccess } from "@/lib/guard";
 import { CAND_VIEWS, isCandView, STAGE_PILL } from "@/lib/candidate-views";
 import { canSeeCandidate } from "@/lib/candidate-scope";
+import { IconDownload } from "../../../../icons";
 import AppShell from "../../../../AppShell";
 import CandidatePanel from "../../../CandidatePanel";
 
@@ -39,6 +40,19 @@ export default async function CandidateView({
         <span className="spacer" />
         <span className="tree-meta">{c.firstName} {c.lastName}</span>
         <span className={`pill ${STAGE_PILL[c.stage] ?? "s-PENDING"}`}>{c.stage}</span>
+        {/* The dossier gathers contact details, statutory numbers and an
+            assessment into one file that can leave the system — a different
+            thing from reading the tabs behind a login. */}
+        {user.role === "SUPER_USER" && (
+          <a
+            className="save icon"
+            href={`/api/candidate-dossier/${cand}`}
+            title="Download the full dossier as PDF"
+            aria-label="Download dossier"
+          >
+            <IconDownload />
+          </a>
+        )}
       </div>
 
       <div className="subtabs" role="tablist">
