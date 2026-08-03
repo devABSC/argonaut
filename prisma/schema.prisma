@@ -53,6 +53,7 @@ model User {
   projects       Project[]
   milestoneTasks MilestoneTask[] @relation("MilestoneTaskAuthor")
   soasCreated    Soa[]           @relation("SoaAuthor")
+  receiptReviews SoaLine[]       @relation("ReceiptReviewer")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -227,6 +228,22 @@ model SoaLine {
   /// "Charges" and "Credits" on the statement. A line is one or the other.
   debit       Decimal  @default(0) @db.Decimal(14, 2)
   credit      Decimal  @default(0) @db.Decimal(14, 2)
+
+  /// The receipt backing a charge. Held on the line because a receipt only
+  /// means anything next to the expense it proves.
+  receiptData    Bytes?
+  receiptName    String?
+  receiptMime    String?
+  receiptSize    Int?
+  /// Pending, Approved or Rejected. Null while no receipt has been attached.
+  receiptStatus  String?
+  /// Who in Finance decided, and what they said. A snapshot of the review, so
+  /// a decision survives the reviewer leaving.
+  reviewedById   String?
+  reviewedBy     User?     @relation("ReceiptReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedByName String?
+  reviewedAt     DateTime?
+  reviewRemarks  String?
 
   createdAt DateTime @default(now())
 

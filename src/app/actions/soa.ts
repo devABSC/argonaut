@@ -259,6 +259,108 @@ export async function importSoaLines(soaId: string, formData: FormData) {
   );
 }
 
+/** What a receipt may be: a photo of the slip, a scan, or a PDF. */
+const RECEIPT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+const RECEIPT_MAX = 8 * 1024 * 1024;
+
+/**
+ * Attach the receipt backing a charge. The person the statement belongs to
+ * uploads their own; Finance can do it on their behalf. A fresh upload goes
+ * back to Pending — a replaced receipt has not been reviewed.
+ */
+export async function uploadReceipt(lineId: string, formData: FormData) {
+  const where = back(formData);
+  const owner = await prisma.soaLine.findUnique({ where: { id: lineId }, select: { soaId: true } });
+  if (!owner) return;
+  const { me, soa } = await requirePoster(owner.soaId);
+  if (soa.status === "Closed") done(where, `${soa.ref} is closed — reopen it to attach a receipt.`);
+
+  const file = formData.get("receipt");
+  if (!(file instanceof File) || file.size === 0) done(where, "Pick a receipt file first.");
+  const f = file as File;
+  if (!RECEIPT_TYPES.includes(f.type)) done(where, "Not attached — use a JPEG, PNG, WebP, HEIC or PDF.");
+  if (f.size > RECEIPT_MAX) {
+    done(where, `Not attached — that file is ${Math.round(f.size / 1024 / 1024)} MB; the limit is ${RECEIPT_MAX / 1024 / 1024} MB.`);
+  }
+
+  await prisma.soaLine.update({
+    where: { id: lineId },
+    data: {
+      receiptData: Buffer.from(await f.arrayBuffer()),
+      receiptName: f.name,
+      receiptMime: f.type,
+      receiptSize: f.size,
+      receiptStatus: "Pending",
+      reviewedById: null,
+      reviewedByName: null,
+      reviewedAt: null,
+      reviewRemarks: null,
+    },
+  });
+
+  revalidatePath(PATH);
+  await logHistory({
+    type: "create", module: "Finance > SOA",
+    description: `Attached a receipt to a line on ${soa.ref}`, user: me,
+  });
+  done(where, `Receipt attached — awaiting Finance review.`);
+}
+
+/** Finance decides. The person claiming the expense cannot approve their own. */
+export async function reviewReceipt(lineId: string, decision: "Approved" | "Rejected", formData: FormData) {
+  const me = await requireFinanceUser();
+  const where = back(formData);
+
+  const line = await prisma.soaLine.findUnique({
+    where: { id: lineId },
+    select: { receiptStatus: true, soa: { select: { ref: true } } },
+  });
+  if (!line) return;
+  if (!line.receiptStatus) done(where, "Nothing to review — that line has no receipt.");
+
+  await prisma.soaLine.update({
+    where: { id: lineId },
+    data: {
+      receiptStatus: decision,
+      reviewedById: me.id,
+      reviewedByName: me.name,
+      reviewedAt: new Date(),
+      reviewRemarks: String(formData.get("remarks") ?? "").trim() || null,
+    },
+  });
+
+  revalidatePath(PATH);
+  await logHistory({
+    type: decision === "Approved" ? "approve" : "reject",
+    module: "Finance > SOA",
+    description: `Receipt ${decision.toLowerCase()} on ${line.soa.ref}`,
+    user: me,
+  });
+  done(where, `Receipt ${decision.toLowerCase()} on ${line.soa.ref}.`);
+}
+
+/** Remove a receipt so a clearer one can go up. Clears the review with it. */
+export async function deleteReceipt(lineId: string, formData: FormData) {
+  const where = back(formData);
+  const owner = await prisma.soaLine.findUnique({ where: { id: lineId }, select: { soaId: true } });
+  if (!owner) return;
+  const { me, soa } = await requirePoster(owner.soaId);
+  if (soa.status === "Closed") done(where, `${soa.ref} is closed — reopen it to change a receipt.`);
+
+  await prisma.soaLine.update({
+    where: { id: lineId },
+    data: {
+      receiptData: null, receiptName: null, receiptMime: null, receiptSize: null,
+      receiptStatus: null, reviewedById: null, reviewedByName: null,
+      reviewedAt: null, reviewRemarks: null,
+    },
+  });
+
+  revalidatePath(PATH);
+  await logHistory({ type: "delete", module: "Finance > SOA", description: `Removed a receipt from ${soa.ref}`, user: me });
+  done(where, `Receipt removed from ${soa.ref}.`);
+}
+
 export async function setSoaStatus(formData: FormData) {
   const me = await requireFinanceUser();
   const where = back(formData);

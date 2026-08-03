@@ -60,26 +60,23 @@ export const IconDownload = () => (
   </svg>
 );
 
-/* File-type marks people already recognise: a green sheet for Excel, a red
-   page badged PDF, and a plain envelope for post. Colour carries the meaning
-   at icon size, so they are filled rather than stroked like the action
-   glyphs. */
+/* File-type marks: the conventional shapes, drawn in the same stroke style and
+   currentColor as every other glyph. They differ by silhouette, not by colour —
+   a coloured icon in a grey row reads as an alert rather than an action. */
 export const IconExcel = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"
-      fill="#1D6F42" stroke="#1D6F42" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M13 2v7h7" fill="#0f4d2c" stroke="#1D6F42" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M8.6 12.4l4.8 6M13.4 12.4l-4.8 6" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M13.5 2.5H6.5a2 2 0 00-2 2v15a2 2 0 002 2h11a2 2 0 002-2V8.5z" />
+    <path d="M13.5 2.5v6h6" />
+    <path d="M8.8 12.6l4.4 5.4M13.2 12.6l-4.4 5.4" />
   </svg>
 );
 
 export const IconPdf = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"
-      fill="#C8102E" stroke="#C8102E" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M13 2v7h7" fill="#8f0a20" stroke="#C8102E" strokeWidth="1.6" strokeLinejoin="round" />
-    <text x="12" y="18.4" textAnchor="middle" fontSize="6.6" fontFamily="Helvetica, Arial, sans-serif"
-      fontWeight="700" fill="#fff">PDF</text>
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <path d="M13.5 2.5H6.5a2 2 0 00-2 2v15a2 2 0 002 2h11a2 2 0 002-2V8.5z" />
+    <path d="M13.5 2.5v6h6" />
+    <path d="M8.2 18v-4.4h1.5a1.2 1.2 0 010 2.4H8.2" />
+    <path d="M12.6 18v-4.4h1.1a2.2 2.2 0 010 4.4z" />
   </svg>
 );
 

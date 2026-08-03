@@ -3,11 +3,23 @@ import { prisma } from "@/lib/prisma";
 import { candidateScope } from "@/lib/candidate-scope";
 import type { RoleKey } from "@/lib/roles";
 import { SPANS, bucketOf, series, type Span } from "@/lib/upload-series";
+import ChartPicker from "./ChartPicker";
 
 export { isSpan } from "@/lib/upload-series";
 
-/** Enough hues to tell recruiters apart, reused beyond that. */
-const HUES = ["#38E8FF", "#7C6BFF", "#3DDC97", "#FFB86B", "#FF8FA3", "#8FD3FF", "#C9A6FF"];
+/**
+ * Series colours come from the app's own tokens, not a palette invented here,
+ * so the chart sits in the theme instead of shouting over it. Combined mode
+ * uses one neutral bar; only "per recruiter" needs telling apart, and it
+ * separates them by depth of the same accents.
+ */
+const HUES = [
+  "var(--cyan)",
+  "var(--violet)",
+  "var(--blue)",
+  "var(--muted)",
+  "var(--faint)",
+];
 
 /**
  * CV uploads over time, above the candidate list.
@@ -22,19 +34,57 @@ const HUES = ["#38E8FF", "#7C6BFF", "#3DDC97", "#FFB86B", "#FF8FA3", "#8FD3FF", 
 export default async function UploadChart({
   viewer,
   span,
-  mode,
+  year,
   recruiter,
   query,
 }: {
   viewer: { id: string; role: RoleKey };
   span: Span;
-  /** "combined" totals every recruiter into one bar; "each" draws them apart. */
-  mode: "combined" | "each";
-  /** Narrow to one recruiter, from the list's own filter. */
+  /** Which year the Annual view draws. Ignored by the rolling spans. */
+  year: number;
+  /** Whose uploads to draw. Empty means everyone, combined into one bar. */
   recruiter: string;
   /** The list's current query string, so switching view keeps the filters. */
   query: Record<string, string>;
 }) {
+  // Who can be picked. Only the owner sees more than themselves, so only the
+  // owner gets a list worth choosing from.
+  const people =
+    viewer.role === "SUPER_USER"
+      ? await prisma.candidate.groupBy({
+          by: ["recruiterId"],
+          where: { cvUploadedAt: { not: null }, recruiterId: { not: null } },
+          _count: { _all: true },
+        })
+      : [];
+  const names = people.length
+    ? await prisma.user.findMany({
+        where: { id: { in: people.map((p) => p.recruiterId!) } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const recruiters = names
+    .map((n) => ({
+      id: n.id,
+      name: n.name,
+      count: people.find((p) => p.recruiterId === n.id)?._count._all ?? 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Years with uploads in them, newest first, so the picker only offers years
+  // that have something to show.
+  const spread = await prisma.candidate.aggregate({
+    where: { ...candidateScope(viewer), cvUploadedAt: { not: null } },
+    _min: { cvUploadedAt: true },
+    _max: { cvUploadedAt: true },
+  });
+  const years: number[] = [];
+  if (spread._min.cvUploadedAt && spread._max.cvUploadedAt) {
+    const from = new Date(+spread._min.cvUploadedAt + 8 * 3600_000).getUTCFullYear();
+    const to = new Date(+spread._max.cvUploadedAt + 8 * 3600_000).getUTCFullYear();
+    for (let y = to; y >= from; y -= 1) years.push(y);
+  }
+
   const rows = await prisma.candidate.findMany({
     where: {
       ...candidateScope(viewer),
@@ -45,7 +95,7 @@ export default async function UploadChart({
     select: { cvUploadedAt: true, recruiterId: true, recruiter: { select: { name: true } } },
   });
 
-  const buckets = series(span);
+  const buckets = series(span, year);
   const index = new Map(buckets.map((b, i) => [b.key, i]));
 
   // recruiter -> counts per bucket
@@ -54,8 +104,9 @@ export default async function UploadChart({
   for (const r of rows) {
     const i = index.get(bucketOf(r.cvUploadedAt!, span).key);
     if (i === undefined) continue; // older than the window
-    const id = mode === "combined" ? "all" : r.recruiterId ?? "none";
-    const name = mode === "combined" ? "All recruiters" : r.recruiter?.name ?? "No recruiter";
+    // One series: either the chosen recruiter, or everyone combined.
+    const id = recruiter ? recruiter : "all";
+    const name = recruiter ? r.recruiter?.name ?? "No recruiter" : "All recruiters";
     if (!byWho.has(id)) byWho.set(id, { name, counts: Array(buckets.length).fill(0) });
     byWho.get(id)!.counts[i] += 1;
     total += 1;
@@ -94,9 +145,31 @@ export default async function UploadChart({
               {SPANS[k].label}
             </Link>
           ))}
-          <span className="sep" />
-          <Link href={href({ mode: "combined" })} className={mode === "combined" ? "on" : undefined}>Combined</Link>
-          <Link href={href({ mode: "each" })} className={mode === "each" ? "on" : undefined}>Per recruiter</Link>
+          {span === "annual" && years.length > 0 && (
+            <>
+              <span className="sep" />
+              <ChartPicker
+                recruiter={String(year)}
+                recruiters={years.map((y) => ({ id: String(y), name: String(y), count: 0 }))}
+                hrefFor={Object.fromEntries(years.map((y) => [String(y), href({ year: String(y) })]))}
+                allLabel={null}
+                label="Year shown in the chart"
+              />
+            </>
+          )}
+          {recruiters.length > 0 && (
+            <>
+              <span className="sep" />
+              <ChartPicker
+                recruiter={recruiter}
+                recruiters={recruiters}
+                hrefFor={{
+                  "": href({ recruiter: "" }),
+                  ...Object.fromEntries(recruiters.map((r) => [r.id, href({ recruiter: r.id })])),
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -106,7 +179,7 @@ export default async function UploadChart({
         <>
           <div className="chartwrap">
             <svg viewBox={`0 0 ${W} ${H}`} role="img" preserveAspectRatio="xMidYMid meet"
-              aria-label={`CV uploads, ${SPANS[span].label.toLowerCase()}, ${mode === "combined" ? "all recruiters combined" : "by recruiter"}`}>
+              aria-label={`CV uploads, ${SPANS[span].label.toLowerCase()}, ${seriesList[0]?.name ?? "no data"}`}>
               {ticks.map((t) => {
                 const y = PADT + plotH - (t / peak) * plotH;
                 return (
@@ -143,7 +216,7 @@ export default async function UploadChart({
             </svg>
           </div>
 
-          {mode === "each" && (
+          {(
             <div className="chartkey">
               {seriesList.map((sr) => (
                 <span key={sr.id}>

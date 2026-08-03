@@ -11,16 +11,17 @@ export default async function RecruitmentTab({
   params: Promise<{ tab: string }>;
   searchParams: Promise<{
     q?: string; recruiter?: string; bou?: string; stage?: string;
-    span?: string; mode?: string;
+    span?: string; year?: string;
   }>;
 }) {
   const { tab } = await params;
-  const { q, recruiter, bou, stage, span, mode } = await searchParams;
+  const { q, recruiter, bou, stage, span, year } = await searchParams;
   const { user, nav, section, tab: active } = await requireAccess("recruitment", tab);
 
   // Monthly reads best on a young pipeline; the other spans are one click away.
   const useSpan = span && isSpan(span) ? span : "monthly";
-  const useMode = mode === "each" ? "each" : "combined";
+  const thisYear = new Date().getUTCFullYear();
+  const useYear = Number(year) >= 2000 && Number(year) <= thisYear + 1 ? Number(year) : thisYear;
 
   return (
     <AppShell
@@ -33,11 +34,11 @@ export default async function RecruitmentTab({
         <UploadChart
           viewer={{ id: user.id, role: user.role }}
           span={useSpan}
-          mode={useMode}
+          year={useYear}
           recruiter={recruiter ?? ""}
           query={{
             q: q ?? "", recruiter: recruiter ?? "", bou: bou ?? "", stage: stage ?? "",
-            span: useSpan, mode: useMode,
+            span: useSpan, year: String(useYear),
           }}
         />
       )}

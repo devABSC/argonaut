@@ -898,6 +898,9 @@ button{font-family:inherit}
 .app .chartswitch a:hover{color:var(--text);background:var(--s4)}
 .app .chartswitch a.on{color:var(--cyan);background:rgba(56,232,255,.1);border-color:rgba(56,232,255,.32)}
 .app .chartswitch .sep{width:1px;height:18px;background:var(--line);margin:0 5px}
+.app .chartpick{font-family:var(--body);font-size:.8rem;color:var(--text);background:var(--s4);
+  border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;max-width:220px}
+.app .chartpick:focus{outline:none;border-color:var(--cyan)}
 .app .chartkey{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px}
 .app .chartkey span{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted)}
 .app .chartkey i{width:10px;height:10px;border-radius:3px}
