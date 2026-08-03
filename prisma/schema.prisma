@@ -349,6 +349,11 @@ model ServiceRequest {
   id            String             @id @default(cuid())
   /// Human-facing reference, e.g. SD-000142.
   reference     String             @unique
+  /// Which company the ticket belongs to, stamped at creation from the
+  /// requester. Held on the ticket rather than read through the requester so
+  /// it survives someone moving company later — the ticket stays with the
+  /// business that raised it.
+  companyCode   String?
   requesterId   String
   requester     User               @relation("RequestedBy", fields: [requesterId], references: [id], onDelete: Cascade)
   subcategoryId String
@@ -373,6 +378,7 @@ model ServiceRequest {
 
   @@index([requesterId, status])
   @@index([status])
+  @@index([companyCode])
 }
 
 enum ApprovalDecision {

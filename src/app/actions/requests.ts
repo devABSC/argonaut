@@ -118,10 +118,22 @@ export async function createRequest(formData: FormData) {
 
   const reference = await nextReference(sub.id, sub.category.code, sub.code);
 
+  // Stamped from the requester at creation. Held on the ticket rather than
+  // read through the requester, so it survives someone moving company later.
+  const companyCode =
+    user.company ??
+    (await prisma.company.findFirst({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: { code: true },
+    }))?.code ??
+    null;
+
   const created = await prisma.serviceRequest.create({
     data: {
       reference,
       requesterId: user.id,
+      companyCode,
       subcategoryId: sub.id,
       subject,
       description,
