@@ -49,14 +49,30 @@ export default async function UploadChart({
 }) {
   // Who can be picked. Only the owner sees more than themselves, so only the
   // owner gets a list worth choosing from.
-  const people =
+  // The three reads below do not depend on each other, so they go together.
+  const [people, spread, rows] = await Promise.all([
     viewer.role === "SUPER_USER"
-      ? await prisma.candidate.groupBy({
+      ? prisma.candidate.groupBy({
           by: ["recruiterId"],
           where: { cvUploadedAt: { not: null }, recruiterId: { not: null } },
           _count: { _all: true },
         })
-      : [];
+      : [],
+    prisma.candidate.aggregate({
+    where: { ...candidateScope(viewer), cvUploadedAt: { not: null } },
+    _min: { cvUploadedAt: true },
+    _max: { cvUploadedAt: true },
+  }),
+    prisma.candidate.findMany({
+    where: {
+      ...candidateScope(viewer),
+      cvUploadedAt: { not: null },
+      ...(recruiter && recruiter !== "none" ? { recruiterId: recruiter } : {}),
+      ...(recruiter === "none" ? { recruiterId: null } : {}),
+    },
+    select: { cvUploadedAt: true, recruiterId: true, recruiter: { select: { name: true } } },
+  }),
+  ]);
   const names = people.length
     ? await prisma.user.findMany({
         where: { id: { in: people.map((p) => p.recruiterId!) } },
@@ -73,11 +89,6 @@ export default async function UploadChart({
 
   // Years with uploads in them, newest first, so the picker only offers years
   // that have something to show.
-  const spread = await prisma.candidate.aggregate({
-    where: { ...candidateScope(viewer), cvUploadedAt: { not: null } },
-    _min: { cvUploadedAt: true },
-    _max: { cvUploadedAt: true },
-  });
   const years: number[] = [];
   if (spread._min.cvUploadedAt && spread._max.cvUploadedAt) {
     const from = new Date(+spread._min.cvUploadedAt + 8 * 3600_000).getUTCFullYear();
@@ -85,15 +96,6 @@ export default async function UploadChart({
     for (let y = to; y >= from; y -= 1) years.push(y);
   }
 
-  const rows = await prisma.candidate.findMany({
-    where: {
-      ...candidateScope(viewer),
-      cvUploadedAt: { not: null },
-      ...(recruiter && recruiter !== "none" ? { recruiterId: recruiter } : {}),
-      ...(recruiter === "none" ? { recruiterId: null } : {}),
-    },
-    select: { cvUploadedAt: true, recruiterId: true, recruiter: { select: { name: true } } },
-  });
 
   const buckets = series(span, year);
   const index = new Map(buckets.map((b, i) => [b.key, i]));

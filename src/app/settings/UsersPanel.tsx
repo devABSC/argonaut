@@ -28,7 +28,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function UsersPanel({ me }: { me: Actor }) {
-  const users = await prisma.user.findMany({
+  // Independent of one another, so one round trip rather than three.
+  const [users, roleRows, employeeCompanies] = await Promise.all([
+    prisma.user.findMany({
     orderBy: [{ status: "asc" }, { name: "asc" }],
     select: {
       id: true, name: true, email: true, status: true,
@@ -37,7 +39,19 @@ export default async function UsersPanel({ me }: { me: Actor }) {
       manager: { select: { name: true } },
       updatedBy: { select: { name: true } },
     },
-  });
+  }),
+    prisma.role.findMany({
+    where: { isActive: true },
+    orderBy: [{ rank: "desc" }, { label: "asc" }],
+    select: { key: true, label: true },
+  }),
+    prisma.employee.findMany({
+    where: { company: { not: null } },
+    distinct: ["company"],
+    select: { company: true },
+    orderBy: { company: "asc" },
+  }),
+  ]);
 
   const pending = users.filter((u) => u.status === "PENDING");
   const canApprove = canApproveRegistrations(me);
@@ -46,11 +60,6 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   const isOwner = me.role === "SUPER_USER";
   // Assignable roles come from the table so custom ones appear, then are
   // filtered by what this actor is permitted to grant.
-  const roleRows = await prisma.role.findMany({
-    where: { isActive: true },
-    orderBy: [{ rank: "desc" }, { label: "asc" }],
-    select: { key: true, label: true },
-  });
   const roleLabel = (k: string) => roleRows.find((r) => r.key === k)?.label ?? ROLE_LABEL[k as keyof typeof ROLE_LABEL] ?? k;
   const roleChoices = roleRows.map((r) => r.key).filter((k) => canAssignRole(me, k as never));
   // Anyone at supervisor level or above can be a reporting line.
@@ -59,12 +68,6 @@ export default async function UsersPanel({ me }: { me: Actor }) {
   );
 
   // Company codes come from the HRIS records, plus anything already assigned.
-  const employeeCompanies = await prisma.employee.findMany({
-    where: { company: { not: null } },
-    distinct: ["company"],
-    select: { company: true },
-    orderBy: { company: "asc" },
-  });
   const companies = [
     ...new Set([
       ...employeeCompanies.map((c) => c.company!),

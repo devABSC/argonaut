@@ -37,22 +37,38 @@ export default async function RbacPanel({
     : view === "person" || view === "menu" ? view
     : "role";
   // Renamed labels, so RBAC calls a module what the user called it.
-  const tree = accessTree(await withLabels(NAV));
-  const nodes = tree.flatMap((g) => g.nodes);
+  // Five independent reads, so one round trip instead of five. Nothing here
+  // depends on anything else here.
+  const [namedNav, roleRows, roleGrants, allUsers, staff] = await Promise.all([
+    withLabels(NAV),
+    // Driven by the Role table, so a role added on the Roles tab appears here.
+    prisma.role.findMany({
+      where: { isActive: true },
+      orderBy: [{ rank: "desc" }, { label: "asc" }],
+      select: { key: true, label: true },
+    }),
+    prisma.menuGrant.findMany({
+      where: { roleId: { not: null } },
+      include: { role: { select: { key: true } } },
+    }),
+    prisma.user.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true, role: { select: { key: true } } },
+    }),
+    // Accounts are matched to their HRIS record by email — Employee.userId is
+    // not populated yet, and the address is the one thing both sides agree on.
+    prisma.employee.findMany({
+      where: { emailAdd: { not: null } },
+      select: { emailAdd: true, bouId: true, bou: { select: { id: true, name: true } } },
+    }),
+  ]);
 
-  // Driven by the Role table, so a role added on the Roles tab appears here.
-  const roleRows = await prisma.role.findMany({
-    where: { isActive: true },
-    orderBy: [{ rank: "desc" }, { label: "asc" }],
-    select: { key: true, label: true },
-  });
+  const tree = accessTree(namedNav);
+  const nodes = tree.flatMap((g) => g.nodes);
   const ROLES = roleRows.map((r) => r.key as RoleKey);
   const labels = Object.fromEntries(roleRows.map((r) => [r.key, r.label]));
 
-  const roleGrants = await prisma.menuGrant.findMany({
-    where: { roleId: { not: null } },
-    include: { role: { select: { key: true } } },
-  });
   const byRole = new Map(roleGrants.map((g) => [`${g.role?.key}|${g.nodeKey}`, g.allowed]));
 
   const initial: Record<string, boolean> = {};
@@ -74,18 +90,6 @@ export default async function RbacPanel({
     })),
   }));
 
-  const allUsers = await prisma.user.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true, role: { select: { key: true } } },
-  });
-
-  // Accounts are matched to their HRIS record by email — Employee.userId is
-  // not populated yet, and the address is the one thing both sides agree on.
-  const staff = await prisma.employee.findMany({
-    where: { emailAdd: { not: null } },
-    select: { emailAdd: true, bouId: true, bou: { select: { id: true, name: true } } },
-  });
   const byEmail = new Map(
     staff.filter((e) => e.emailAdd).map((e) => [e.emailAdd!.toLowerCase().trim(), e]),
   );

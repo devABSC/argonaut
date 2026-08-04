@@ -1,6 +1,9 @@
 // Argonaut — Prisma schema. Postgres on Supabase (DATABASE_URL, pooled).
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Loads relations with a LATERAL JOIN instead of one query per relation.
+  // The session lookup alone was three round trips on every page.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -128,6 +131,7 @@ model Project {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@index([userId])
 }
 
 /// A dated checkpoint on a project.
@@ -224,6 +228,7 @@ model Soa {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([employeeId])
+  @@index([createdAt])
 }
 
 /// One dated movement on a statement. A line is a debit or a credit, never
@@ -504,6 +509,8 @@ model ServiceRequest {
   @@index([requesterId, status])
   @@index([status])
   @@index([companyCode])
+  @@index([subcategoryId])
+  @@index([createdAt])
 }
 
 enum ApprovalDecision {
@@ -672,6 +679,8 @@ model Employee {
 
   @@index([lastName, firstName])
   @@index([company])
+  @@index([status])
+  @@index([bouId])
 }
 
 /// A company the business operates as. Employees and accounts belong to one.
@@ -1067,6 +1076,7 @@ model Bill {
 
   @@index([supplierId])
   @@index([coaId])
+  @@index([createdAt])
 }
 
 /// A company we buy from. Kept apart from Client: a supplier is the other
@@ -1389,6 +1399,8 @@ model Candidate {
 
   @@index([stage])
   @@index([lastName, firstName])
+  @@index([recruiterId])
+  @@index([cvUploadedAt])
 }
 
 /// Which BOUs one user may see records for. Menu access says which *pages* a

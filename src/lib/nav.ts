@@ -190,6 +190,7 @@ export const NAV: NavSection[] = [
       // Sits in the rail rather than the strip: a scheduled report is set up
       // once, not read alongside the everyday views.
       { slug: "scheduled", label: "Scheduled Reports", railOnly: true },
+      { slug: "monitoring", label: "Monitoring", railOnly: true },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },
