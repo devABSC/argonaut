@@ -1017,6 +1017,12 @@ button{font-family:inherit}
 @media (max-width:1024px){.skel-rail{display:none}.skel-main{padding:70px 16px 16px}}
 @media (prefers-reduced-motion:reduce){.skel-line{animation:none;opacity:.6}}
 
+/* A query in a table cell: small, monospaced, wrapping, and scrollable when
+   it is genuinely long. */
+.app .sqlcell{display:block;max-height:5.4em;overflow:auto;font-family:var(--mono);
+  font-size:.68rem;line-height:1.45;color:var(--muted);white-space:pre-wrap;
+  overflow-wrap:anywhere;max-width:52ch}
+
 /* Home: a way in, nothing more. */
 .app .homegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:18px}
 .app .homecard{display:flex;flex-direction:column;gap:5px;padding:14px 16px;border:1px solid var(--line);

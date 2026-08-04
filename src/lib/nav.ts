@@ -191,13 +191,17 @@ export const NAV: NavSection[] = [
       // once, not read alongside the everyday views.
       { slug: "scheduled", label: "Scheduled Reports", railOnly: true },
       { slug: "monitoring", label: "Monitoring", railOnly: true },
+      { slug: "sql-queries", label: "SQL Queries", parent: "monitoring" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },
   {
     key: "recruitment",
     label: "RECRUITMENT",
-    tabs: [{ slug: "candidates", label: "Candidates" }],
+    tabs: [
+      { slug: "candidates", label: "Candidates" },
+      { slug: "job-reqs", label: "Job Reqs", title: "Job Requisitions", railOnly: true },
+    ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },
   {

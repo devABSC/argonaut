@@ -6,6 +6,7 @@ import {
   effectiveAccess, canOpenModule, canOpenTab, navFor, grantsFromJson, grantsToJson,
 } from "./access";
 import { withLabels } from "./menu-labels";
+import { setPageContext } from "./query-log";
 
 /**
  * The gate every page goes through: signed in, allowed this module, allowed
@@ -50,6 +51,9 @@ export async function requireAccess(sectionKey: string, tabSlug?: string) {
   const nav = await withLabels(navFor(grants));
   const named = nav.find((n) => n.key === sectionKey) ?? section;
   const namedTab = named.tabs.find((t) => t.slug === tab.slug) ?? tab;
+
+  // Every database call made while rendering this page is attributed to it.
+  setPageContext({ module: named.label, url: `/${sectionKey}/${tab.slug}` });
 
   return { user, grants, section: named, tab: namedTab, nav };
 }

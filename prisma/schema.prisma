@@ -1046,6 +1046,25 @@ model UploadStat {
   @@index([grain, bucket])
 }
 
+/// A slow database call, kept so the Monitoring page can show what is costing
+/// time. Only calls over the threshold are recorded, and only the newest are
+/// kept — this is a diagnostic, not an audit.
+model QueryStat {
+  id     String @id @default(cuid())
+  /// Which module the page belonged to, and the address it was served at.
+  module String
+  url    String
+  /// The SQL Prisma actually sent.
+  sql    String
+  /// How long it took, in milliseconds.
+  ms     Int
+
+  at DateTime @default(now())
+
+  @@index([ms])
+  @@index([at])
+}
+
 /// One line of the Chart of Accounts — what a cost is booked against.
 /// Shaped to match QuickBooks Online, so the two charts can be reconciled.
 model CoaAccount {

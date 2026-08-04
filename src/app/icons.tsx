@@ -87,6 +87,13 @@ export const IconLink = () => (
   </svg>
 );
 
+export const IconCopy = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V5a2 2 0 012-2h10" />
+  </svg>
+);
+
 export const IconUpload = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" {...s}>
     <path d="M12 20.5v-11M7.5 13.5L12 9l4.5 4.5" />
