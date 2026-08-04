@@ -11,8 +11,14 @@ const kb = (n: number | null) => (n == null ? "" : `${Math.round(n / 1024)} KB`)
  * business's own documents, not part of the source.
  */
 export default async function BirFormsPanel() {
+  // Columns only. The blank itself is hundreds of kilobytes and is never shown
+  // here — it is fetched by the download route when someone asks for it.
   const rows = await prisma.birForm.findMany({
     orderBy: [{ sortOrder: "asc" }, { code: "asc" }],
+    select: {
+      id: true, code: true, description: true, sourceUrl: true,
+      fileName: true, fileSize: true, uploadedByName: true,
+    },
   });
 
   return (
@@ -64,7 +70,7 @@ export default async function BirFormsPanel() {
                         title={f.sourceUrl}>
                         <IconLink /> {f.sourceUrl}
                       </a>
-                    ) : f.fileData ? (
+                    ) : f.fileName ? (
                       <a className="viewtoggle" href={`/api/bir-form/${f.id}`} download
                         title={`Download ${f.fileName ?? f.code}`}>
                         <IconDownload /> {f.fileName ?? "Download"}

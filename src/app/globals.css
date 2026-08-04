@@ -1000,6 +1000,12 @@ button{font-family:inherit}
   .app .inforow,.app .infolist>div{grid-template-columns:1fr}
   .app .btn-primary.wide{width:100%}
 }
+/* Home: a way in, nothing more. */
+.app .homegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:18px}
+.app .homecard{display:flex;flex-direction:column;gap:5px;padding:14px 16px;border:1px solid var(--line);
+  border-radius:12px;background:var(--s2);transition:border-color .16s,background .16s}
+.app .homecard:hover{border-color:rgba(56,232,255,.42);background:rgba(56,232,255,.06)}
+.app .homecard b{font-family:var(--font);font-size:.98rem}
 .app .yeargroup{margin-top:18px;padding-top:14px;border-top:1px solid var(--line-2)}
 .app .yeargroup:first-of-type{border-top:0;padding-top:0}
 /* A full address in a table cell wraps rather than stretching the column. */

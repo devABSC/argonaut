@@ -43,6 +43,13 @@ export type NavSection = {
 
 export const NAV: NavSection[] = [
   {
+    // First in the list, so this is where everyone lands. It carries no data
+    // of its own — it is a way in to the modules a person can actually open.
+    key: "home",
+    label: "Home",
+    tabs: [{ slug: "overview", label: "Overview" }],
+  },
+  {
     // First in the list, so it is where everyone lands. Open to every signed-in
     // user — it is their own space, not a granted module.
     key: "my-space",
@@ -180,6 +187,9 @@ export const NAV: NavSection[] = [
       { slug: "overview", label: "Overview" },
       { slug: "service-desk", label: "Service Desk" },
       { slug: "logs", label: "Log History" },
+      // Sits in the rail rather than the strip: a scheduled report is set up
+      // once, not read alongside the everyday views.
+      { slug: "scheduled", label: "Scheduled Reports", railOnly: true },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },

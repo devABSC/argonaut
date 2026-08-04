@@ -62,8 +62,8 @@ export default async function SoaPanel({
 }) {
   // Finance sees every statement; everyone else sees their own and nothing
   // else — scoped in the query, not hidden in the render.
-  const v = await soaViewer(viewer);
-  const [company, bous, staff] = await Promise.all([
+  const [v, company, bous, staff] = await Promise.all([
+    soaViewer(viewer),
     prisma.company.findFirst({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.bou.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.employee.findMany({
@@ -86,7 +86,17 @@ export default async function SoaPanel({
     orderBy: { createdAt: "desc" },
     include: {
       employee: { select: { firstName: true, lastName: true, jobTitle: true, emailAdd: true } },
-      lines: { orderBy: [{ date: "asc" }, { createdAt: "asc" }] },
+      // Columns only: a receipt can be megabytes, and the page shows a link to
+      // it rather than the file itself.
+      lines: {
+        orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true, date: true, particulars: true, requestor: true,
+          debit: true, credit: true,
+          receiptName: true, receiptMime: true, receiptSize: true,
+          receiptStatus: true, reviewedByName: true, reviewedAt: true, reviewRemarks: true,
+        },
+      },
     },
   });
 
@@ -346,7 +356,7 @@ export default async function SoaPanel({
                               <td className="amt">{cell(Number(l.credit))}</td>
                               <td className={line < 0 ? "amt owed" : "amt"}>{running(line)}</td>
                               <td data-label="Receipt">
-                                {l.receiptData ? (
+                                {l.receiptName ? (
                                   <span className="receiptcell">
                                     <a className="ticket" href={href(s.ref, { receipt: l.id })}
                                       title={l.receiptName ?? "View receipt"}>View</a>
