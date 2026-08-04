@@ -15,6 +15,12 @@ export type NavTab = {
    * beside it.
    */
   parent?: string;
+  /**
+   * Shown as a sublink in the left rail rather than in the section's tab
+   * strip. For a page that belongs to the section but does not belong beside
+   * its siblings.
+   */
+  railOnly?: boolean;
 };
 export type NavSection = {
   key: string;
@@ -36,14 +42,6 @@ export type NavSection = {
 };
 
 export const NAV: NavSection[] = [
-  {
-    // First in the list, so the owner lands here. Owner-only for now — it is
-    // the front page of the product, not a personal dashboard.
-    key: "home",
-    label: "Home",
-    tabs: [{ slug: "overview", label: "Overview" }],
-    roles: ["SUPER_USER"],
-  },
   {
     // First in the list, so it is where everyone lands. Open to every signed-in
     // user — it is their own space, not a granted module.
@@ -231,11 +229,10 @@ export const NAV: NavSection[] = [
       { slug: "email", label: "Email" },
       { slug: "roles", label: "Roles" },
       { slug: "rbac", label: "RBAC" },
-      { slug: "cron-jobs", label: "Cron Jobs" },
+      // Everything else is a tab across the top; only this one hangs under
+      // Settings in the rail.
+      { slug: "cron-jobs", label: "Cron Jobs", railOnly: true },
     ],
-    // Sublinks in the left pane rather than one long tab strip — Settings has
-    // grown past what a strip reads well at.
-    children: "submenu",
     // HR Supervisor is included because registration approvals live here.
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },

@@ -8,13 +8,6 @@ import Flash from "./Flash";
 import type { NavSection } from "@/lib/nav";
 
 const ICONS: Record<string, ReactNode> = {
-  home: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-      <path d="M4 10.4L12 4l8 6.4" />
-      <path d="M6 12v8h12v-8" />
-      <path d="M10 20v-4.6h4V20" />
-    </svg>
-  ),
   "my-space": (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
       <path d="M3.6 10.6L12 4l8.4 6.6" />
@@ -172,7 +165,7 @@ export default function AppShell({
   const strip: TopTab[] =
     topTabs ??
     (section && section.children !== "submenu" && section.tabs.length > 1
-      ? section.tabs.map((t) => ({
+      ? section.tabs.filter((t) => !t.railOnly).map((t) => ({
           href: `/${section.key}/${t.slug}`,
           label: t.label,
           on: t.slug === activeTab,
@@ -206,9 +199,17 @@ export default function AppShell({
               </Link>
 
               {/* Sublinks in the rail — only for sections that use a submenu. */}
-              {s.key === activeSection && s.children === "submenu" && s.tabs.length > 1 && (
+              {/* Sublinks for a submenu section, and for any tab that asks to
+                  live in the rail rather than the strip above. */}
+              {s.key === activeSection
+                && (s.children === "submenu" || s.tabs.some((t) => t.railOnly))
+                && s.tabs.length > 1 && (
                 <div className="subnav navtext">
-                  {s.tabs.filter((t) => !t.hideInSubmenu && !t.parent).map((t) => (
+                  {s.tabs
+                    .filter((t) => !t.hideInSubmenu && !t.parent)
+                    // A tabbed section only lists what it asked to put here.
+                    .filter((t) => s.children === "submenu" || t.railOnly)
+                    .map((t) => (
                     <Fragment key={t.slug}>
                       <Link
                         href={`/${s.key}/${t.slug}`}
