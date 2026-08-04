@@ -1,0 +1,12 @@
+# The git-less deploy (.git moved aside) means Vercel cannot read .gitignore,
+# so anything secret has to be excluded here or it is uploaded into the build.
+.env
+.env.*
+.git
+.git-hold
+node_modules
+.next
+*.xlsx
+*.docx
+*.pptx
+*.csv
