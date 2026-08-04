@@ -26,7 +26,8 @@ export default async function CompanyPanel() {
         <div className="fields">
           <div className="frow crow chead">
             <span>Code</span><span>Company name</span><span>TIN</span>
-            <span>Address</span><span>POC email</span><span />
+            <span>Address</span><span>City</span><span>ZIP</span>
+            <span>POC email</span><span />
           </div>
 
           {companies.length === 0 ? (
@@ -41,6 +42,10 @@ export default async function CompanyPanel() {
                 <input name="name" defaultValue={c.name} required />
                 <input name="tin" defaultValue={c.tin ?? ""} placeholder="000-000-000-000" />
                 <input name="address" defaultValue={c.address ?? ""} placeholder="Registered address" />
+                {/* Apart from the address because the BIR forms ask for them
+                    separately, and the 2307 payor block prints them. */}
+                <input name="city" defaultValue={c.city ?? ""} placeholder="City" />
+                <input name="zipCode" defaultValue={c.zipCode ?? ""} placeholder="ZIP" />
                 <input name="pocEmail" type="email" defaultValue={c.pocEmail ?? ""} placeholder="poc@company.com" />
                 <span className="rowacts">
                   <button className="save icon" type="submit" title="Save" aria-label="Save"><IconSave /></button>
@@ -78,6 +83,8 @@ export default async function CompanyPanel() {
             <input name="name" placeholder="Company name" required />
             <input name="tin" placeholder="TIN" />
             <input name="address" placeholder="Address" />
+            <input name="city" placeholder="City" />
+            <input name="zipCode" placeholder="ZIP" />
             <input name="pocEmail" type="email" placeholder="POC email" />
             <span className="rowacts">
               <button className="save icon" type="submit" title="Add company" aria-label="Add company"><IconPlus /></button>

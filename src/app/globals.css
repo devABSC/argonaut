@@ -384,7 +384,7 @@ button{font-family:inherit}
 .app .utable .clip{max-width:26ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app .utable .clip.narrow{max-width:18ch}
 
-.app .frow.crow{grid-template-columns:minmax(120px,.9fr) minmax(150px,1.3fr) minmax(110px,.9fr) minmax(160px,1.5fr) minmax(150px,1.2fr) auto}
+.app .frow.crow{grid-template-columns:minmax(105px,.8fr) minmax(130px,1.1fr) minmax(105px,.8fr) minmax(150px,1.4fr) minmax(90px,.7fr) minmax(70px,.5fr) minmax(140px,1.1fr) auto}
 .app .frow.crow.chead{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:0 2px 2px}
 .app .frow.crow input{width:100%;font-family:var(--body);font-size:.86rem;color:var(--text);background:var(--s4);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
 .app .frow.crow input:focus{outline:none;border-color:var(--cyan)}

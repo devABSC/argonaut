@@ -21,6 +21,8 @@ function readRow(f: FormData) {
     name: String(f.get("name") ?? "").trim(),
     tin: String(f.get("tin") ?? "").trim() || null,
     address: String(f.get("address") ?? "").trim() || null,
+    city: String(f.get("city") ?? "").trim() || null,
+    zipCode: String(f.get("zipCode") ?? "").trim() || null,
     pocEmail: String(f.get("pocEmail") ?? "").trim() || null,
   };
 }
