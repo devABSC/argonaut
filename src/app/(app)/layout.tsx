@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, needsPasswordChange } from "@/lib/auth";
 import { ROLE_LABEL } from "@/lib/rbac";
-import { effectiveAccess, navFor, grantsFromJson } from "@/lib/access";
+import { effectiveAccess, navFor, grantsFromJson, grantsAreStale } from "@/lib/access";
 import { withLabels } from "@/lib/menu-labels";
 import AppShell from "@/app/AppShell";
 
@@ -20,7 +20,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // Resolved at sign-in and carried on the session; worked out again only when
   // it is missing.
-  const grants = grantsFromJson(user.access) ?? (await effectiveAccess(user));
+  const grants =
+    (!grantsAreStale(user.access) && grantsFromJson(user.access, user.role)) ||
+    (await effectiveAccess(user));
   const nav = await withLabels(navFor(grants));
 
   return (

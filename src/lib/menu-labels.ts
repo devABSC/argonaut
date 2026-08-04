@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "./prisma";
 import type { NavSection } from "./nav";
 import { moduleNodeKey, tabNodeKey } from "./access-policy";
@@ -8,8 +9,11 @@ import { moduleNodeKey, tabNodeKey } from "./access-policy";
  * The nav structure — what exists, what it links to, who may see it — stays in
  * code. Only the words change here, so a spelling fix never risks the routes.
  */
+/** The renames, read once per request however many callers want them. */
+const labelRows = cache(async () => prisma.menuLabel.findMany().catch(() => []));
+
 export async function withLabels(nav: NavSection[]): Promise<NavSection[]> {
-  const rows = await prisma.menuLabel.findMany().catch(() => []);
+  const rows = await labelRows();
   if (rows.length === 0) return nav;
 
   const by = new Map(rows.map((r) => [r.nodeKey, r]));

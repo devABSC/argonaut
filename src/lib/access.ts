@@ -1,5 +1,6 @@
 import type { RoleKey } from "./roles";
 import { Prisma } from "@prisma/client";
+import { cache } from "react";
 import { prisma } from "./prisma";
 import { allNodes, defaultAllows, type Grants } from "./access-policy";
 
@@ -10,24 +11,51 @@ export function grantsToJson(g: Grants): Record<string, boolean> {
   return Object.fromEntries(g);
 }
 
-/** The grants map back from JSON, dropping anything that is not a node now. */
-export function grantsFromJson(v: unknown): Grants | null {
+/**
+ * The grants map back from the copy on the session.
+ *
+ * A page added since someone signed in is not in their snapshot. That must
+ * mean "ask the code", not "denied" — otherwise a new page is invisible to
+ * everyone already signed in, which is how it first went wrong.
+ *
+ * Returns null when the snapshot is missing nodes, so the caller resolves
+ * properly and stores a complete one.
+ */
+export function grantsFromJson(v: unknown, role?: RoleKey): Grants | null {
   if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+
+  const stored = v as Record<string, unknown>;
   const out: Grants = new Map();
+  let missing = false;
+
   for (const n of allNodes()) {
-    const stored = (v as Record<string, unknown>)[n.key];
-    // A node added since the session was minted is simply absent; falling back
-    // to the code default is right, and it never grants more than the code does.
-    if (typeof stored === "boolean") out.set(n.key, stored);
+    const val = stored[n.key];
+    if (typeof val === "boolean") {
+      out.set(n.key, val);
+    } else {
+      missing = true;
+      // Never deny on absence alone.
+      if (role) out.set(n.key, defaultAllows(role, n.key));
+    }
   }
+
+  // Out of date: usable for this request, but the caller should replace it.
+  if (missing && !role) return null;
   return out.size > 0 ? out : null;
+}
+
+/** Whether a stored copy still covers every node the code declares. */
+export function grantsAreStale(v: unknown): boolean {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return true;
+  const stored = v as Record<string, unknown>;
+  return allNodes().some((n) => typeof stored[n.key] !== "boolean");
 }
 
 /**
  * Effective access for one user: user grants win over role grants, which win
  * over the code default. Returns a lookup keyed by node.
  */
-export async function effectiveAccess(user: { id: string; role: RoleKey }): Promise<Grants> {
+export const effectiveAccess = cache(async (user: { id: string; role: RoleKey }): Promise<Grants> => {
   const rows = await prisma.menuGrant.findMany({
     where: { OR: [{ role: { key: user.role } }, { userId: user.id }] },
     include: { role: { select: { key: true } } },
@@ -45,7 +73,7 @@ export async function effectiveAccess(user: { id: string; role: RoleKey }): Prom
     out.set(n.key, byUser.get(n.key) ?? byRole.get(n.key) ?? defaultAllows(user.role, n.key));
   }
   return out;
-}
+});
 
 /**
  * Drops the copy of access every session is carrying.

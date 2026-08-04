@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
+import { cache } from "react";
 import { prisma } from "./prisma";
 import { effectiveAccess, grantsToJson } from "./access";
 import type { User } from "@prisma/client";
@@ -71,7 +72,14 @@ export type SessionUser = Omit<User, "role"> & {
 };
 
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+/**
+ * The signed-in user.
+ *
+ * Wrapped in React's per-request cache: the layout asks for it to build the
+ * menu and every page asks again to check its own permission, and both should
+ * cost one query between them, not one each.
+ */
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -87,7 +95,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const { role, ...rest } = session.user;
   // Carried along so the gate does not have to ask the database again.
   return { ...rest, role: role.key as RoleKey, access: session.access, sessionToken: token };
-}
+});
 
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();

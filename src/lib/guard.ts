@@ -3,7 +3,7 @@ import { getCurrentUser, needsPasswordChange } from "./auth";
 import { findSection } from "./nav";
 import { prisma } from "./prisma";
 import {
-  effectiveAccess, canOpenModule, canOpenTab, navFor, grantsFromJson, grantsToJson,
+  effectiveAccess, canOpenModule, canOpenTab, navFor, grantsFromJson, grantsToJson, grantsAreStale,
 } from "./access";
 import { withLabels } from "./menu-labels";
 import { setPageContext } from "./query-log";
@@ -25,7 +25,7 @@ export async function requireAccess(sectionKey: string, tabSlug?: string) {
 
   // Resolved at sign-in and carried on the session. Only worked out again when
   // it is missing — a new session, or RBAC changed and cleared it.
-  let grants = grantsFromJson(user.access);
+  let grants = grantsAreStale(user.access) ? null : grantsFromJson(user.access, user.role);
   if (!grants) {
     grants = await effectiveAccess(user);
     if (user.sessionToken) {

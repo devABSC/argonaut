@@ -83,9 +83,12 @@ export default function AudiencePicker({ staff, bous }: {
                 checked={picked.has(s.email)}
                 onChange={() => toggle(s.email)}
               />
-              <span>
-                <b>{s.name}</b> <span className="muted">{s.email}</span>
-                {s.bouName && <span className="tree-meta"> · {s.bouName}</span>}
+              {/* One line per person: the tick, the name, then the details.
+                  Long addresses trim rather than wrap the row onto two. */}
+              <span className="tickwho">
+                <b>{s.name}</b>
+                <span className="muted">{s.email}</span>
+                {s.bouName && <span className="tree-meta">{s.bouName}</span>}
               </span>
             </label>
           ))
