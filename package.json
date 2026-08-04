@@ -8,7 +8,9 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "test": "node --experimental-strip-types --no-warnings tests/rbac.test.ts && node --experimental-strip-types --no-warnings tests/access.test.ts && node --experimental-strip-types --no-warnings tests/sla.test.ts && node --experimental-strip-types --no-warnings tests/password.test.ts && node --experimental-strip-types --no-warnings tests/strength.test.ts"
+    "test": "node --experimental-strip-types --no-warnings tests/rbac.test.ts && node --experimental-strip-types --no-warnings tests/access.test.ts && node --experimental-strip-types --no-warnings tests/sla.test.ts && node --experimental-strip-types --no-warnings tests/password.test.ts && node --experimental-strip-types --no-warnings tests/strength.test.ts",
+    "ship": "bash scripts/ship.sh",
+    "verify:live": "bash scripts/verify-live.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
