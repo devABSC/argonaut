@@ -2,6 +2,7 @@
 
 import { Fragment, Suspense, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signOut } from "./actions/auth";
 import ThemeToggle from "./ThemeToggle";
 import Flash from "./Flash";
@@ -134,30 +135,38 @@ export type TopTab = { href: string; label: string; on: boolean; title?: string 
  */
 const DRAWER = "(max-width:1024px)";
 
+/**
+ * The chrome: rail, top bar, tab strip.
+ *
+ * Rendered once by the app layout and kept mounted, so moving between pages
+ * swaps only the content. It takes no page props — which page is open is read
+ * from the address, which the router already knows — because a prop would mean
+ * every page re-rendering the whole shell to pass it.
+ */
 export default function AppShell({
   user,
   nav,
-  activeSection,
-  activeTab,
-  topTabs,
-  wide,
   children,
 }: {
   user: { name: string; roleLabel: string };
   nav: NavSection[];
-  activeSection: string;
-  activeTab: string;
-  /** Tab strip above the content. Supplied by the page, since a single section
-   *  can show different strips on different sublinks. */
-  topTabs?: TopTab[];
-  /** Lets a table-heavy page use the full window instead of the reading width. */
-  wide?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [rail, setRail] = useState(false);
   const initial = user.name.trim().charAt(0).toUpperCase() || "A";
+
+  const pathname = usePathname();
+  const [, sectionKey = "", tabSlug = ""] = pathname.split("/");
+  const activeSection = sectionKey;
   const section = nav.find((s) => s.key === activeSection);
+  // A per-record page (/hris/employee/x/y) still belongs to its section's
+  // first tab, so the rail keeps the right thing lit.
+  const activeTab = section?.tabs.some((t) => t.slug === tabSlug)
+    ? tabSlug
+    : section?.tabs[0]?.slug ?? "";
+  const activeTabDef = section?.tabs.find((t) => t.slug === activeTab);
+  const wide = activeTabDef?.wide ?? false;
 
   // Sections whose children are sublinks name the page after the open sublink
   // (Service Forms, Routes…); tab sections keep the section name.
@@ -168,15 +177,30 @@ export default function AppShell({
 
   // Sections that declare plain tabs (HRIS, Service Desk) get a strip derived
   // from their own children; anything else supplies one explicitly.
+  // The strip is worked out from the nav rather than handed in: a page whose
+  // tab sits under a parent shows its siblings, otherwise the section's own
+  // tabs. Nothing about it needs to come from the page itself.
+  const parentSlug = activeTabDef?.parent;
+  const family = section?.tabs.filter(
+    (t) => t.parent === (parentSlug ?? activeTab) && !t.railOnly,
+  ) ?? [];
+
   const strip: TopTab[] =
-    topTabs ??
-    (section && section.children !== "submenu" && section.tabs.length > 1
-      ? section.tabs.filter((t) => !t.railOnly).map((t) => ({
-          href: `/${section.key}/${t.slug}`,
+    family.length > 0
+      ? family.map((t) => ({
+          href: `/${section!.key}/${t.slug}`,
           label: t.label,
+          title: t.title,
           on: t.slug === activeTab,
         }))
-      : []);
+      : section && section.children !== "submenu" && section.tabs.filter((t) => !t.railOnly && !t.parent).length > 1
+        ? section.tabs.filter((t) => !t.railOnly && !t.parent).map((t) => ({
+            href: `/${section.key}/${t.slug}`,
+            label: t.label,
+            title: t.title,
+            on: t.slug === activeTab,
+          }))
+        : [];
 
   function toggle() {
     if (typeof window !== "undefined" && window.matchMedia(DRAWER).matches) setOpen((v) => !v);

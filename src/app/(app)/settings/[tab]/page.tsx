@@ -1,0 +1,35 @@
+import { redirect, notFound } from "next/navigation";
+import { requireAccess } from "@/lib/guard";
+import { ROLE_LABEL } from "@/lib/rbac";
+import UsersPanel from "../UsersPanel";
+import RbacPanel from "../RbacPanel";
+import CronPanel from "../CronPanel";
+import CompanyPanel from "../CompanyPanel";
+import RolesPanel from "../RolesPanel";
+import BouPanel from "../BouPanel";
+import EmailPanel from "../EmailPanel";
+
+export default async function SettingsTab({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ tab: string }>;
+  searchParams: Promise<{ u?: string; bou?: string; inactive?: string; view?: string }>;
+}) {
+  const { tab } = await params;
+  const { u, bou, inactive, view } = await searchParams;
+
+  const { user, nav, section, tab: active } = await requireAccess("settings", tab);
+
+  return (
+    <>
+      {active.slug === "users" && <UsersPanel me={{ id: user.id, role: user.role }} />}
+      {active.slug === "company" && <CompanyPanel />}
+      {active.slug === "roles" && <RolesPanel />}
+      {active.slug === "bou" && <BouPanel showInactive={inactive === "1"} />}
+      {active.slug === "email" && <EmailPanel />}
+      {active.slug === "rbac" && <RbacPanel userId={u} bouId={bou} view={view} />}
+      {active.slug === "cron-jobs" && <CronPanel view={view} />}
+    </>
+  );
+}

@@ -930,6 +930,8 @@ button{font-family:inherit}
 @media (max-width:760px){.app .billbar>*{flex:1 1 140px}.app .billbar .btn-primary{flex:1 1 100%}}
 
 /* Chart of Accounts: a fuller record, so a grid rather than a strip. */
+.app .jobrow{grid-template-columns:minmax(180px,1.6fr) minmax(150px,1fr) minmax(170px,1.2fr) 36px}
+.app .jobrow input[type=file]{font-size:.8rem;color:var(--muted);border:0;background:transparent;padding:0}
 .app .birrow{grid-template-columns:130px minmax(160px,1.5fr) minmax(150px,1fr) minmax(140px,1fr) 36px}
 .app .birnote{margin-top:10px;font-size:.86rem;color:var(--muted);max-width:none}
 
@@ -1000,12 +1002,9 @@ button{font-family:inherit}
   .app .inforow,.app .infolist>div{grid-template-columns:1fr}
   .app .btn-primary.wide{width:100%}
 }
-/* The instant skeleton. Shape only — it stands in for the page while the
-   server builds it, so a menu click is acknowledged at once. */
-.app .skel,.skel{display:flex;min-height:100vh;background:var(--bg)}
-.skel-rail{width:262px;flex:0 0 262px;padding:74px 18px 18px;display:flex;flex-direction:column;gap:14px;
-  border-right:1px solid var(--line)}
-.skel-main{flex:1;padding:74px 28px 28px;max-width:1080px;width:100%}
+/* The instant skeleton. Shape only — it stands in for the page body while the
+   server builds it, so a menu click is acknowledged at once. The rail stays. */
+.skel-main{width:100%}
 .skel-panel{margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:14px;
   background:var(--s2);display:flex;flex-direction:column;gap:14px}
 .skel-line{display:block;height:12px;border-radius:6px;background:var(--s6);
@@ -1014,14 +1013,7 @@ button{font-family:inherit}
 .skel-line:nth-child(3n){width:62%}
 .skel-title{height:22px;width:240px;border-radius:8px}
 @keyframes skelpulse{0%,100%{opacity:.45}50%{opacity:.9}}
-@media (max-width:1024px){.skel-rail{display:none}.skel-main{padding:70px 16px 16px}}
 @media (prefers-reduced-motion:reduce){.skel-line{animation:none;opacity:.6}}
-
-/* A query in a table cell: small, monospaced, wrapping, and scrollable when
-   it is genuinely long. */
-.app .sqlcell{display:block;max-height:5.4em;overflow:auto;font-family:var(--mono);
-  font-size:.68rem;line-height:1.45;color:var(--muted);white-space:pre-wrap;
-  overflow-wrap:anywhere;max-width:52ch}
 
 /* Home: a way in, nothing more. */
 .app .homegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:18px}

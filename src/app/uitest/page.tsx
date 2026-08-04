@@ -16,8 +16,6 @@ export default function UiTest() {
     <AppShell
       user={{ name: "Test User", roleLabel: "Super User" }}
       nav={NAV}
-      activeSection="recruitment"
-      activeTab="candidates"
     >
       <div className="viewbar">
         <span className="viewtoggle">← Back to candidates</span>

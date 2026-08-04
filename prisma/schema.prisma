@@ -63,6 +63,7 @@ model User {
   stockMovements InventoryMovement[] @relation("StockMovements")
   agencyLinks    AgencyLink[]        @relation("AgencyLinkEditor")
   cronJobs       CronJob[]           @relation("CronAuthor")
+  jobReqs        JobReq[]            @relation("JobReqAuthor")
 
   // Service desk
   workflowSteps   WorkflowStepApprover[] @relation("StepActorOf")
@@ -1065,6 +1066,35 @@ model QueryStat {
   @@index([at])
 }
 
+/// A job requisition — a role being recruited for, and the description that
+/// goes with it.
+model JobReq {
+  id    String @id @default(cuid())
+  title String
+
+  /// Which part of the business the role sits in.
+  bouId String?
+  bou   Bou?    @relation("BouJobs", fields: [bouId], references: [id], onDelete: SetNull)
+
+  /// The job description as filed. Held here rather than in the repo — it is
+  /// the business's own document.
+  fileName String?
+  fileMime String?
+  fileSize Int?
+  fileData Bytes?
+
+  isOpen Boolean @default(true)
+
+  createdById   String?
+  createdBy     User?   @relation("JobReqAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([bouId])
+}
+
 /// One line of the Chart of Accounts — what a cost is booked against.
 /// Shaped to match QuickBooks Online, so the two charts can be reconciled.
 model CoaAccount {
@@ -1325,6 +1355,7 @@ model Bou {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  jobs      JobReq[] @relation("BouJobs")
 
   @@index([companyCode])
   @@index([name])

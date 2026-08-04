@@ -21,6 +21,8 @@ export type NavTab = {
    * its siblings.
    */
   railOnly?: boolean;
+  /** Table-heavy page: uses the full window instead of the reading width. */
+  wide?: boolean;
 };
 export type NavSection = {
   key: string;
@@ -201,6 +203,7 @@ export const NAV: NavSection[] = [
     tabs: [
       { slug: "candidates", label: "Candidates" },
       { slug: "job-reqs", label: "Job Reqs", title: "Job Requisitions", railOnly: true },
+      { slug: "jobs", label: "Jobs", parent: "job-reqs" },
     ],
     roles: ["SUPER_USER", "ADMINISTRATOR", "HR_SUPERVISOR"],
   },
@@ -213,7 +216,7 @@ export const NAV: NavSection[] = [
   {
     key: "project",
     label: "PROJECT",
-    tabs: [{ slug: "projects", label: "Projects" }],
+    tabs: [{ slug: "projects", label: "Projects", wide: true }],
     roles: ["SUPER_USER", "ADMINISTRATOR"],
   },
   {
