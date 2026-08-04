@@ -1,7 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser, needsPasswordChange } from "./auth";
 import { findSection } from "./nav";
-import { effectiveAccess, canOpenModule, canOpenTab, navFor } from "./access";
+import { prisma } from "./prisma";
+import {
+  effectiveAccess, canOpenModule, canOpenTab, navFor, grantsFromJson, grantsToJson,
+} from "./access";
 import { withLabels } from "./menu-labels";
 
 /**
@@ -19,7 +22,20 @@ export async function requireAccess(sectionKey: string, tabSlug?: string) {
   // typing a URL.
   if (needsPasswordChange(user)) redirect("/change-password");
 
-  const grants = await effectiveAccess(user);
+  // Resolved at sign-in and carried on the session. Only worked out again when
+  // it is missing — a new session, or RBAC changed and cleared it.
+  let grants = grantsFromJson(user.access);
+  if (!grants) {
+    grants = await effectiveAccess(user);
+    if (user.sessionToken) {
+      await prisma.session
+        .update({
+          where: { token: user.sessionToken },
+          data: { access: grantsToJson(grants), accessAt: new Date() },
+        })
+        .catch(() => {});
+    }
+  }
   if (!canOpenModule(grants, sectionKey)) notFound();
 
   const section = findSection(sectionKey);

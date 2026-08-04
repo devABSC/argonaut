@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { notify } from "./notify";
+import { rebuildUploadStats } from "./upload-stat";
 
 /**
  * What a scheduled job can actually do.
@@ -45,6 +46,16 @@ const RUNNERS: Record<string, { label: string; describe: string; run: Runner }> 
       return sent
         ? { ok: true, message: `Sent to ${to}: "${q.text}" — ${q.who}` }
         : { ok: false, message: `Could not deliver to ${to}. Check the mail settings.` };
+    },
+  },
+
+  "rollup-uploads": {
+    label: "Roll up CV upload counts",
+    describe:
+      "Recounts CV uploads into the tally the ATS chart reads — daily, weekly, monthly, quarterly and yearly. Runs once a day so the chart never counts anything itself.",
+    run: async () => {
+      const { rows, uploads } = await rebuildUploadStats();
+      return { ok: true, message: `${uploads} upload(s) rolled into ${rows} tally row(s).` };
     },
   },
 

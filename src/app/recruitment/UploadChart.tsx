@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { candidateScope } from "@/lib/candidate-scope";
 import type { RoleKey } from "@/lib/roles";
-import { SPANS, bucketOf, series, type Span } from "@/lib/upload-series";
+import { SPANS, series, type Span } from "@/lib/upload-series";
+import type { Grain } from "@/lib/upload-stat";
 import ChartPicker from "./ChartPicker";
 
 export { isSpan } from "@/lib/upload-series";
@@ -47,35 +47,40 @@ export default async function UploadChart({
   /** The list's current query string, so switching view keeps the filters. */
   query: Record<string, string>;
 }) {
-  // Who can be picked. Only the owner sees more than themselves, so only the
-  // owner gets a list worth choosing from.
-  // The three reads below do not depend on each other, so they go together.
-  const [people, spread, rows] = await Promise.all([
+  // Reads the tally the nightly job leaves behind — never a live count. The
+  // grain asked for is the grain stored, so this is a handful of rows.
+  // The chart's spans and the tally's grains are named differently: Annual is
+  // twelve months of one year, so it reads the monthly rows.
+  const GRAIN_OF: Record<Span, Grain> = {
+    daily: "day", weekly: "week", monthly: "month", quarterly: "quarter", annual: "month",
+  };
+  const grain = GRAIN_OF[span];
+
+  const [stats, people] = await Promise.all([
+    prisma.uploadStat.findMany({
+      where: {
+        grain,
+        ...(recruiter && recruiter !== "none" ? { recruiterId: recruiter } : {}),
+        ...(recruiter === "none" ? { recruiterId: "" } : {}),
+        // A recruiter who is not the owner only ever sees their own tally.
+        ...(viewer.role === "SUPER_USER" ? {} : { recruiterId: viewer.id }),
+      },
+      select: { bucket: true, recruiterId: true, count: true },
+    }),
+    // Only the owner is offered a choice of recruiter, so only the owner needs
+    // the list.
     viewer.role === "SUPER_USER"
-      ? prisma.candidate.groupBy({
+      ? prisma.uploadStat.groupBy({
           by: ["recruiterId"],
-          where: { cvUploadedAt: { not: null }, recruiterId: { not: null } },
-          _count: { _all: true },
+          where: { grain: "year", recruiterId: { not: "" } },
+          _sum: { count: true },
         })
       : [],
-    prisma.candidate.aggregate({
-    where: { ...candidateScope(viewer), cvUploadedAt: { not: null } },
-    _min: { cvUploadedAt: true },
-    _max: { cvUploadedAt: true },
-  }),
-    prisma.candidate.findMany({
-    where: {
-      ...candidateScope(viewer),
-      cvUploadedAt: { not: null },
-      ...(recruiter && recruiter !== "none" ? { recruiterId: recruiter } : {}),
-      ...(recruiter === "none" ? { recruiterId: null } : {}),
-    },
-    select: { cvUploadedAt: true, recruiterId: true, recruiter: { select: { name: true } } },
-  }),
   ]);
+
   const names = people.length
     ? await prisma.user.findMany({
-        where: { id: { in: people.map((p) => p.recruiterId!) } },
+        where: { id: { in: people.map((p) => p.recruiterId) } },
         select: { id: true, name: true },
       })
     : [];
@@ -83,35 +88,30 @@ export default async function UploadChart({
     .map((n) => ({
       id: n.id,
       name: n.name,
-      count: people.find((p) => p.recruiterId === n.id)?._count._all ?? 0,
+      count: people.find((p) => p.recruiterId === n.id)?._sum.count ?? 0,
     }))
     .sort((a, b) => b.count - a.count);
 
-  // Years with uploads in them, newest first, so the picker only offers years
-  // that have something to show.
-  const years: number[] = [];
-  if (spread._min.cvUploadedAt && spread._max.cvUploadedAt) {
-    const from = new Date(+spread._min.cvUploadedAt + 8 * 3600_000).getUTCFullYear();
-    const to = new Date(+spread._max.cvUploadedAt + 8 * 3600_000).getUTCFullYear();
-    for (let y = to; y >= from; y -= 1) years.push(y);
-  }
+  // Years the tally has anything in, newest first.
+  const years = [...new Set(stats.map((r) => new Date(r.bucket).getUTCFullYear()))].sort((a, b) => b - a);
 
 
   const buckets = series(span, year);
   const index = new Map(buckets.map((b, i) => [b.key, i]));
 
-  // recruiter -> counts per bucket
+  // recruiter -> counts per bucket, straight from the stored rows
   const byWho = new Map<string, { name: string; counts: number[] }>();
   let total = 0;
-  for (const r of rows) {
-    const i = index.get(bucketOf(r.cvUploadedAt!, span).key);
-    if (i === undefined) continue; // older than the window
-    // One series: either the chosen recruiter, or everyone combined.
+  for (const r of stats) {
+    const i = index.get(new Date(r.bucket).toISOString().slice(0, 10));
+    if (i === undefined) continue; // outside the window on screen
     const id = recruiter ? recruiter : "all";
-    const name = recruiter ? r.recruiter?.name ?? "No recruiter" : "All recruiters";
+    const name = recruiter
+      ? names.find((n) => n.id === r.recruiterId)?.name ?? "No recruiter"
+      : "All recruiters";
     if (!byWho.has(id)) byWho.set(id, { name, counts: Array(buckets.length).fill(0) });
-    byWho.get(id)!.counts[i] += 1;
-    total += 1;
+    byWho.get(id)!.counts[i] += r.count;
+    total += r.count;
   }
 
   const seriesList = [...byWho.entries()]

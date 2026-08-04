@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { effectiveAccess, grantsToJson } from "./access";
 import type { User } from "@prisma/client";
 import type { RoleKey } from "./roles";
 
@@ -25,8 +26,23 @@ function randToken(bytes = 32): string {
 
 export async function createSession(userId: string): Promise<void> {
   const token = randToken();
+
+  // Resolved once, here, rather than on every page this person opens.
+  const who = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: { select: { key: true } } },
+  });
+  const access = who
+    ? grantsToJson(await effectiveAccess({ id: who.id, role: who.role.key as RoleKey }))
+    : undefined;
+
   await prisma.session.create({
-    data: { token, userId, expiresAt: new Date(Date.now() + SESSION_DAYS * 864e5) },
+    data: {
+      token, userId,
+      expiresAt: new Date(Date.now() + SESSION_DAYS * 864e5),
+      access,
+      accessAt: access ? new Date() : null,
+    },
   });
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
@@ -46,7 +62,13 @@ export async function destroySession(): Promise<void> {
 }
 
 /** The signed-in user, with `role` flattened to its stable key. */
-export type SessionUser = Omit<User, "role"> & { role: RoleKey; roleId: string };
+export type SessionUser = Omit<User, "role"> & {
+  role: RoleKey;
+  roleId: string;
+  /** The privileges resolved at sign-in, as stored on the session. */
+  access?: unknown;
+  sessionToken?: string;
+};
 
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
@@ -63,7 +85,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   if (session.user.status !== "ACTIVE") return null;
 
   const { role, ...rest } = session.user;
-  return { ...rest, role: role.key as RoleKey };
+  // Carried along so the gate does not have to ask the database again.
+  return { ...rest, role: role.key as RoleKey, access: session.access, sessionToken: token };
 }
 
 export async function requireUser(): Promise<SessionUser> {

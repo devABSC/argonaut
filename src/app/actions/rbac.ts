@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { type RoleKey } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { clearSessionAccess } from "@/lib/access";
 import { requireUser } from "@/lib/auth";
 import { allNodes, defaultAllows, effectiveAccess } from "@/lib/access";
 import { done } from "@/lib/flash";
@@ -72,6 +73,8 @@ export async function saveRoleMatrix(formData: FormData) {
     ...(fresh.length ? [prisma.menuGrant.createMany({ data: fresh })] : []),
   ]);
 
+  await clearSessionAccess();
+
   revalidatePath(PATH, "layout");
 }
 
@@ -116,6 +119,8 @@ export async function saveUserOverrides(userId: string, formData: FormData) {
     ...(fresh.length ? [prisma.menuGrant.createMany({ data: fresh })] : []),
   ]);
 
+  await clearSessionAccess();
+
   revalidatePath(PATH, "layout");
 }
 
@@ -123,6 +128,7 @@ export async function saveUserOverrides(userId: string, formData: FormData) {
 export async function clearUserOverrides(userId: string) {
   await requireOwner();
   await prisma.menuGrant.deleteMany({ where: { userId } });
+  await clearSessionAccess();
   revalidatePath(PATH, "layout");
 }
 
@@ -130,6 +136,7 @@ export async function clearUserOverrides(userId: string) {
 export async function resetToDefaults() {
   await requireOwner();
   await prisma.menuGrant.deleteMany({});
+  await clearSessionAccess();
   revalidatePath(PATH, "layout");
 }
 
@@ -156,6 +163,8 @@ export async function saveBouAccess(userId: string, formData: FormData) {
       ? [prisma.bouAccess.createMany({ data: picked.map((bouId) => ({ userId, bouId })) })]
       : []),
   ]);
+
+  await clearSessionAccess();
 
   revalidatePath("/settings/rbac");
   await logHistory({
@@ -192,6 +201,7 @@ export async function renameMenu(formData: FormData) {
 
   if (!label || label === fallback) {
     await prisma.menuLabel.deleteMany({ where: { nodeKey } });
+    await clearSessionAccess();
     revalidatePath("/", "layout");
     await logHistory({ type: "update", module: "Settings > RBAC", description: `Reset the name of ${nodeKey}`, user: me });
     done("/settings/rbac", `${fallback} put back to its original name.`);
@@ -204,6 +214,7 @@ export async function renameMenu(formData: FormData) {
   });
 
   // Every page renders the nav, so the whole layout has to be revalidated.
+  await clearSessionAccess();
   revalidatePath("/", "layout");
   await logHistory({ type: "update", module: "Settings > RBAC", description: `Renamed ${nodeKey} to ${label}`, user: me });
   done("/settings/rbac", `Renamed to ${label}.`);

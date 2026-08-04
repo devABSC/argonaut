@@ -91,6 +91,12 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  /// What this person may open, resolved once at sign-in and carried on the
+  /// session — every page needs it, and it only changes when someone edits
+  /// RBAC, which clears it here so the next request resolves it again.
+  access   Json?
+  accessAt DateTime?
 }
 
 model Project {
@@ -1016,6 +1022,28 @@ model InventoryMovement {
 
   @@index([itemId])
   @@index([createdAt])
+}
+
+/// A CV upload count for one bucket of time, per recruiter, at each grain the
+/// chart offers. Written when a CV is uploaded so the chart reads a handful of
+/// rows instead of counting candidates on every render — the count is a fact
+/// about the past and cannot change once the day has gone.
+model UploadStat {
+  /// day | week | month | quarter | year — the grain this row counts at.
+  grain  String
+  /// Start of the bucket, in Manila time: the day, the Monday, the 1st of the
+  /// month, the 1st of the quarter, or the 1st of January.
+  bucket DateTime @db.Date
+
+  /// Empty string rather than null: Postgres treats nulls as distinct, so a
+  /// nullable column could never carry the unique constraint this needs.
+  recruiterId String @default("")
+  count       Int    @default(0)
+
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@id([grain, bucket, recruiterId])
+  @@index([grain, bucket])
 }
 
 /// One line of the Chart of Accounts — what a cost is booked against.
