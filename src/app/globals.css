@@ -163,15 +163,26 @@ button{font-family:inherit}
    ============================================================ */
 .app{display:flex;min-height:100vh}
 .app .sidebar{position:sticky;top:0;height:100vh;width:252px;flex:0 0 252px;background:var(--s2);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px 14px;transition:width .25s ease, transform .25s ease}
-.app .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 20px;font-family:var(--font);font-weight:700;font-size:1.2rem;letter-spacing:.02em;white-space:nowrap;overflow:hidden}
+.app .brand{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:6px 10px 20px;font-family:var(--font);font-weight:700;font-size:1.2rem;letter-spacing:.02em;white-space:nowrap;overflow:hidden}
 .app .brand .mark{width:10px;height:10px;border-radius:50%;flex:0 0 10px;background:linear-gradient(135deg,var(--cyan),var(--violet));box-shadow:0 0 14px -1px var(--cyan)}
-.app .nav{display:flex;flex-direction:column;gap:4px}
+/* The rail is taller than the screen once enough modules exist, so the nav
+   itself scrolls. min-height:0 is what lets a flex child do that at all —
+   without it the list is simply clipped and the modules below the fold
+   cannot be reached. Brand stays at the top, account stays at the foot. */
+.app .nav{display:flex;flex-direction:column;gap:4px;flex:1;min-height:0;
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+  scrollbar-color:var(--s22) transparent;padding-right:2px}
+.app .nav::-webkit-scrollbar{width:8px}
+.app .nav::-webkit-scrollbar-track{background:transparent}
+.app .nav::-webkit-scrollbar-thumb{background:var(--s10);border-radius:99px;
+  border:2px solid transparent;background-clip:content-box}
+.app .nav:hover::-webkit-scrollbar-thumb{background:var(--s22);background-clip:content-box}
 .app .nav a{display:flex;align-items:center;gap:13px;padding:11px 12px;border-radius:11px;color:var(--muted);font-size:.94rem;font-weight:500;white-space:nowrap;overflow:hidden;transition:background .18s,color .18s;cursor:pointer}
 .app .nav a svg{flex:0 0 20px}
 .app .nav a:hover{background:var(--s5);color:var(--text)}
 .app .nav a.active{color:var(--text);background:linear-gradient(90deg,rgba(56,232,255,.14),transparent 80%);box-shadow:inset 2px 0 0 var(--cyan)}
 .app .newbtn{display:flex;align-items:center;justify-content:center;gap:9px;margin:16px 4px 0;padding:11px;border:0;border-radius:11px;cursor:pointer;font-family:var(--font);font-weight:600;font-size:.92rem;color:var(--on-accent);white-space:nowrap;overflow:hidden;background:linear-gradient(135deg,var(--cyan),var(--blue) 55%,var(--violet));box-shadow:0 10px 26px -10px rgba(76,107,255,.6)}
-.app .side-foot{margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 10px 4px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden}
+.app .side-foot{flex:0 0 auto;margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 10px 4px;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden}
 .app .avatar{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:grid;place-items:center;font-family:var(--font);font-weight:600;background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--on-accent)}
 .app .u-meta{display:flex;flex-direction:column;min-width:0}
 .app .u-meta b{font-size:.9rem;font-weight:600}
